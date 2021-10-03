@@ -11,17 +11,17 @@ import java.lang.IllegalArgumentException
 class Reflector (
     val reflectorType: ReflectorType
 ) {
-    private val optimizedEncryptionTable = optimize(reflectorType.encryptionTable)
+    private val _encryptionTable = optimize(reflectorType.encryptionTable)
 
-    fun encryptContact(inputChannel:Char, recorders:MutableList<StepRecorder>?) : Char {
+    fun encrypt(inputChannel:Char, recorders:MutableList<StepRecorder>? = null) : Char {
         if (!validate(inputChannel)) {
             throw IllegalArgumentException("input must be a character between A and Z (capital!)")
         }
-        return toChar(encryptContact(toInt(inputChannel), recorders))
+        return toChar(encrypt(toInt(inputChannel), recorders))
     }
 
-    fun encryptContact(contactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
-        val result = normalize(contactChannel + optimizedEncryptionTable[contactChannel])
+    fun encrypt(contactChannel:Int, recorders:MutableList<StepRecorder>? = null) : Int {
+        val result = normalize(contactChannel + _encryptionTable[contactChannel])
 
         if (recorders != null) {
             var recorder = ReflectorStepRecorder()
@@ -41,14 +41,14 @@ class Reflector (
         // result: array[1] = R.toInt() - B.toInt() = 18 - 2 = 16
         //   meaning: B maps to a character 16 positions further on in the alphabet = R
         fun optimize(encryptionTable: String): IntArray {
-            var optimizedEncryptionTable = IntArray(26)
+            var internalEncryptionTable = IntArray(26)
 
             var pos = 0
             while (pos < encryptionTable.length) {
-                optimizedEncryptionTable[pos] = encryptionTable[pos].toInt() - ('A'.toInt() + pos)
+                internalEncryptionTable[pos] = encryptionTable[pos].toInt() - ('A'.toInt() + pos)
                 pos++
             }
-            return optimizedEncryptionTable
+            return internalEncryptionTable
         }
     }
 }

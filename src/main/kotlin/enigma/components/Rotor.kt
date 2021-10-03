@@ -38,7 +38,7 @@ class Rotor (
     private val _encryptionTableLtoR = optimizeLtoR(rotorType.encryptionTable)
 
     // current position of the rotor, identified by a character between 'A' and 'Z'
-    private var currentPosition = startPosition
+    var currentPosition = startPosition
 
     // current position value optimized for the internal algorithm: 'A' is represented by 0, and so on
     private var _position = 0
@@ -57,11 +57,11 @@ class Rotor (
      * @param inputChannel character between 'A' and 'Z'
      * @return character between 'A' and 'Z'
      */
-    fun encryptContactRightToLeft(inputChannel:Char, recorders:MutableList<StepRecorder>?) : Char {
+    fun encryptRightToLeft(inputChannel:Char, recorders:MutableList<StepRecorder>? = null) : Char {
         if (!validate(inputChannel)) {
             throw IllegalArgumentException("input must be a character between A and Z (capital!)")
         }
-        return toChar(encryptContactRightToLeft(toInt(inputChannel), recorders))
+        return toChar(encryptRightToLeft(toInt(inputChannel), recorders))
     }
 
     /**
@@ -71,11 +71,11 @@ class Rotor (
      * @param inputChannel character between 'A' and 'Z'
      * @return character between 'A' and 'Z'
      */
-    fun encryptContactLeftToRight(inputChannel:Char, recorders:MutableList<StepRecorder>?) : Char {
+    fun encryptLeftToRight(inputChannel:Char, recorders:MutableList<StepRecorder>? = null) : Char {
         if (!validate(inputChannel)) {
             throw IllegalArgumentException("input must be a character between A and Z (capital!)")
         }
-        return toChar(encryptContactLeftToRight(toInt(inputChannel), recorders))
+        return toChar(encryptLeftToRight(toInt(inputChannel), recorders))
     }
 
     /**
@@ -85,9 +85,9 @@ class Rotor (
      * @param inputChannel integer between 0 (representing 'A') and 25 (representing 'Z')
      * @return integer between 0 (representing 'A') and 25 (representing 'Z')
      */
-    private fun encryptContactRightToLeft(rightContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
+    private fun encryptRightToLeft(rightContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
         val rightContact = rightContactFromChannel(rightContactChannel)
-        val leftContact = encryptValueRightToLeft(rightContact)
+        val leftContact = encryptContactRightToLeft(rightContact)
         val leftContactChannel = leftContactChannelFromContact(leftContact)
 
         if (recorders != null) {
@@ -112,9 +112,9 @@ class Rotor (
      * @param inputChannel integer between 0 (representing 'A') and 25 (representing 'Z')
      * @return integer between 0 (representing 'A') and 25 (representing 'Z')
      */
-    private fun encryptContactLeftToRight(leftContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
+    private fun encryptLeftToRight(leftContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
         val leftContact = leftContactFromChannel(leftContactChannel)
-        val rightContact = encryptValueLeftToRight(leftContact)
+        val rightContact = encryptContactLeftToRight(leftContact)
         val rightContactChannel = rightContactChannelFromContact(rightContact)
 
         if (recorders != null) {
@@ -151,7 +151,7 @@ class Rotor (
         return normalize(rightContactChannel + _position - _ringSetting)
     }
 
-    private fun encryptValueRightToLeft(right:Int): Int {
+    private fun encryptContactRightToLeft(right:Int): Int {
         return normalize(right + _encryptionTableRtoL[right])
     }
 
@@ -163,7 +163,7 @@ class Rotor (
         return normalize(leftContactChannel + _position - _ringSetting)
     }
 
-    private fun encryptValueLeftToRight(left:Int): Int {
+    private fun encryptContactLeftToRight(left:Int): Int {
         return normalize(left + _encryptionTableLtoR[left])
     }
 

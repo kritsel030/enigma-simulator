@@ -1,5 +1,6 @@
 package enigma
 
+import enigma.components.Plugboard
 import enigma.components.Reflector
 import enigma.components.Rotor
 import enigma.components.recorder.StepRecorder
@@ -20,7 +21,9 @@ class Enigma (
     val rotor2: Rotor,
 
     // right most rotor (position 3 in Enigma terms)
-    val rotor3: Rotor
+    val rotor3: Rotor,
+
+    val plugboard: Plugboard
     ){
 
     fun encrypt(input:String) : String {
@@ -49,18 +52,24 @@ class Enigma (
         // Before a pressed key is encoded by the Enigma, it first triggers the mechanical rotor stepping mechanism
         stepRotors()
 
+        // Plugboard
+        val input1 = plugboard.encrypt(input, recorders)
+
         // Follow the signal through the rotors from right to left (order: rotor3, rotor2, rotor1)
-        val input2 = rotor3.encryptContactRightToLeft(input, recorders)
-        val input3 = rotor2.encryptContactRightToLeft(input2, recorders)
-        val inputReflector = rotor1.encryptContactRightToLeft(input3, recorders)
+        val input2 = rotor3.encryptRightToLeft(input1, recorders)
+        val input3 = rotor2.encryptRightToLeft(input2, recorders)
+        val inputReflector = rotor1.encryptRightToLeft(input3, recorders)
 
         // Reflector
-        val input4 = reflector.encryptContact(inputReflector, recorders)
+        val input4 = reflector.encrypt(inputReflector, recorders)
 
         // Follow the signal through the rotors from left to right (order: rotor1, rotor2, rotor3)
-        val input5 = rotor1.encryptContactLeftToRight(input4, recorders)
-        val input6 = rotor2.encryptContactLeftToRight(input5, recorders)
-        val output = rotor3.encryptContactLeftToRight(input6, recorders)
+        val input5 = rotor1.encryptLeftToRight(input4, recorders)
+        val input6 = rotor2.encryptLeftToRight(input5, recorders)
+        val inputPlugboard = rotor3.encryptLeftToRight(input6, recorders)
+
+        // Plugboard
+        val output = plugboard.encrypt(inputPlugboard, recorders)
 
         return output
     }
@@ -71,7 +80,7 @@ class Enigma (
      *
      * https://en.wikipedia.org/wiki/Enigma_machine#Stepping
      */
-    private fun stepRotors() {
+    internal fun stepRotors() {
         //The right-most rotor (rotor3) steps with every key press.
         val stepMiddle = rotor3.stepRotor()
         if (stepMiddle) {
@@ -92,7 +101,7 @@ class Enigma (
     /**
      * Prepare for a new messsage to be encoded: return all rotors to their starting positions
      */
-    private fun resetRotors() {
+    internal fun resetRotors() {
         rotor1.reset()
         rotor2.reset()
         rotor3.reset()

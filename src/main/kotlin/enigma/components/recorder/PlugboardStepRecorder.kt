@@ -1,25 +1,23 @@
 package enigma.components.recorder
 
-import enigma.components.ReflectorType
 import enigma.util.Util
 
-class ReflectorStepRecorder (
-    var reflectorType: ReflectorType? = null,
-
+class PlugboardStepRecorder(
+    var connectedLetters:String? = null,
     var inputContactChannel: Int? = null,
     var outputContactChannel: Int? = null
 ): StepRecorder(){
     override fun toStringSimple(useCharacters:Boolean): String {
         if (useCharacters) {
-            return "reflector $reflectorType | ${Util.toChar(inputContactChannel!!)} -> ${Util.toChar(outputContactChannel!!)}"
+            return "plubboard | ${Util.toChar(inputContactChannel!!)} -> ${Util.toChar(outputContactChannel!!)}"
         } else {
-            return "reflector $reflectorType | $inputContactChannel -> $outputContactChannel"
+            return "plugboard | $inputContactChannel -> $outputContactChannel"
         }
     }
 
     override fun toStringVerbose(useCharacters:Boolean): String {
         var buf = StringBuffer()
-        buf.append("reflector $reflectorType \n")
+        buf.append("plugboard $connectedLetters \n")
         if (useCharacters) {
             buf.append("input channel ${Util.toChar(inputContactChannel!!)} -> output channel ${Util.toChar(outputContactChannel!!)} \n")
         } else {
