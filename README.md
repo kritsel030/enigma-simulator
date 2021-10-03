@@ -5,8 +5,10 @@ This Enigma simulator is capable of emulating the Enigma I as introduced in 1930
 It supports
 * B or C type reflector
 * 3 rotors, of type I, II and III
-* plugboard with 6 connectors
+* plugboard with 6 cables
 
+Note that this program and its documentation assumes that you have a proper understanding
+of the workings of an Enigma machine.
 
 # Program design model
 
@@ -73,11 +75,11 @@ _rotor specification (it's the same for every example)_
 
 - rotor wiring: (table on the left: wiring defined in terms of characters; table on the right: wiring defined in terms on contact identifiers)
 
-
-    contact on the right side:  ABCDE     01234
-                                |||||     |||||
-    contact on the left side:   ECDBA     42310
-
+```
+contact on the right side:  ABCDE     01234
+                            |||||     |||||
+contact on the left side:   ECDBA     42310
+```
 - turnover position for this rotor: C (indicated by ^ in the diagram)
 
 _rotor settings_
@@ -89,21 +91,22 @@ _rotor settings_
 With these rotor specification and settings, this single rotor will encode a C (right contact channel) into a D (left contact channel)
 
 
-
-     left   | outer     left   right   |  right                              left   | outer     left   right   |  right               
-    contact | ring   contact   contact | contact                            contact | ring   contact   contact | contact             
-    channel |position                  | channel                            channel |position                  | channel             
-    ========|==========================|==========                          ========|==========================|==========           
-            |                          |                                            |                          |                     
-    ---E----|  (E)      4         4    |---E---                             ---E----| (A=0)     0         0    |---E---              
-            |                          |             when this rotor                |                          |                     
-    <==D====|  (D)      3 <---    3    |----D--      advances 1 step  ==>   ---D----| (E)       4         4    |---D---              
-            |                |         |             this results in                |                          |                     
-    ---C----| (^C)      2    ---- 2    |<==C===                             ---C----| (D)       3         3    |---C---        
-            |                          |                                            |                          |                     
-    ---B----|  (B)      1         1    |---B---                             ---B----|(^C)       2         2    |---B---              
-            |                          |                                            |                          |                     
-    ---A----|  |A=0|    0         0    |---A---                             ---A----| |B|       1         1    |---A---
+```
+ left   | outer     left   right   |  right                              left   | outer     left   right   |  right               
+contact | ring   contact   contact | contact                            contact | ring   contact   contact | contact             
+channel |position                  | channel                            channel |position                  | channel             
+========|==========================|==========                          ========|==========================|==========           
+        |                          |                                            |                          |                     
+---E----|  (E)      4         4    |---E---                             ---E----| (A=0)     0         0    |---E---              
+        |                          |             when this rotor                |                          |                     
+<==D====|  (D)      3 <---    3    |----D--      advances 1 step  ==>   ---D----| (E)       4         4    |---D---              
+        |                |         |             this results in                |                          |                     
+---C----| (^C)      2    ---- 2    |<==C===                             ---C----| (D)       3         3    |---C---        
+        |                          |                                            |                          |                     
+---B----|  (B)      1         1    |---B---                             ---B----|(^C)       2         2    |---B---              
+        |                          |                                            |                          |                     
+---A----|  |A=0|    0         0    |---A---                             ---A----| |B|       1         1    |---A---
+```
 
 ***************************************
 ### Example B - other position plus base ring setting
@@ -111,10 +114,11 @@ _rotor specification (it's the same for every example)_
 
 - rotor wiring: (table on the left: wiring defined in terms of characters; table on the right: wiring defined in terms on contact identifiers)
   
-
-    contact on the right side:  ABCDE     01234
-                                |||||     |||||
-    contact on the left side:   ECDBA     42310
+```
+contact on the right side:  ABCDE     01234
+                            |||||     |||||
+contact on the left side:   ECDBA     42310
+```
 
 - turnover position for this rotor: C (indicated by ^ in the diagram)
 
@@ -126,22 +130,22 @@ _rotor settings_
 
 With these rotor specification and settings, this single rotor will encode a C (right contact channel) into an A (left contact channel)
 
-
-     left   | outer     left   right   |  right    
-    contact | ring   contact   contact | contact   
-    channel |position                  | channel   
-    ========|==========================|==========
-            |                          |           
-    ---E----| (A=0)     0         0    |---E---    
-            |                          |           
-    ---D----| (E)       4         4    |---D---    
-            |                          |           
-    ---C----| (D)       3    /--- 3    |<==C===    
-            |                |         |           
-    ---B----|(^C)       2    |    2    |---B---    
-            |  _             |         |           
-    <==A====| |B|       1 <--/    1    |---A---
-
+```
+ left   | outer     left   right   |  right    
+contact | ring   contact   contact | contact   
+channel |position                  | channel   
+========|==========================|==========
+        |                          |           
+---E----| (A=0)     0         0    |---E---    
+        |                          |           
+---D----| (E)       4         4    |---D---    
+        |                          |           
+---C----| (D)       3    /--- 3    |<==C===    
+        |                |         |           
+---B----|(^C)       2    |    2    |---B---    
+        |  _             |         |           
+<==A====| |B|       1 <--/    1    |---A---
+```
 
 ***************************************
 ### Example C - other position plus other ring setting
@@ -149,10 +153,11 @@ _rotor specification (it's the same for every example)_
 
 - rotor wiring: (table on the left: wiring defined in terms of characters; table on the right: wiring defined in terms on contact identifiers)
   
-
-    contact on the right side:  ABCDE     01234
-                                |||||     ||||| 
-    contact on the left side:   ECDBA     42310
+```
+contact on the right side:  ABCDE     01234
+                            |||||     ||||| 
+contact on the left side:   ECDBA     42310
+```
 
 - turnover position for this rotor: C (indicated by ^ in the diagram)
 
@@ -164,22 +169,22 @@ _rotor settings_
 
 With these rotor specification and settings, this single rotor will encode a C (right contact channel) to a B (left contact channel)
 
-
-     left   | outer     left   right   |  right                             left   | outer     left   right   |  right   
-    contact | ring   contact   contact | contact                           contact | ring   contact   contact | contact  
-    channel |position                  | channel                           channel |position                  | channel  
-    ========|==========================|=========                         ========|==========================|==========
-            |                          |            when this rotor                |                          |          
-    ---E----| (A)       2         2    |---E---     advances 1 step,       ---E----| (B)       3         3    |---E---   
-            |                          |            this results in  ==>           |                          |          
-    ---D----| (E)       1         1    |---D---                            ---D----| (A)       0         0    |---D---   
-            |                          |            (the new rotor                 |                          |          
-    ---C----| (D=0)     0    /--- 0    |<==C===     position is ^C;        ---C----| (E)       4         4    |---C---   
-            |                |         |            the ^ indicates that           |                          |          
-    <==B===-|(^C)       4 <--/    4    |---B---     the rotor to its left  ---B----| (D=0)     3         3    |---B---   
-            |                          |            will have stepped              |                          |          
-    ---A----| |B|       3         3    |---A---     as well)               ---A----| |^C|      2         2    |---A---
-
+```
+ left   | outer     left   right   |  right                             left   | outer     left   right   |  right   
+contact | ring   contact   contact | contact                           contact | ring   contact   contact | contact  
+channel |position                  | channel                           channel |position                  | channel  
+========|==========================|=========                         ========|==========================|==========
+        |                          |            when this rotor                |                          |          
+---E----| (A)       2         2    |---E---     advances 1 step,       ---E----| (B)       3         3    |---E---   
+        |                          |            this results in  ==>           |                          |          
+---D----| (E)       1         1    |---D---                            ---D----| (A)       0         0    |---D---   
+        |                          |            (the new rotor                 |                          |          
+---C----| (D=0)     0    /--- 0    |<==C===     position is ^C;        ---C----| (E)       4         4    |---C---   
+        |                |         |            the ^ indicates that           |                          |          
+<==B===-|(^C)       4 <--/    4    |---B---     the rotor to its left  ---B----| (D=0)     3         3    |---B---   
+        |                          |            will have stepped              |                          |          
+---A----| |B|       3         3    |---A---     as well)               ---A----| |^C|      2         2    |---A---
+```
 
 # Information consulted
 * https://en.wikipedia.org/wiki/Enigma_machine 
