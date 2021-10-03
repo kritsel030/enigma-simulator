@@ -74,9 +74,9 @@ _rotor specification (it's the same for every example)_
 - rotor wiring: (table on the left: wiring defined in terms of characters; table on the right: wiring defined in terms on contact identifiers)
 
 
-     contact on the right side:  ABCDE     01234
-                                 |||||     |||||
-     contact on the left side:   ECDBA     42310
+    contact on the right side:  ABCDE     01234
+                                |||||     |||||
+    contact on the left side:   ECDBA     42310
 
 - turnover position for this rotor: C (indicated by ^ in the diagram)
 
