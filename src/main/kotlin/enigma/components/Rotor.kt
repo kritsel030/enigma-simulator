@@ -86,9 +86,9 @@ class Rotor (
      * @return integer between 0 (representing 'A') and 25 (representing 'Z')
      */
     private fun encryptRightToLeft(rightContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
-        val rightContact = rightContactFromChannel(rightContactChannel)
+        val rightContact = this.contactFromChannel(rightContactChannel)
         val leftContact = encryptContactRightToLeft(rightContact)
-        val leftContactChannel = leftContactChannelFromContact(leftContact)
+        val leftContactChannel = this.contactChannelFromContact(leftContact)
 
         if (recorders != null) {
             var recorder = RotorStepRecorder()
@@ -113,9 +113,9 @@ class Rotor (
      * @return integer between 0 (representing 'A') and 25 (representing 'Z')
      */
     private fun encryptLeftToRight(leftContactChannel:Int, recorders:MutableList<StepRecorder>?) : Int {
-        val leftContact = leftContactFromChannel(leftContactChannel)
+        val leftContact = this.contactFromChannel(leftContactChannel)
         val rightContact = encryptContactLeftToRight(leftContact)
-        val rightContactChannel = rightContactChannelFromContact(rightContact)
+        val rightContactChannel = this.contactChannelFromContact(rightContact)
 
         if (recorders != null) {
             var recorder = RotorStepRecorder()
@@ -147,28 +147,20 @@ class Rotor (
      * @result identification of contact on the right of the rotor currently connected to the rightContactChannel
      *   integer between 0 (representing 'A') and 25 (representing 'Z')
      */
-    private fun rightContactFromChannel(rightContactChannel:Int): Int {
-        return normalize(rightContactChannel + _position - _ringSetting)
+    private fun contactFromChannel(contactChannel:Int): Int {
+        return normalize(contactChannel + _position - _ringSetting)
     }
 
     private fun encryptContactRightToLeft(right:Int): Int {
         return normalize(right + _encryptionTableRtoL[right])
     }
 
-    private fun leftContactChannelFromContact(leftContact:Int) : Int {
-        return normalize(leftContact - _position + _ringSetting)
-    }
-
-    private fun leftContactFromChannel(leftContactChannel:Int): Int {
-        return normalize(leftContactChannel + _position - _ringSetting)
+    private fun contactChannelFromContact(contact:Int) : Int {
+        return normalize(contact - _position + _ringSetting)
     }
 
     private fun encryptContactLeftToRight(left:Int): Int {
         return normalize(left + _encryptionTableLtoR[left])
-    }
-
-    private fun rightContactChannelFromContact(rightContact:Int) : Int {
-        return normalize(rightContact - _position + _ringSetting)
     }
 
     companion object {
