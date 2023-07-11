@@ -43,14 +43,16 @@ class Enigma (
         return buf.toString()
     }
 
-    fun encrypt(input: Char, recorders:MutableList<StepRecorder>?=null) :Char {
+    fun encrypt(input: Char, stepRotors: Boolean?=true, recorders:MutableList<StepRecorder>?=null) :Char {
         // validate input
         if (!validate(input)) {
             throw IllegalArgumentException("input must be character between A and Z (capital!)")
         }
 
         // Before a pressed key is encoded by the Enigma, it first triggers the mechanical rotor stepping mechanism
-        stepRotors()
+        if (stepRotors == true) {
+            stepRotors()
+        }
 
         // Plugboard
         val input1 = plugboard.encrypt(input, recorders)

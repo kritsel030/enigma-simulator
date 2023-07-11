@@ -2,16 +2,28 @@ import enigma.Enigma
 import enigma.components.*
 import enigma.components.recorder.StepRecorder
 
+/**
+ * example from https://www.lysator.liu.se/~koma/turingbombe/TuringBombeTutorial.pdf
+ *     var rotor1 = Rotor(RotorType.II, 'Y', 4)
+var rotor2 = Rotor(RotorType.V, 'W', 11)
+var rotor3 = Rotor(RotorType.III, 'Y', 24)
+val reflector = Reflector(ReflectorType.B)
+val plugboard2 = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
+
+ input:  WETTERVORHERSAGE
+ output: SNMKGGSTZZUGARLV
+ */
+
 fun main(args: Array<String>) {
-    var rotor1 = Rotor(RotorType.III, 'A', 1)
-    var rotor2 = Rotor(RotorType.II, 'A', 1)
-    var rotor3 = Rotor(RotorType.I, 'A', 1)
+    var rotor1 = Rotor(RotorType.II, 'Y', 4)
+    var rotor2 = Rotor(RotorType.V, 'W', 11)
+    var rotor3 = Rotor(RotorType.III, 'Y', 24)
     val reflector = Reflector(ReflectorType.B)
     val plugboard1 = Plugboard("")
-    val plugboard2 = Plugboard("AC-DK-GI-JX-OE-XZ")
+    val plugboard2 = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
     val enigma = Enigma(reflector, rotor1, rotor2, rotor3, plugboard2)
 
-    testEnigmaSimple("ABCDEFGHIJKLMNOPQRSTUVWXYZ", enigma)
+    testEnigmaSimple("WETTERVORHERSAGE", enigma)
 //    testEnigmaSimple('B', enigma)
 //    testEnigmaSimple('H', enigma)
 //    testSingleRotorSimple('B', rotor3)
@@ -54,13 +66,13 @@ fun testSingleRotorVerbose(input:Char, rotor:Rotor) {
 fun testEnigmaSimple(input:Char, enigma:Enigma) {
     println("***********")
     var recorders = mutableListOf<StepRecorder>()
-    var output = enigma.encrypt(input, recorders)
+    var output = enigma.encrypt(input, true, recorders)
     println("$input --> $output" )
     recorders.forEach{r -> println(r.toStringSimple(true))}
 
     val input2 = output
     recorders = mutableListOf<StepRecorder>()
-    val output2 = enigma.encrypt(input2, recorders)
+    val output2 = enigma.encrypt(input2, true, recorders)
     println("$input2 --> $output2" )
     recorders.forEach{r -> println(r.toStringSimple(true))}
 }

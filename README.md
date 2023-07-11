@@ -196,3 +196,43 @@ channel |position                  | channel                           channel |
   ring setting (in dutch)
 * http://people.physik.hu-berlin.de/~palloks/js/enigma/enigma-u_v26_en.html 
   online simulator used to verify the results
+
+***************************************
+# Bombe simulator
+
+## Class model
+
+```
+                         __________________
+                        |    <abstract>    |
+                        | CircuitComponent |
+                        | * passCurrent    |       
+                         ------------------
+                                / \
+       --------------------------|----------------
+       |                 |                       |
+       |                 |                  ______________________
+       |                 |                 |      <abstract>      |
+       |                 |                 | PassThroughComponent |       
+       |                 |                  ----------------------
+       |                 |                            / \
+       |                 |                ----- -------|------------
+  _____|_____     _______|_______     ____|___     ____|__     ____|____
+ | Scrambler |   | DiagonalBoard |   | Bridge |   | Cable |   | Commons |
+  -----------     ---------------     --------     -------     ---------
+   (2) |_____________    |(26)  _______|    |       __|            |
+                     |   |     |(1)         |(2)   |(2)  __________|(5)
+                 ____|___|_____|__-       __|______|____|_
+                |       Jack       |     |      Plug      |
+                |(female connector)|     |(male connector)|
+                 ------------------       ----------------
+                         |______________________|      
+                                     |                      
+                           __________\/___________
+                          |      <abstract>       |
+                          |      Connector        |
+                          | - liveContacts        |
+                          | * passCurrentInbound  |
+                          | * passCurrentOutbound |
+                           -----------------------
+```

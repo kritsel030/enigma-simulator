@@ -1,0 +1,4 @@
+package bombe
+
+class Menu {
+}

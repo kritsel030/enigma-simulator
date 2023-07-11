@@ -23,11 +23,76 @@ const CONNECTOR_RADIUS = 4
 //////////////////////////////////////////////////////////////////////////
 // variables
 
-let _reflector = new Reflector('B')
-let _rotor1 = new Rotor('I', 'A', 6)
-let _rotor2 = new Rotor('II', 'D', 5)
-let _rotor3 = new Rotor('III', 'U', 3)
-let _plugboard = new Plugboard('AC-DK-GI-JX-OE-XZ')
+// interpret query string (?reflector=B&rotor1=I-C-5)
+const urlParams = new URLSearchParams(window.location.search);
+// reflector
+var reflectorParam
+if (urlParams.get('reflector')) {
+  reflectorParam = urlParams.get('reflector')
+  console.log('reflector: ' + reflectorParam);
+}
+
+// rotor 1 (example value: II-D-5)
+var rotor1TypeParam;
+var rotor1PositionParam;
+var rotor1RingSettingParam
+if (urlParams.has('rotor1') ) {
+  if (urlParams.get('rotor1').split('-').length = 3) {
+    rotor1ParamElements = urlParams.get('rotor1').split('-');
+    rotor1TypeParam = rotor1ParamElements[0];
+    rotor1PositionParam = rotor1ParamElements[1];
+    rotor1RingSettingParam = rotor1ParamElements[2];
+    console.log('rotor 1 type: ' + rotor1TypeParam);
+    console.log('rotor 1 position: ' + rotor1PositionParam);
+    console.log('rotor 1 ringSetting: ' + rotor1RingSettingParam);
+  }
+}
+
+// rotor 2 
+var rotor2TypeParam;
+var rotor2PositionParam;
+var rotor2RingSettingParam
+if (urlParams.has('rotor2') ) {
+  if (urlParams.get('rotor2').split('-').length = 3) {
+    rotor2ParamElements = urlParams.get('rotor2').split('-');
+    rotor2TypeParam = rotor2ParamElements[0];
+    rotor2PositionParam = rotor2ParamElements[1];
+    rotor2RingSettingParam = rotor2ParamElements[2];
+    console.log('rotor 2 type: ' + rotor2TypeParam);
+    console.log('rotor 2 position: ' + rotor2PositionParam);
+    console.log('rotor 2 ringSetting: ' + rotor2RingSettingParam);
+  }
+}
+
+// rotor 3 
+var rotor3TypeParam;
+var rotor3PositionParam;
+var rotor3RingSettingParam
+if (urlParams.has('rotor3') ) {
+  if (urlParams.get('rotor3').split('-').length = 3) {
+    rotor3ParamElements = urlParams.get('rotor3').split('-');
+    rotor3TypeParam = rotor3ParamElements[0];
+    rotor3PositionParam = rotor3ParamElements[1];
+    rotor3RingSettingParam = rotor3ParamElements[2];
+    console.log('rotor 3 type: ' + rotor3TypeParam);
+    console.log('rotor 3 position: ' + rotor3PositionParam);
+    console.log('rotor 3 ringSetting: ' + rotor3RingSettingParam);
+  }
+}
+
+//plugboard
+var plugboardParam
+if (urlParams.has('plugboard') ) {
+  plugboardParam = urlParams.get('plugboard')
+  console.log('plugboard: ' + plugboardParam);
+}
+
+
+let _reflector = new Reflector(reflectorParam ?? 'B')
+let _rotor1 = new Rotor(rotor1TypeParam ?? 'I', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6)
+let _rotor2 = new Rotor(rotor2TypeParam ?? 'II', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5)
+let _rotor3 = new Rotor(rotor3TypeParam ?? 'III', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3)
+let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JX-OE-XZ')
 
 let enigma = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
 
