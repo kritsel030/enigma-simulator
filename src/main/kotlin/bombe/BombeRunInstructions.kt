@@ -9,7 +9,9 @@ class BombeRunInstructions (
     // in the order as they would appear from left to right on an Enigma machine
     val rotorConfigurations: List<List<RotorType>>,
     val reflectorType: ReflectorType = ReflectorType.B,
-    val activateContact: Char = 'A') {
+    val activateContact: Char = 'A',
+    val bombeStrategy: BombeStrategy = BombeStrategy.DIAGONAL_BOARD,
+    val bombeTemplate: BombeTemplate = BombeTemplate.MAGIC) {
 
     var parsedMenu = mutableListOf<List<MenuLink>>()
         private set

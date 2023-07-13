@@ -1,7 +1,6 @@
 package bombe.connectors
 
 import bombe.components.*
-import kotlin.reflect.KClass
 
 // Convention used in this codebase: each *female* connector is named a *Jack*
 // This includes all fixed connectors on the backside of the bombe,
@@ -19,24 +18,32 @@ import kotlin.reflect.KClass
  *   attached to the same component
  * - component: the component this Jack is physically attached to
  */
-class Jack (val externalLabel: String,
+open class Jack (val externalLabel: String,
             label: String,
             component: CircuitComponent) : Connector(label, component) {
 
-    fun checkCableTo(componentTypes: List<String>) : List<String> {
+    fun insertedPlug() : Plug? {
+        return connectedTo as? Plug
+    }
+
+    // verifies if this jack
+    // - is plugged up with a plug attached to a cable
+    // - if the other plug of that cable is plugged into a jack of a component whose type is mentioned in the given
+    //   list of component types
+    // returns a list of verification error messages (empty list when all is OK)
+    fun verifyCableTo(componentTypes: List<String>) : List<String> {
         val errors = mutableListOf<String>()
-        val plugInsertedToJack = this.pluggedTo
+        val plugInsertedToJack = this.insertedPlug()
         if (plugInsertedToJack == null) {
             errors.add("${attachedTo.label}.${externalLabel} : jack is not plugged up")
         } else {
             if (plugInsertedToJack!!.attachedTo !is Cable) {
                 errors.add("${attachedTo.label}.${externalLabel} : jack is plugged up with a plug connected to a ${attachedTo.javaClass.simpleName}, expected Cable")
             }
-            val jackOnOtherSideOfCable = (plugInsertedToJack as CablePlug).getOtherPlug().pluggedTo
+            val jackOnOtherSideOfCable = (plugInsertedToJack as CablePlug).getOppositePlug().pluggedInto()
             if (jackOnOtherSideOfCable == null) {
                 errors.add("${attachedTo.label}.${externalLabel} : other side of the plugged in cable is not plugged in")
-            }
-            if (!componentTypes.contains(jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName)) {
+            } else if (!componentTypes.contains(jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName)) {
                 errors.add(
                     "${attachedTo.label}.${externalLabel} : jack is connected to a ${jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName}, expected ${
                         componentTypes.joinToString(" or ")

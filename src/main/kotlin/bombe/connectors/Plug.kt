@@ -14,11 +14,18 @@ import bombe.components.CircuitComponent
 // https://en.wikipedia.org/wiki/Gender_of_connectors_and_fasteners
 open class Plug (label:String, component: CircuitComponent) : Connector(label, component) {
 
+    // Whenever a Plug is plugged into a Jack, a two-way relationship is established between Plug and Jack
+    // (this will allow a live contact in one connector to activate the proper contact in the other connector
+    // and vice versa).
     fun plugInto(jack : Jack) {
-        connectTo(jack)
+        this.connectTo(jack)
+    }
+
+    fun pluggedInto() : Jack? {
+        return connectedTo as? Jack
     }
 
     fun unplug() {
-        unconnect()
+        disconnect()
     }
 }

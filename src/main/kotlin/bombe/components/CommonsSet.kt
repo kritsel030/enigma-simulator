@@ -1,6 +1,7 @@
 package bombe.components
 
 import bombe.Bombe
+import bombe.connectors.CablePlug
 import bombe.connectors.Jack
 import java.lang.IllegalStateException
 
@@ -33,6 +34,13 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
     private val jack4 = Jack(externalLabel(id), "jack-4", this)
     private val jack5 = Jack(externalLabel(id), "jack-5", this)
 
+    fun jacks() : List<Jack> {
+        return connectors as List<Jack>
+    }
+
+    // ******************************************************************************************************
+    // Features needed to plug up a bombe based on a menu
+
     // When setting up a bombe based on a menu, we need a way of requesting an available
     // (= not yet claimed) CommonsSet from the total set of CommonsSet instances available
     // on a bombe. These fields and methods support this feature.
@@ -50,11 +58,31 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
     // of a particular CommonsSet
     fun getAvailableJack() : Jack {
         try {
-            return connectors.filter { it.pluggedTo == null }.first() as Jack
+            return jacks().filter { it.insertedPlug() == null }.first() as Jack
         } catch (ex:NoSuchElementException) {
             throw IllegalStateException("[CommonsSet ${label}] Trying to use more than 5 Jacks from this CommonsSet.")
         }
     }
 
+    // ******************************************************************************************************
+    // Features needed to verify correct plugging up of a bombe
+    /**
+     * either 0 jacks are plugged up, or at least 2 (so not 1)
+     * when there are plugged up jacks, exactly 1 should be connected to the DiagonalBoard
+     */
+    fun verifyConnections() : List<String> {
+        val errors = mutableListOf<String>()
+        val pluggedUpJacks = jacks().filter{it.insertedPlug() != null}.toList()
+        if ( pluggedUpJacks.size == 1) {
+            errors.add("$label has only 1 plugged up jack, this cannot be correct")
+        }
+        if (pluggedUpJacks.size > 1) {
+            val jacksConnectedToDB = pluggedUpJacks.filter { (it.insertedPlug() as CablePlug).getOppositePlug()!!.pluggedInto()!!.attachedTo is DiagonalBoard }.toList()
+            if (jacksConnectedToDB.size != 1) {
+                errors.add("$label has ${jacksConnectedToDB.size} jacks which are connected to the DiagonalBoard, expected 1")
+            }
+        }
+        return errors
+    }
 
 }

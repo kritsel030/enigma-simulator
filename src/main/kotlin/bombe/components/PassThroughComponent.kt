@@ -9,11 +9,14 @@ import bombe.recorder.CurrentPathElement
 
 abstract class PassThroughComponent(label: String, bombe: Bombe) : CircuitComponent(label, bombe) {
 
-    override fun passCurrent(wire: Char, activatedVia: Connector, previousPathElement: CurrentPathElement) {
-        val newPathElement = CurrentPathElement(label, javaClass.simpleName, wire, wire, previousPathElement, previousPathElement.root)
-        previousPathElement.addNext(newPathElement)
+    override fun passCurrent(wire: Char, activatedVia: Connector, previousPathElement: CurrentPathElement?) {
+        var newPathElement : CurrentPathElement? = null
+        if (previousPathElement != null) {
+            newPathElement = CurrentPathElement(label, javaClass.simpleName, wire, wire, previousPathElement, previousPathElement.root)
+            previousPathElement.addNext(newPathElement)
+        }
         for (connector in connectors) {
-            connector.activateContactOutbound(wire, newPathElement)
+            connector.passCurrentOutbound(wire, newPathElement)
         }
     }
 }

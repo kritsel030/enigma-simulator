@@ -7,11 +7,6 @@ import bombe.connectors.Plug
 
 class Bridge (label: String, bombe : Bombe) : PassThroughComponent(label, bombe){
 
-    constructor(label: String, plugOutPlugInto: Jack, plugInPlugInto: Jack, bombe: Bombe) : this(label, bombe) {
-        outPlug.plugInto(plugOutPlugInto)
-        inPlug.plugInto(plugInPlugInto)
-    }
-
     // plug that goes into the out-jack of a scrambler
     val outPlug = Plug("out" ,this)
 

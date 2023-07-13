@@ -8,42 +8,41 @@ import bombe.recorder.CurrentPathElement
 import enigma.components.RotorType
 import java.lang.IllegalStateException
 
-class Bank (val id: Int, noOfScramblersPerBank: Int, bombe: Bombe)
+class Bank (val id: Int, noOfScramblersPerBank: Int = 12, bombe: Bombe)
     : CircuitComponent("Bank-$id", bombe), BankControlPanel, BankDisplay {
-    // Contract a Bank ****************************************************************************
+
+    // ***********************************************************************************************************
+    // Contract a Bank of scramblers, and ever
 
     // construct a bank of scramblers
-    val scramblers = mutableMapOf<Int, Scrambler>()
+    // key starts at 1
+    private val scramblers = mutableMapOf<Int, Scrambler>()
+
+    fun getScramblers() : List<Scrambler> {
+        return scramblers.values.toList()
+    }
+    // index is a 1-based index
+    fun getScrambler(index: Int) : Scrambler {
+        if (scramblers.containsKey(index)) {
+            return scramblers[index]!!
+        } else {
+            throw IllegalStateException("you're asking for scrambler $index but there are only ${scramblers.size} scramblers in this bank")
+        }
+    }
+
     init {
         for (s in 1..noOfScramblersPerBank) {
             scramblers.put(s, Scrambler(s, this))
         }
     }
-    fun getScrambler(id:Int) : Scrambler {
-        return scramblers.get(id)!!
-    }
-
-    fun claimNextAvailableScrambler(menuPosition: Int) : Scrambler {
-        val availableScrambler = scramblers.values.filter { it -> it.isAvailable()}.firstOrNull();
-        if (availableScrambler == null) throw IllegalStateException("[bank $id] No more free scrambler available in this bank")
-        availableScrambler.claimForMenuPosition(menuPosition)
-        return availableScrambler!!
-    }
 
     // create a Jack for the bank which will be present at the back of the bombe
     // (on a real bombe these Jacks are named CH1, CH2 and CH3, one for each Bank)
-    val jack = Jack("CH$id", "CH$id", this)
+    val inputJack = Jack("CH$id", "input-CH$id", this)
 
-    // create a test register and connect it to the jack
-    // (the test register can be connected to another connector to demonstrate
-    //  single line scanning as was the case in the first bombe prototype (Victory))
-    var testRegisterConnectedTo : Connector = jack
-    fun connectTestRegisterTo(connector: Connector) {
-        testRegisterConnectedTo = connector
-    }
+    // ***********************************************************************************************************
+    // control panel support
 
-
-    // control panel support *************************************************************************
     private var on: Boolean = false
     override fun switchOn() {
         on = true
@@ -64,39 +63,60 @@ class Bank (val id: Int, noOfScramblersPerBank: Int, bombe: Bombe)
         return contactToActivate
     }
 
-    // BankDisplay support ******************************************************************************
-    override fun readTestRegister() : Map<Char, Boolean> {
-        return jack.readContacts()
+    // ***********************************************************************************************************
+    // BankDisplay support
+
+    // by default the bank's test register is connected to the bank's input Jack
+    var testRegisterConnectedTo : Connector = inputJack
+
+    // The test register can be connected to another connector to demonstrate
+    //  single line scanning as was the case in the first bombe prototype (Victory))
+    fun connectTestRegisterTo(connector: Connector) {
+        testRegisterConnectedTo = connector
     }
 
-    // Place drums on each scrambler of this bank *******************************************************
-    // (each scrambler in the bank will be fitted with the same drum types)
+    // Return the currently active contacts in the test register
+    override fun readTestRegister() : Map<Char, Boolean> {
+        return inputJack.readContacts()
+    }
+
+    // ***********************************************************************************************************
+    // Features to support the plugging up of a bombe based on a menu
+
+    // Fit each scrambler in this bank with the given set of drum types
     fun placeDrums(rotorTypeRotor1: RotorType, rotorTypeRotor2: RotorType, rotorTypeRotor3: RotorType) {
         for (scrambler in scramblers.values) {
             scrambler.placeEnigma(rotorTypeRotor1, rotorTypeRotor2, rotorTypeRotor3)
         }
     }
 
-    // Run the bombe  ***********************************************************************************
+    // ***********************************************************************************************************
+    // Features to support the running of a bombe
     fun run(previousPathElement: CurrentPathElement) {
         if (on) {
-            jack.activateContactOutbound(this.contactToActivate!!, previousPathElement)
+            inputJack.passCurrentOutbound(this.contactToActivate!!, previousPathElement)
         }
     }
 
-    override fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement) {
+    override fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement?) {
         // nothing to do
     }
 
-    fun checkStepResult() : Pair<Boolean, Map<Char, Boolean>?> {
-        val activeContacts = readTestRegister().filter{entry -> entry.value }.count()
-        val stop = activeContacts == 1 || activeContacts == bombe.alphabetSize - 1
-//        val stop = activeContacts < bombe.alphabetSize
+    fun checkStepResult() : Pair<Boolean, List<Char>?> {
+        var potentialSteckerPartners : List<Char>? = null
+        val activeContacts = readTestRegister().filter{entry -> entry.value }.map{it.key}.toList()
+//        val stop = activeContacts.size == 1 || activeContacts.size == bombe.alphabetSize - 1
+        val stop = activeContacts.size < bombe.alphabetSize
         if (stop) {
-            // return true + the single inactive contact
-            return Pair(true, readTestRegister())
-        } else {
-            return Pair(false, null)
+            if (activeContacts.size == 1) {
+                // pick the single active contact
+                potentialSteckerPartners = activeContacts
+            } else {
+                // pick all inactive entries in the test register
+                potentialSteckerPartners =
+                    readTestRegister().filter { entry -> !entry.value }.map { it.key }.toList()
+            }
         }
+        return Pair(stop, potentialSteckerPartners)
     }
 }

@@ -22,6 +22,6 @@ abstract class CircuitComponent(val label: String, val bombe: Bombe) {
         connectors.forEach{it.resetContacts()}
     }
 
-    abstract fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement)
+    abstract fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement? = null)
 
 }

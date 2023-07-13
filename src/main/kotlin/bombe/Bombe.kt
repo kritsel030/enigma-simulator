@@ -14,18 +14,20 @@ const val COMMONSSETS_PER_COLUMN = 5
 class Bombe(
     // physical construction parameters
 
-    // the german enigma had a fixed alphabet consisting of 26 letters,
+    // the german enigma supported an alphabet consisting of 26 letters,
     // for demonstration purposes our bombe emulator can also be configured to support a smaller alphabet size
     // (e.g. 8 letters, from A to H)
     val alphabetSize : Int,
 
-    // number of banks of scrambler in the bombe (in the Turing-Welchman bombes this was 3)
+    // number of banks of scrambler in the bombe (in the Atlanta bombe this was 3)
     val noOfBanks : Int,
 
     // number of scramblers (a scrambler consists of 3 drums + reflector) per bank
-    // (in the Turing-Welchman bombes this was 12)
+    // (in the Atlanta this was 12)
     val noOfScramblersPerBank : Int
 ) {
+    constructor(params: BombeConstructionParameters) : this(params.alphabetSize, params.noOfBanks, params.noOfScramblersPerBank)
+
     // ******************************************************************************************************
     // Features needed to represent and access the components of a bombe
     // Including initialization/reset
@@ -74,7 +76,7 @@ class Bombe(
         bridges = mutableListOf<Bridge>()
 
         indicatorDrums = mutableListOf<IndicatorDrum>()
-        for (i in 1..noOfScramblersPerBank) {
+        for (i in 1..3) {
             indicatorDrums.add(IndicatorDrum(this))
         }
 
@@ -103,6 +105,9 @@ class Bombe(
      *   purposes we register this letter
      */
     fun claimAvailableCommonsSet(column: Int, letter:Char) : CommonsSet {
+        if (claimedCommonsSets.containsKey(Pair(column, letter))) {
+            throw IllegalStateException("commons column $column already has a CommonsSet for '$letter', it is not possible to claim another one for this same combination")
+        }
         val availableCommonsSet = commonsSetsColumns.get(column)!!.filter{ it -> it.isAvailable()}.firstOrNull()
         if (availableCommonsSet == null) {
             throw IllegalStateException("[column $column] no free CommonsSet available anymore in this column; "+
@@ -110,17 +115,17 @@ class Bombe(
         }
         availableCommonsSet.claimFor(letter)
         claimedCommonsSets.put(Pair(column, letter), availableCommonsSet)
-        return availableCommonsSet!!
+        return availableCommonsSet
     }
 
-    fun createAndConnectCable(leftJack: Jack, rightJack: Jack) : Cable {
-        val cable = Cable("cable-${cables.size+1}", leftJack, rightJack, this)
+    fun createCable() : Cable {
+        val cable = Cable("cable-${cables.size+1}", this)
         cables.add(cable)
         return cable
     }
 
-    fun createAndConnectBridge(leftJack: Jack, rightJack: Jack) : Bridge {
-        val bridge = Bridge("bridge-${bridges.size+1}", leftJack, rightJack, this)
+    fun createBridge() : Bridge {
+        val bridge = Bridge("bridge-${bridges.size+1}", this)
         bridges.add(bridge)
         return bridge
     }
@@ -128,7 +133,7 @@ class Bombe(
     // ******************************************************************************************************
     // Features needed to support executing a run on a bombe
 
-    fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false) : List<Stop> {
+    fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false, centralLetter: Char) : List<Stop> {
         for (step in 1.. if (numberOfSteps != null) numberOfSteps!! else pow(alphabetSize,3) ) {
             for (bank in banks.values) {
                 if (bank.isOn()) {
@@ -141,13 +146,12 @@ class Bombe(
                         println("bank ${bank.id} current path")
                         root.print()
                     }
-                    checkResult(step)
+                    checkResult(centralLetter)
                 }
             }
             resetCurrent()
             rotateDrums()
         }
-        println("found ${stops.size} stops")
         return stops
     }
 
@@ -158,7 +162,7 @@ class Bombe(
      */
     fun resetCurrent() {
         // reset all connectors of all components
-        banks.values.forEach{it.scramblers.values.forEach { s -> s.resetCurrent()} }
+        banks.values.forEach{it.getScramblers().forEach { s -> s.resetCurrent()} }
         banks.values.forEach{it.resetCurrent()}
         diagonalBoards.values.forEach { it.resetCurrent() }
         commonsSetsColumns.values.forEach{it.forEach { c -> c.resetCurrent()}}
@@ -166,46 +170,56 @@ class Bombe(
         bridges.forEach {it.resetCurrent()}
     }
 
-    private var drumRotations = 0
+    var drumRotations = 0
+        private set
+    // https://www.codesandciphers.org.uk/virtualbp/tbombe/thebmb.htm
+    // "the top, fast, drum on the Bombe corresponds to the slow left hand drum on the Enigma machine"
+    // meaning: the (top) fast-moving drum on a bombe corresponds with the (left) slow-moving rotor
     fun rotateDrums() {
         drumRotations++
-        // every drum rotation, all rotors in rotor position 3 (fast rotor, right-hand side) take a step
+        // every drum rotation, all drums representing the left rotor (position 1) in an enigma machine take a step
         // and the corresponding indicator drum takes a step
-        banks.values.forEach{it.scramblers.values.forEach { it.enigma?.rotor3!!.stepRotor() }}
-        indicatorDrums[2].rotate()
+        banks.values.forEach{it.getScramblers().forEach { it.enigma?.rotor1!!.stepRotor() }}
+        indicatorDrums[0].rotate()
 
-        // every 26th rotation, all rotors in rotor position 2 (middle rotor) take a step as well
+        // every 26th rotation, all drums representing the middle rotor in an enigma machine (position 2) take a step as well
         // and the corresponding indicator drum takes a step
-        if (drumRotations % 26 == 0) {
-            banks.values.forEach{it.scramblers.values.forEach { it.enigma?.rotor2!!.stepRotor() }}
+        if (drumRotations % alphabetSize == 0) {
+            banks.values.forEach{it.getScramblers().forEach { it.enigma?.rotor2!!.stepRotor() }}
             indicatorDrums[1].rotate()
         }
 
-        // every 26*26th rotation, all rotors in rotor position 1 (left-hand side, slow rotor) take a step as well
+        // every 26*26th rotation, all drums representing the right rotor (position 3) in an enigma machine take a step as well
         // and the corresponding indicator drum takes a step
-        if (drumRotations % (26 * 26) == 0) {
-            banks.values.forEach{it.scramblers.values.forEach { it.enigma?.rotor1!!.stepRotor() }}
-            indicatorDrums[0].rotate()
+        if (drumRotations % (alphabetSize * alphabetSize) == 0) {
+            banks.values.forEach{it.getScramblers().forEach { it.enigma?.rotor3!!.stepRotor() }}
+            indicatorDrums[2].rotate()
         }
     }
 
     /**
      * - steps: number of drum rotations done so far
      */
-    private fun checkResult(steps:Int) {
+    private fun checkResult(centralLetter: Char) {
         for (bank in banks.values) {
             val stepResult = bank.checkStepResult()
             // stepResult.first indicates whether the result of this step is a valid stop
             if (stepResult.first) {
-                captureStop(steps, bank, stepResult.second!!)
+                captureStop(bank, centralLetter, stepResult.second!!)
             }
         }
     }
 
     var stops : MutableList<Stop> = mutableListOf()
         private set
-    private fun captureStop(steps: Int, bank:Bank, result : Map<Char,Boolean>) {
-        stops.add(Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position, bank.getContactToActivate()!!, result))
+    private fun captureStop(bank:Bank, centralLetter: Char, possibleSteckerPartnersForCentralLetter : List<Char>) {
+        // rotor types on all scramblers are identical, so we can simply use the first enigma to act as our source
+        val rotor1RotorType = bank.getScrambler(1).enigma!!.rotor1.rotorType
+        val rotor2RotorType = bank.getScrambler(1).enigma!!.rotor2.rotorType
+        val rotor3RotorType = bank.getScrambler(1).enigma!!.rotor3.rotorType
+        stops.add(Stop(rotor1RotorType, rotor2RotorType, rotor3RotorType,
+            indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+            centralLetter, possibleSteckerPartnersForCentralLetter))
     }
 
     // ******************************************************************************************************

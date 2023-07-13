@@ -15,9 +15,20 @@ val plugboard2 = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
  */
 
 fun main(args: Array<String>) {
-    var rotor1 = Rotor(RotorType.II, 'Y', 4)
-    var rotor2 = Rotor(RotorType.V, 'W', 11)
-    var rotor3 = Rotor(RotorType.III, 'Y', 24)
+//    var rotor1 = Rotor(RotorType.II, 'Y', 4)   // D = 4
+//    var rotor2 = Rotor(RotorType.V, 'W', 11)   // K = 11
+//    var rotor3 = Rotor(RotorType.III, 'Y', 24) // X = 24
+
+//    var rotor1 = Rotor(RotorType.II, Char('Y'.code - 3), 4-3)
+//    var rotor2 = Rotor(RotorType.V, Char('W'.code - 10), 11-10)
+//    var rotor3 = Rotor(RotorType.III, Char('Y'.code - 23), 24-23)
+
+    var rotor1 = Rotor(RotorType.II, 'V', 1)
+    var rotor2 = Rotor(RotorType.V, 'M', 1)
+    var rotor3 = Rotor(RotorType.III, 'B', 1)
+
+    println("${rotor1.startPosition} ${rotor2.startPosition} ${rotor3.startPosition}")
+
     val reflector = Reflector(ReflectorType.B)
     val plugboard1 = Plugboard("")
     val plugboard2 = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")

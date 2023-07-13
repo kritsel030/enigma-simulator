@@ -1,67 +1,117 @@
 package bombe.components
 
 import bombe.Bank
-import bombe.connectors.Connector
-import bombe.connectors.Jack
+import bombe.MenuLink
+import bombe.connectors.*
 import bombe.recorder.CurrentPathElement
 import enigma.Enigma
 import enigma.components.*
 
-class Scrambler (id: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
+class Scrambler (val id: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
 
-    val inputJack = Jack("IN", "IN", this)
-    val outputJack = Jack("OUT", "OUT", this)
+    val inputJack = Jack("IN$id", "IN$id", this)
+    val outputJack = Jack("OUT$id", "OUT$id", this)
     var enigma: Enigma? = null
-
-
-    // ******************************************************************************************************
-    // Features needed to support setting up the back-side of a bombe
-
-    // When setting up a bombe based on a menu, we need a way of requesting an available
-    // (= not yet claimed) Scrambler from the total set of Scrambler instances available
-    // on a bombe. These fields and methods support this feature.
-    // As a Scrambler is always used to represent a certain position in the menu,
-    // we also register that position for debugging/informational purposes.
-    var claimedForMenuPosition : Int? = null
-        private set
-
-    fun isAvailable() : Boolean {
-        return claimedForMenuPosition == null
-    }
-    fun claimForMenuPosition(menuPosition: Int) {
-        claimedForMenuPosition = menuPosition
-    }
 
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
 
     fun placeEnigma(rotorTypeRotor1:RotorType, rotorTypeRotor2: RotorType, rotorTypeRotor3: RotorType) {
         val reflector = Reflector(ReflectorType.B)
-        var rotor1 = Rotor(rotorTypeRotor1, 'Z', 1)
-        var rotor2 = Rotor(rotorTypeRotor2, 'Z', 1)
-        var rotor3 = Rotor(rotorTypeRotor3, 'Z', 1)
-        val noPlugboard = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
+        var rotor1 = Rotor(rotorTypeRotor1, 'Y', 26)
+        var rotor2 = Rotor(rotorTypeRotor2, 'W', 26)
+        var rotor3 = Rotor(rotorTypeRotor3, 'Y', 26)
+
+//        var rotor1 = Rotor(rotorTypeRotor1, 'Z', 26)
+//        var rotor2 = Rotor(rotorTypeRotor2, 'Z', 26)
+//        var rotor3 = Rotor(rotorTypeRotor3, 'Z', 26)
+
+
+        val noPlugboard = Plugboard("")
         enigma = Enigma(reflector, rotor1, rotor2, rotor3, noPlugboard)
     }
 
     fun setRelativePosition(pos:Int) {
         for (p in 1..pos) {
-            enigma?.rotor1?.stepRotor()
+            // step the drum representing the right-rotor in the enigma
+            enigma?.rotor3?.stepRotor()
         }
     }
 
     // ******************************************************************************************************
+    // Features needed to verify correct plugging up of a bombe
+
+    // each scrambler in use has an inputJack and an outputJack,
+    // both of these jacks represent a letter in the menu
+    // each jack should ultimately be connected to a DiagonalBoard jack which represents this same letter
+    // possible connection paths:
+    // - scrambler.in/outputJack --cable--> diagonalBoard
+    // - scrambler.in/outputJack --cable--> commonsSet --cable--> diagonalBoard
+    // - scrambler.in/outputJack --bridge--> diagonalBoard
+    // - scrambler.in/outputJack --bridge--> commonsSet --cable--> diagonalBoard
+    fun checkConnections(menuLink: MenuLink) : MutableList<String> {
+        val errors = mutableListOf<String>()
+        errors.addAll(checkJackConnections(inputJack, menuLink.inputLetter))
+        errors.addAll(checkJackConnections(outputJack, menuLink.outputLetter))
+        return errors
+    }
+    fun checkJackConnections(scramblerJack: Jack, representsLetter: Char) : MutableList<String>{
+        val errors = mutableListOf<String>()
+        val diagonalBoardJackForScramblerJack = findConnectedDiagonalBoardJack(scramblerJack)
+        if (diagonalBoardJackForScramblerJack != null) {
+            if (representsLetter != diagonalBoardJackForScramblerJack.letter) {
+                errors.add(
+                    "$label.${scramblerJack.externalLabel} is not correctly plugged up, " +
+                            "expected ${representsLetter} -> ${representsLetter}, " +
+                            "got ${representsLetter} -> ${diagonalBoardJackForScramblerJack.letter}"
+                )
+            }
+        } else {
+            errors.add("$label.${scramblerJack.externalLabel} is not correctly plugged up, " +
+                    "it is not ultimately connected to the diagonal board")
+        }
+        return errors
+    }
+    private fun findConnectedDiagonalBoardJack(jack: Jack) : DiagonalBoardJack? {
+        if (jack.insertedPlug() is CablePlug) {
+            // this jack has a cable plugged into it
+            // find the component on the other end of the cable
+            val otherComponentJack = ((jack.insertedPlug() as CablePlug).getOppositePlug().pluggedInto()) as Jack
+            val otherComponent = otherComponentJack!!.attachedTo
+            if (otherComponent is DiagonalBoard) {
+                return otherComponentJack as DiagonalBoardJack
+            } else if (otherComponent is CommonsSet) {
+                // find the jack of this CommonsSet which is plugged into the DiagonalBoard
+                val commonsJackConnectedToDiagonalBoard = (otherComponent as CommonsSet).jacks().filter{it.insertedPlug() != null && (it.insertedPlug() as CablePlug).getOppositePlug().pluggedInto()!!.attachedTo is DiagonalBoard}.firstOrNull()
+                if (commonsJackConnectedToDiagonalBoard == null)
+                    return null
+                else return (commonsJackConnectedToDiagonalBoard.insertedPlug() as CablePlug).getOppositePlug().pluggedInto() as DiagonalBoardJack
+            }
+        } else {
+            // this jack has a bridge plugged into it,
+            // find the diagonal board jack ultimately connected to this bridge's jack
+            return findConnectedDiagonalBoardJack((jack.insertedPlug()!!.attachedTo as Bridge).jack)
+        }
+        // we should actually never get here...
+        return null
+    }
+
+
+    // ******************************************************************************************************
     // Features needed to execute a bombe run
 
-    override fun passCurrent(contact: Char, activatedVia : Connector, previousPathElement: CurrentPathElement) {
+    override fun passCurrent(contact: Char, activatedVia : Connector, previousPathElement: CurrentPathElement?) {
         // println("pass current from ${activatedVia.connectedTo?.component?.label}-${activatedVia.connectedTo?.label} to ${this.label} at contact $contact")
         val resultContact = scramble(contact)
-        val newPathElement = CurrentPathElement(label, javaClass.simpleName, contact, resultContact, previousPathElement, previousPathElement.root)
-        previousPathElement.addNext(newPathElement)
+        var newPathElement : CurrentPathElement? = null
+        if (previousPathElement != null) {
+            newPathElement = CurrentPathElement(label, javaClass.simpleName, contact, resultContact, previousPathElement, previousPathElement.root)
+            previousPathElement.addNext(newPathElement)
+        }
         if (activatedVia == inputJack) {
-            outputJack.activateContactOutbound(resultContact, newPathElement)
+            outputJack.passCurrentOutbound(resultContact, newPathElement)
         } else {
-            inputJack.activateContactOutbound(resultContact, newPathElement)
+            inputJack.passCurrentOutbound(resultContact, newPathElement)
         }
     }
 
@@ -73,6 +123,5 @@ class Scrambler (id: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.i
 //        println("scrambler output: $output")
         return output
     }
-
 
 }
