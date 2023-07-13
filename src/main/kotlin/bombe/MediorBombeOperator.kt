@@ -6,6 +6,19 @@ import bombe.components.DiagonalBoard
 import bombe.components.Scrambler
 import java.lang.IllegalStateException
 
+/**
+ * https://en.wikipedia.org/wiki/Women_in_Bletchley_Park
+ *
+ * Please meet Beatrice, our medior bombe operator. She's been with us for several weeks now.
+ *
+ * She can help you to plug up a bombe, but you will have to give her detailed instructions like
+ * 'draw a cable from this jack to that jack'.
+ * Based on her experience, she can also check whether the bombe is correctly set-up, once you're done
+ * with your instructions, before starting the bombe.
+ *
+ * If you need a more experience bombe operator, you check out her colleague:
+ * - ExpertBombeOperator
+ */
 open class MediorBombeOperator() : JuniorBombeOperator() {
 
     fun executeRun(
@@ -28,7 +41,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
 
         // each Bank has an input-jack, when plugged up it should be connected - via a cable - to a CommonsSet or DiagonalBoard
         getBombe().banks.values.forEach { bank ->
-            if (bank.inputJack.insertedPlug() != null) {
+            if (bank.inputJack.pluggedUpBy() != null) {
                 errors.addAll(bank.inputJack.verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
             }
         }
@@ -38,7 +51,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         getBombe().diagonalBoards.values.forEach {
             it.jacks.values.forEach { jack ->
                 run {
-                    if (jack.insertedPlug() != null) {
+                    if (jack.pluggedUpBy() != null) {
                         errors.addAll(
                             jack.verifyCableTo(
                                 listOf(
@@ -81,8 +94,8 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         getBombe().banks.values.forEach {
             it.getScramblers().forEach { scrambler ->
                 run {
-                    if (!((scrambler.inputJack.insertedPlug() == null && scrambler.outputJack.insertedPlug() == null) ||
-                                (scrambler.inputJack.insertedPlug() != null && scrambler.outputJack.insertedPlug() != null))
+                    if (!((scrambler.inputJack.pluggedUpBy() == null && scrambler.outputJack.pluggedUpBy() == null) ||
+                                (scrambler.inputJack.pluggedUpBy() != null && scrambler.outputJack.pluggedUpBy() != null))
                     ) {
                         errors.add("${scrambler.label} has only 1 jack plugged in, expected none or both")
                     }

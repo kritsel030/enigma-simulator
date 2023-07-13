@@ -13,7 +13,7 @@ class EnigmaTest {
         var middleRotor = Rotor(RotorType.II, 'C', 25)
         var rightRotor = Rotor(RotorType.I, 'D', 24)
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
-        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+        val enigma = Enigma(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
         val input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         var output = enigma.encrypt(input)
@@ -29,7 +29,7 @@ class EnigmaTest {
         var middleRotor = Rotor(RotorType.II, 'A', 1)
         var rightRotor = Rotor(RotorType.I, 'A', 1)
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
-        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+        val enigma = Enigma(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
         enigma.stepRotors()
 
@@ -47,7 +47,7 @@ class EnigmaTest {
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 1)
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
-        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+        val enigma = Enigma(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
         enigma.stepRotors()
 
@@ -66,7 +66,7 @@ class EnigmaTest {
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 1)
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
-        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+        val enigma = Enigma(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
         enigma.stepRotors()
 
@@ -85,7 +85,7 @@ class EnigmaTest {
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 1)
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
-        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+        val enigma = Enigma(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
         // encrypt something,
         // because of the used start position, all rotors will have stepped

@@ -2,9 +2,19 @@ package bombe
 
 import bombe.components.*
 import bombe.connectors.Jack
-import java.lang.IllegalStateException
 
-
+/**
+ * https://en.wikipedia.org/wiki/Women_in_Bletchley_Park
+ *
+ * Please meet Amanda, our junior bombe operator. She recently arrived at Bletchly Park and has only had some basic training.
+ *
+ *  She can help you to plug up a bombe, but you will have to give her detailed instructions like
+ * 'draw a cable from this jack to that jack'.
+ *
+ * If you need a more experience bombe operator, you check out her colleagues:
+ * - MediumBombeOperator
+ * - ExpertBombeOperator
+ */
 open class JuniorBombeOperator() {
 
     var _bombe: Bombe? = null
@@ -18,7 +28,7 @@ open class JuniorBombeOperator() {
     }
 
 
-    fun createAndConnectBridge(
+    fun attachBridgeTo(
         firstScramblerOutputJack: Jack,
         nextScramblerInputJack: Jack
     ): Bridge {
@@ -28,7 +38,7 @@ open class JuniorBombeOperator() {
         return bridge
     }
 
-    fun createAndConnectCable(
+    fun drawCableBetween(
         leftJack: Jack,
         rightJack: Jack
     ): Cable {

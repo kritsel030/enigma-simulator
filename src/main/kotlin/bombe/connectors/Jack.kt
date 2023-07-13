@@ -2,7 +2,7 @@ package bombe.connectors
 
 import bombe.components.*
 
-// Convention used in this codebase: each *female* connector is named a *Jack*
+// Convention used in this codebase: each *female* connector is named a *Jack* (a.k.a. socket)
 // This includes all fixed connectors on the backside of the bombe,
 // plus the jack on a bridge to allow another cable to be plugged in to a bridge
 
@@ -22,7 +22,7 @@ open class Jack (val externalLabel: String,
             label: String,
             component: CircuitComponent) : Connector(label, component) {
 
-    fun insertedPlug() : Plug? {
+    fun pluggedUpBy() : Plug? {
         return connectedTo as? Plug
     }
 
@@ -33,7 +33,7 @@ open class Jack (val externalLabel: String,
     // returns a list of verification error messages (empty list when all is OK)
     fun verifyCableTo(componentTypes: List<String>) : List<String> {
         val errors = mutableListOf<String>()
-        val plugInsertedToJack = this.insertedPlug()
+        val plugInsertedToJack = this.pluggedUpBy()
         if (plugInsertedToJack == null) {
             errors.add("${attachedTo.label}.${externalLabel} : jack is not plugged up")
         } else {

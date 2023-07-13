@@ -14,17 +14,16 @@ import java.lang.IllegalArgumentException
 class Enigma (
     val reflector: Reflector,
 
-    // left most rotor (position 1 in Enigma terms)
-    val rotor1: Rotor,
-
-    // middle rotor (position 2 in Enigma terms)
-    val rotor2: Rotor,
-
-    // right most rotor (position 3 in Enigma terms)
-    val rotor3: Rotor,
+    // starts with left-most (slowest) rotor
+    val rotors : List<Rotor>,
 
     val plugboard: Plugboard
     ){
+
+    // position is 1-based
+    fun getRotor(position: Int) : Rotor {
+        return rotors[position-1]
+    }
 
     fun encrypt(input:String) : String {
         // validate input
@@ -55,23 +54,23 @@ class Enigma (
         }
 
         // Plugboard
-        val input1 = plugboard.encrypt(input, recorders)
+        var nextElementInput = plugboard.encrypt(input, recorders)
 
-        // Follow the signal through the rotors from right to left (order: rotor3, rotor2, rotor1)
-        val input2 = rotor3.encryptRightToLeft(input1, recorders)
-        val input3 = rotor2.encryptRightToLeft(input2, recorders)
-        val inputReflector = rotor1.encryptRightToLeft(input3, recorders)
+        // start with the right-most rotor (last one in the list)
+        for (rotor in rotors.reversed()) {
+            nextElementInput = rotor.encryptRightToLeft(nextElementInput, recorders)
+        }
 
         // Reflector
-        val input4 = reflector.encrypt(inputReflector, recorders)
+        nextElementInput = reflector.encrypt(nextElementInput, recorders)
 
-        // Follow the signal through the rotors from left to right (order: rotor1, rotor2, rotor3)
-        val input5 = rotor1.encryptLeftToRight(input4, recorders)
-        val input6 = rotor2.encryptLeftToRight(input5, recorders)
-        val inputPlugboard = rotor3.encryptLeftToRight(input6, recorders)
+        // now start with the left-most rotor (first one in the list)
+        for (rotor in rotors) {
+            nextElementInput = rotor.encryptLeftToRight(nextElementInput, recorders)
+        }
 
         // Plugboard
-        val output = plugboard.encrypt(inputPlugboard, recorders)
+        val output = plugboard.encrypt(nextElementInput, recorders)
 
         return output
     }
@@ -80,32 +79,46 @@ class Enigma (
      * Every key pressed causes one or more rotors to step by one twenty-sixth of a full rotation,
      * before the electrical connection is made to encrypt the pressed key.
      *
+     * For a 3-rotor enigma:
+     * - the right-most rotor (position 3) steps with every key press.
+     * - the middle rotor (position 2) steps when the rotor to its right reaches its turnover position.
+     * - the left-most rotor (position 2) steps when the rotor to its right reaches its turnover position;
+     *   due to the mechanical design of the stepping mechanism, when a step of the middle-rotor
+     *    causes the left-most rotor to step, the left-most rotor causes the middle rotor to step an additional step.
+     *
      * https://en.wikipedia.org/wiki/Enigma_machine#Stepping
      */
     internal fun stepRotors() {
-        //The right-most rotor (rotor3) steps with every key press.
-        val stepMiddle = rotor3.stepRotor()
-        if (stepMiddle) {
-            // The middle rotor (rotor2) only steps every 26th key presses.
-            // It steps when the rotor to its right reaches its turnover position.
-            val stepLeft = rotor2.stepRotor()
-            if (stepLeft) {
-                // The left-most rotor (rotor1) only steps every 26x26 key presses.
-                // It too steps when the rotor to its right reaches its turnover position.
-                rotor1.stepRotor()
-                // Due to the mechanical design of the stepping mechanism, when a step of the middle-rotor
-                // causes the left-most rotor to step, the left-most rotor causes the middle rotor to step an additional step.
-                rotor2.stepRotor()
+        stepRotor(rotors.size)
+    }
+
+    /**
+     * Step the rotor in a specific position.
+     * Return true when this rotor's step should trigger a turnover to the rotor to it's left
+     * indicating that that rotor should step as well
+     */
+    private fun stepRotor(position: Int) : Boolean {
+        val turnOver = getRotor(position).stepRotor()
+        // In a 3-rotor enigma:
+        // Due to the mechanical design of the stepping mechanism, when a step of the middle-rotor
+        // causes the left-most rotor to step, the left-most rotor causes the middle rotor to step an additional step.
+        if (rotors.size == 3) {
+            if (position == 1) {
+                getRotor(2).stepRotor()
             }
         }
+
+        // if turnover: proceed to the rotor to the left (unless we've already reached the left-most rotor)
+        if (turnOver && position != 1) {
+            return stepRotor(position-1)
+        }
+        return false
     }
 
     /**
      * Prepare for a new messsage to be encoded: return all rotors to their starting positions
      */
     internal fun resetRotors() {
-        rotor1.reset()
-        rotor2.reset()
-        rotor3.reset()
+        rotors.forEach { it.reset() }
     }
 }

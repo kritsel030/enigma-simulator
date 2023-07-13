@@ -13,7 +13,8 @@ class BombeTest {
         val alphabetSize = 12
         val noOfBanks = 5
         val noOfScramblersPerBank = 7
-        val bombe = Bombe(alphabetSize, noOfBanks, noOfScramblersPerBank)
+        val noOfRotorsPerScrambler = 3
+        val bombe = Bombe(alphabetSize, noOfBanks, noOfScramblersPerBank, noOfRotorsPerScrambler)
 
         assertResetResult(bombe)
         assertNoCurrent(bombe)
@@ -21,14 +22,14 @@ class BombeTest {
 
     @Test
     fun claimAvailableCommonsSet_ok() {
-        val bombe = Bombe(3, 1, 1)
+        val bombe = Bombe(3, 1, 1, 3)
         val commonsSet = bombe.claimAvailableCommonsSet(1, 'X')
         assertNotNull(commonsSet)
     }
 
     @Test
     fun claimAvailableCommonsSet_identical() {
-        val bombe = Bombe(3, 1, 1)
+        val bombe = Bombe(3, 1, 1, 3)
         bombe.claimAvailableCommonsSet(1, 'X')
         // not allowed to have 2 or more CommonsSets in the same column for the same letter
         // (this is not a feature of an actual bombe machine, it is a limitation of this specific bombe implementation)
@@ -37,7 +38,7 @@ class BombeTest {
 
     @Test
     fun claimAvailableCommonsSet_tooMany() {
-        val bombe = Bombe(3, 1,1 )
+        val bombe = Bombe(3, 1,1, 3 )
         val noOfCommonsSetsInColumn = bombe.commonsSetsColumns[1]!!.size
         val letter = 'A'
         for (i in 1 .. noOfCommonsSetsInColumn) {
@@ -50,7 +51,7 @@ class BombeTest {
 
     @Test
     fun createCable() {
-        val bombe = Bombe(3, 1, 1)
+        val bombe = Bombe(3, 1, 1, 3)
         val cable = bombe.createCable()
         assertNotNull(cable)
         assertEquals(1, bombe.cables.size)
@@ -58,7 +59,7 @@ class BombeTest {
 
     @Test
     fun createBridge() {
-        val bombe = Bombe(3, 1, 1)
+        val bombe = Bombe(3, 1, 1, 3)
         val bridge = bombe.createBridge()
         assertNotNull(bridge)
         assertEquals(1, bombe.bridges.size)
@@ -67,10 +68,10 @@ class BombeTest {
     @Test
     fun rotateDrums() {
         // prepare a bombe with scramblers
-        val bombe = Bombe(26, 1, 1)
+        val bombe = Bombe(26, 1, 1, 3)
         bombe.banks.values.forEach { bank ->
             run {
-                bank.placeDrums(RotorType.V, RotorType.I, RotorType.III)
+                bank.placeDrums(listOf(RotorType.V, RotorType.I, RotorType.III))
             }
         }
 
@@ -91,9 +92,9 @@ class BombeTest {
                 bank.getScramblers().forEach { scrambler ->
                     run {
                         // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
-                        assertEquals(fastDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.rotor1.currentPosition.code - scrambler.enigma!!.rotor1.startPosition.code ) % bombe.alphabetSize, "fast drum should have a net advance of $fastDrumSteps")
-                        assertEquals(middleDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.rotor2.currentPosition.code - scrambler.enigma!!.rotor2.startPosition.code ) % bombe.alphabetSize, "middle drum should have a net advance of $middleDrumSteps")
-                        assertEquals(slowDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.rotor3.currentPosition.code - scrambler.enigma!!.rotor3.startPosition.code) % bombe.alphabetSize, "slow drum should have a a net advance of $slowDrumSteps")
+                        assertEquals(fastDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.getRotor(1).currentPosition.code - scrambler.enigma!!.getRotor(1).startPosition.code ) % bombe.alphabetSize, "fast drum should have a net advance of $fastDrumSteps")
+                        assertEquals(middleDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.getRotor(2).currentPosition.code - scrambler.enigma!!.getRotor(2).startPosition.code ) % bombe.alphabetSize, "middle drum should have a net advance of $middleDrumSteps")
+                        assertEquals(slowDrumSteps, (bombe.alphabetSize + scrambler.enigma!!.getRotor(3).currentPosition.code - scrambler.enigma!!.getRotor(3).startPosition.code) % bombe.alphabetSize, "slow drum should have a a net advance of $slowDrumSteps")
                     }
                 }
             }

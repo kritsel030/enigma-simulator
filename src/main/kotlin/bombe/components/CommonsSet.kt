@@ -58,7 +58,7 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
     // of a particular CommonsSet
     fun getAvailableJack() : Jack {
         try {
-            return jacks().filter { it.insertedPlug() == null }.first() as Jack
+            return jacks().filter { it.pluggedUpBy() == null }.first() as Jack
         } catch (ex:NoSuchElementException) {
             throw IllegalStateException("[CommonsSet ${label}] Trying to use more than 5 Jacks from this CommonsSet.")
         }
@@ -72,12 +72,12 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
      */
     fun verifyConnections() : List<String> {
         val errors = mutableListOf<String>()
-        val pluggedUpJacks = jacks().filter{it.insertedPlug() != null}.toList()
+        val pluggedUpJacks = jacks().filter{it.pluggedUpBy() != null}.toList()
         if ( pluggedUpJacks.size == 1) {
             errors.add("$label has only 1 plugged up jack, this cannot be correct")
         }
         if (pluggedUpJacks.size > 1) {
-            val jacksConnectedToDB = pluggedUpJacks.filter { (it.insertedPlug() as CablePlug).getOppositePlug()!!.pluggedInto()!!.attachedTo is DiagonalBoard }.toList()
+            val jacksConnectedToDB = pluggedUpJacks.filter { (it.pluggedUpBy() as CablePlug).getOppositePlug()!!.pluggedInto()!!.attachedTo is DiagonalBoard }.toList()
             if (jacksConnectedToDB.size != 1) {
                 errors.add("$label has ${jacksConnectedToDB.size} jacks which are connected to the DiagonalBoard, expected 1")
             }

@@ -7,34 +7,46 @@ import bombe.recorder.CurrentPathElement
 import enigma.Enigma
 import enigma.components.*
 
-class Scrambler (val id: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
+class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
 
     val inputJack = Jack("IN$id", "IN$id", this)
     val outputJack = Jack("OUT$id", "OUT$id", this)
     var enigma: Enigma? = null
 
+    companion object {
+        // https://www.lysator.liu.se/~koma/turingbombe/TuringBombeTutorial.pdf, page 2:
+        // "Probably by mistake, drums I, II, III, VI, VII and VIII on the Bombe
+        //   are one letter ahead of the corresponding Enigma rotors.
+        //  Drum IV is two steps ahead, and rotor V is three steps ahead."
+        val fixRotorStartPositionMap = mapOf(
+            Pair(RotorType.I, 'Y'),    // Z - 1
+            Pair(RotorType.II, 'Y'),   // Z - 1
+            Pair(RotorType.III, 'Y'),  // Z - 1
+            Pair(RotorType.IV, 'X'),   // Z - 2
+            Pair(RotorType.V, 'W')     // Z - 3
+        )
+    }
+
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
 
-    fun placeEnigma(rotorTypeRotor1:RotorType, rotorTypeRotor2: RotorType, rotorTypeRotor3: RotorType) {
+    fun placeEnigma(rotorTypes: List<RotorType>) {
+        check (rotorTypes.size == noOfRotorsPerScrambler)
+        {"expected $noOfRotorsPerScrambler rotor types to be placed on this scrambler, but received only ${rotorTypes.size}"}
+
         val reflector = Reflector(ReflectorType.B)
-        var rotor1 = Rotor(rotorTypeRotor1, 'Y', 26)
-        var rotor2 = Rotor(rotorTypeRotor2, 'W', 26)
-        var rotor3 = Rotor(rotorTypeRotor3, 'Y', 26)
 
-//        var rotor1 = Rotor(rotorTypeRotor1, 'Z', 26)
-//        var rotor2 = Rotor(rotorTypeRotor2, 'Z', 26)
-//        var rotor3 = Rotor(rotorTypeRotor3, 'Z', 26)
-
+        val rotors = rotorTypes.map{Rotor(it, fixRotorStartPositionMap.getOrDefault(it, 'Z'), 26)}.toList()
 
         val noPlugboard = Plugboard("")
-        enigma = Enigma(reflector, rotor1, rotor2, rotor3, noPlugboard)
+
+        enigma = Enigma(reflector, rotors, noPlugboard)
     }
 
     fun setRelativePosition(pos:Int) {
         for (p in 1..pos) {
             // step the drum representing the right-rotor in the enigma
-            enigma?.rotor3?.stepRotor()
+            enigma?.getRotor(3)?.stepRotor()
         }
     }
 
@@ -73,24 +85,24 @@ class Scrambler (val id: Int, val bank: Bank) : CircuitComponent("Scrambler-${ba
         return errors
     }
     private fun findConnectedDiagonalBoardJack(jack: Jack) : DiagonalBoardJack? {
-        if (jack.insertedPlug() is CablePlug) {
+        if (jack.pluggedUpBy() is CablePlug) {
             // this jack has a cable plugged into it
             // find the component on the other end of the cable
-            val otherComponentJack = ((jack.insertedPlug() as CablePlug).getOppositePlug().pluggedInto()) as Jack
+            val otherComponentJack = ((jack.pluggedUpBy() as CablePlug).getOppositePlug().pluggedInto()) as Jack
             val otherComponent = otherComponentJack!!.attachedTo
             if (otherComponent is DiagonalBoard) {
                 return otherComponentJack as DiagonalBoardJack
             } else if (otherComponent is CommonsSet) {
                 // find the jack of this CommonsSet which is plugged into the DiagonalBoard
-                val commonsJackConnectedToDiagonalBoard = (otherComponent as CommonsSet).jacks().filter{it.insertedPlug() != null && (it.insertedPlug() as CablePlug).getOppositePlug().pluggedInto()!!.attachedTo is DiagonalBoard}.firstOrNull()
+                val commonsJackConnectedToDiagonalBoard = (otherComponent as CommonsSet).jacks().filter{it.pluggedUpBy() != null && (it.pluggedUpBy() as CablePlug).getOppositePlug().pluggedInto()!!.attachedTo is DiagonalBoard}.firstOrNull()
                 if (commonsJackConnectedToDiagonalBoard == null)
                     return null
-                else return (commonsJackConnectedToDiagonalBoard.insertedPlug() as CablePlug).getOppositePlug().pluggedInto() as DiagonalBoardJack
+                else return (commonsJackConnectedToDiagonalBoard.pluggedUpBy() as CablePlug).getOppositePlug().pluggedInto() as DiagonalBoardJack
             }
         } else {
             // this jack has a bridge plugged into it,
             // find the diagonal board jack ultimately connected to this bridge's jack
-            return findConnectedDiagonalBoardJack((jack.insertedPlug()!!.attachedTo as Bridge).jack)
+            return findConnectedDiagonalBoardJack((jack.pluggedUpBy()!!.attachedTo as Bridge).jack)
         }
         // we should actually never get here...
         return null

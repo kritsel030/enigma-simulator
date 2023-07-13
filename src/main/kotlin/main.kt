@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
     val reflector = Reflector(ReflectorType.B)
     val plugboard1 = Plugboard("")
     val plugboard2 = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
-    val enigma = Enigma(reflector, rotor1, rotor2, rotor3, plugboard2)
+    val enigma = Enigma(reflector, listOf(rotor1, rotor2, rotor3), plugboard2)
 
     testEnigmaSimple("WETTERVORHERSAGE", enigma)
 //    testEnigmaSimple('B', enigma)

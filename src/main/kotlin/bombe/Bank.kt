@@ -8,7 +8,7 @@ import bombe.recorder.CurrentPathElement
 import enigma.components.RotorType
 import java.lang.IllegalStateException
 
-class Bank (val id: Int, noOfScramblersPerBank: Int = 12, bombe: Bombe)
+class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int, bombe: Bombe)
     : CircuitComponent("Bank-$id", bombe), BankControlPanel, BankDisplay {
 
     // ***********************************************************************************************************
@@ -32,7 +32,7 @@ class Bank (val id: Int, noOfScramblersPerBank: Int = 12, bombe: Bombe)
 
     init {
         for (s in 1..noOfScramblersPerBank) {
-            scramblers.put(s, Scrambler(s, this))
+            scramblers.put(s, Scrambler(s, noOfRotorsPerScrambler, this))
         }
     }
 
@@ -84,9 +84,9 @@ class Bank (val id: Int, noOfScramblersPerBank: Int = 12, bombe: Bombe)
     // Features to support the plugging up of a bombe based on a menu
 
     // Fit each scrambler in this bank with the given set of drum types
-    fun placeDrums(rotorTypeRotor1: RotorType, rotorTypeRotor2: RotorType, rotorTypeRotor3: RotorType) {
+    fun placeDrums(rotorTypes: List<RotorType>) {
         for (scrambler in scramblers.values) {
-            scrambler.placeEnigma(rotorTypeRotor1, rotorTypeRotor2, rotorTypeRotor3)
+            scrambler.placeEnigma(rotorTypes)
         }
     }
 

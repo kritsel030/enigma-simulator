@@ -10,8 +10,8 @@ class ScramblerTest {
 
     @Test
     fun passCurrent_viaInputJack() {
-        val scrambler = Scrambler(1, Bank(1, 12, Bombe()))
-        scrambler.placeEnigma(RotorType.II, RotorType.V, RotorType.III)
+        val scrambler = Scrambler(1, 3, Bank(1, 12, 3, Bombe(26, 1, 12, 3)))
+        scrambler.placeEnigma(listOf(RotorType.II, RotorType.V, RotorType.III))
 
         val input = 'A'
         val enigmaOutput = scrambler.enigma!!.encrypt(input, false)
@@ -25,8 +25,8 @@ class ScramblerTest {
 
     @Test
     fun passCurrent_viaOutputJack() {
-        val scrambler = Scrambler(1, Bank(1, 12, Bombe()))
-        scrambler.placeEnigma(RotorType.II, RotorType.V, RotorType.III)
+        val scrambler = Scrambler(1, 3, Bank(1, 12, 3, Bombe(26, 1, 12, 3)))
+        scrambler.placeEnigma(listOf(RotorType.II, RotorType.V, RotorType.III))
 
         val input = 'A'
         val enigmaOutput = scrambler.enigma!!.encrypt(input, false)

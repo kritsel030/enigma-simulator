@@ -24,7 +24,7 @@ class PlugTest {
         val plug = Plug("label", DummyComponent())
         plug.plugInto(jack)
         assertEquals(jack, plug.pluggedInto())
-        assertEquals(plug, jack.insertedPlug())
+        assertEquals(plug, jack.pluggedUpBy())
     }
 
     @Test
@@ -53,7 +53,7 @@ class PlugTest {
         val plug = Plug("label", DummyComponent())
         plug.plugInto(jack)
         plug.unplug()
-        assertNull(jack.insertedPlug())
+        assertNull(jack.pluggedUpBy())
         assertNull(plug.pluggedInto())
     }
 
