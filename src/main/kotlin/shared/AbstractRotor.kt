@@ -3,7 +3,7 @@ package shared
 import enigma.components.recorder.StepRecorder
 import enigma.util.Util
 
-open class AbstractRotor(val rotorCore: RotorCore, val letterRing: PlainLetterRing, val startRingOrientation: Char, val ringSetting: Char) {
+open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLetterRing, val startRingOrientation: Char, val ringSetting: Char) {
 
     private val _ringSetting : Int = Util.toInt(ringSetting)
 

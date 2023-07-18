@@ -13,12 +13,14 @@ import shared.RotorType
  *   this position is specified by the letter on the outer ring which is aligned with the first contact of the rotor core
  *   (contact ID 0); this letter is identified by 'ringSetting'
  */
-open class Rotor(rotorType: RotorType, startRingOrientation: Char, ringSetting: Char) :
+open class Rotor private constructor (rotorType: RotorType, override val letterRing: LetterRingWithNotches, startRingOrientation: Char, ringSetting: Char) :
     AbstractRotor(
         RotorCore(rotorType, Util.normalize(Util.toInt(startRingOrientation) - Util.toInt(ringSetting))),
-        LetterRingWithNotches(rotorType),
+        letterRing,
         startRingOrientation,
         ringSetting) {
+
+    constructor(rotorType: RotorType, startRingOrientation: Char, ringSetting: Char) : this(rotorType, LetterRingWithNotches(rotorType), startRingOrientation, ringSetting)
 
     /**
      * Advance this rotor one step
@@ -30,7 +32,7 @@ open class Rotor(rotorType: RotorType, startRingOrientation: Char, ringSetting: 
      */
     override fun stepRotor() : Boolean {
         rotorCore.stepRotor()
-        return (letterRing as LetterRingWithNotches).getTurnoverPoints().contains(currentRingOrientation())
+        return letterRing.getTurnoverPoints().contains(currentRingOrientation())
     }
 
 }
