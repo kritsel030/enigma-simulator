@@ -1,7 +1,7 @@
 package bombe
 
 import enigma.components.ReflectorType
-import enigma.components.RotorType
+import shared.RotorType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

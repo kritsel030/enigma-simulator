@@ -149,7 +149,7 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
             for (chain in instructions.parsedMenu) {
                 for (link in chain) {
                     val scrambler = bank.getScrambler(link.positionInMenu)
-                    scrambler.setRelativePosition(link.rotorOffset)
+                    scrambler.rotate(link.rotorOffset)
                 }
             }
         }

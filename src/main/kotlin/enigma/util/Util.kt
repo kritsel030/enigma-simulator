@@ -3,11 +3,11 @@ package enigma.util
 class Util {
     companion object {
         fun toChar(alphabetIndex: Int): Char {
-            return ('A'.toInt() + alphabetIndex).toChar()
+            return 'A'.plus(alphabetIndex)
         }
 
         fun toInt(character: Char): Int {
-            return character.toInt() - 'A'.toInt()
+            return character.code - 'A'.code
         }
 
         fun validate(input:String) : Boolean {
@@ -19,11 +19,23 @@ class Util {
         }
 
         fun validate(input:Char) :Boolean {
-            return 'A'.toInt() <= input.toInt() && input.toInt() <= 'Z'.toInt()
+            return validate(input, 26)
+        }
+
+        fun validate(input:Char, alphabetsize: Int) :Boolean {
+            return 'A'.code <= input.code && input.code <= 'A'.plus(alphabetsize).code
+        }
+
+        fun validate(input:Int, alphabetsize:Int) :Boolean {
+            return input in 0..alphabetsize
         }
 
         fun normalize(input: Int) : Int {
             return (input + 26) % 26
+        }
+
+        fun normalize(input: Int, alphabetsize: Int) : Int {
+            return (input + alphabetsize) % alphabetsize
         }
     }
 }

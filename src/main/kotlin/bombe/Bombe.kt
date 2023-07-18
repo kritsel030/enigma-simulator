@@ -1,10 +1,6 @@
 package bombe
 
-import bombe.components.Bridge
-import bombe.components.Cable
-import bombe.components.CommonsSet
-import bombe.components.DiagonalBoard
-import bombe.connectors.Jack
+import bombe.components.*
 import bombe.recorder.CurrentPathElement
 import java.lang.IllegalStateException
 import kotlin.math.pow
@@ -218,9 +214,9 @@ class Bombe(
         private set
     private fun captureStop(bank:Bank, centralLetter: Char, possibleSteckerPartnersForCentralLetter : List<Char>) {
         // rotor types on all scramblers are identical, so we can simply use the first enigma to act as our source
-        val rotor1RotorType = bank.getScrambler(1).enigma!!.getRotor(1).rotorType
-        val rotor2RotorType = bank.getScrambler(1).enigma!!.getRotor(2).rotorType
-        val rotor3RotorType = bank.getScrambler(1).enigma!!.getRotor(3).rotorType
+        val rotor1RotorType = bank.getScrambler(1).enigma!!.getRotor(1).getRotorType()
+        val rotor2RotorType = bank.getScrambler(1).enigma!!.getRotor(2).getRotorType()
+        val rotor3RotorType = bank.getScrambler(1).enigma!!.getRotor(3).getRotorType()
         stops.add(Stop(rotor1RotorType, rotor2RotorType, rotor3RotorType,
             indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
             centralLetter, possibleSteckerPartnersForCentralLetter))

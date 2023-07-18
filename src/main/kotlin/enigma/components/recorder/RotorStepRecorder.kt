@@ -1,6 +1,6 @@
 package enigma.components.recorder
 
-import enigma.components.RotorType
+import shared.RotorType
 import enigma.util.Util
 
 class RotorStepRecorder (

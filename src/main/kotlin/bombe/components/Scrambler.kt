@@ -4,49 +4,44 @@ import bombe.Bank
 import bombe.MenuLink
 import bombe.connectors.*
 import bombe.recorder.CurrentPathElement
-import enigma.Enigma
 import enigma.components.*
+import enigma.util.Util
+import shared.BasicScrambler
+import shared.RotorType
 
 class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
 
     val inputJack = Jack("IN$id", "IN$id", this)
     val outputJack = Jack("OUT$id", "OUT$id", this)
-    var enigma: Enigma? = null
-
-    companion object {
-        // https://www.lysator.liu.se/~koma/turingbombe/TuringBombeTutorial.pdf, page 2:
-        // "Probably by mistake, drums I, II, III, VI, VII and VIII on the Bombe
-        //   are one letter ahead of the corresponding Enigma rotors.
-        //  Drum IV is two steps ahead, and rotor V is three steps ahead."
-        val fixRotorStartPositionMap = mapOf(
-            Pair(RotorType.I, 'Y'),    // Z - 1
-            Pair(RotorType.II, 'Y'),   // Z - 1
-            Pair(RotorType.III, 'Y'),  // Z - 1
-            Pair(RotorType.IV, 'X'),   // Z - 2
-            Pair(RotorType.V, 'W')     // Z - 3
-        )
-    }
+    val enigma: BasicScrambler = BasicScrambler(noOfRotorsPerScrambler, Reflector(ReflectorType.B))
 
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
 
-    fun placeEnigma(rotorTypes: List<RotorType>) {
+    fun placeRotors(rotorTypes: List<RotorType>) {
         check (rotorTypes.size == noOfRotorsPerScrambler)
         {"expected $noOfRotorsPerScrambler rotor types to be placed on this scrambler, but received only ${rotorTypes.size}"}
 
         val reflector = Reflector(ReflectorType.B)
 
-        val rotors = rotorTypes.map{Rotor(it, fixRotorStartPositionMap.getOrDefault(it, 'Z'), 26)}.toList()
+        val rotors = rotorTypes.map{Drum(DrumType.getDrumTypeForRotorType(it))}.toList()
 
-        val noPlugboard = Plugboard("")
-
-        enigma = Enigma(reflector, rotors, noPlugboard)
+        enigma.placeRotors(rotors)
     }
 
-    fun setRelativePosition(pos:Int) {
-        for (p in 1..pos) {
+    fun rotate(steps:Int) {
+        enigma.checkRotors()
+        for (p in 1..steps) {
             // step the drum representing the right-rotor in the enigma
-            enigma?.getRotor(3)?.stepRotor()
+            enigma.rightRotor!!.stepRotor()
+        }
+    }
+
+    fun setRotorStartPositions(startPositions:String) {
+        enigma.checkRotors()
+        check(enigma.rotors.size == startPositions.length) {"this scrambler has ${enigma.rotors.size} scramblers, got ${startPositions.length} rotor start positions"}
+        for ( (index, startPos) in startPositions.withIndex() ) {
+            enigma.getRotor(index+1).rotateToRingOrientation(startPos)
         }
     }
 
@@ -84,6 +79,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
         }
         return errors
     }
+
     private fun findConnectedDiagonalBoardJack(jack: Jack) : DiagonalBoardJack? {
         if (jack.pluggedUpBy() is CablePlug) {
             // this jack has a cable plugged into it
@@ -108,6 +104,10 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
         return null
     }
 
+    fun checkRotors() {
+        enigma.checkRotors()
+    }
+
 
     // ******************************************************************************************************
     // Features needed to execute a bombe run
@@ -127,11 +127,9 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
         }
     }
 
-    private fun scramble(input: Char) : Char {
+    fun scramble(input: Char) : Char {
 //        println("scrambler input: $input (${input.code})")
-        // dummy implementation: proceed 10 characters down the alphabet
-        //val output = Char(((input.code - 'A'.code + 10) % bombe.alphabetSize) + 'A'.code)
-        val output = enigma!!.encrypt(input, false)
+        val output = Util.toChar(enigma!!.encrypt(Util.toInt(input)))
 //        println("scrambler output: $output")
         return output
     }

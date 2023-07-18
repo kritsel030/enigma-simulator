@@ -1,9 +1,6 @@
 package bombe
 
-import bombe.components.Bridge
-import bombe.components.CommonsSet
-import bombe.components.DiagonalBoard
-import bombe.components.Scrambler
+import bombe.components.*
 import java.lang.IllegalStateException
 
 /**

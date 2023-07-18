@@ -2,7 +2,7 @@ package bombe.components
 
 import bombe.Bank
 import bombe.Bombe
-import enigma.components.RotorType
+import shared.RotorType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -11,10 +11,10 @@ class ScramblerTest {
     @Test
     fun passCurrent_viaInputJack() {
         val scrambler = Scrambler(1, 3, Bank(1, 12, 3, Bombe(26, 1, 12, 3)))
-        scrambler.placeEnigma(listOf(RotorType.II, RotorType.V, RotorType.III))
+        scrambler.placeRotors(listOf(RotorType.II, RotorType.V, RotorType.III))
 
         val input = 'A'
-        val enigmaOutput = scrambler.enigma!!.encrypt(input, false)
+        val enigmaOutput = scrambler.scramble(input)
         scrambler.inputJack.passCurrentInbound(input)
         val activeOutputContacts = scrambler.outputJack.readActiveContacts()
 
@@ -26,10 +26,10 @@ class ScramblerTest {
     @Test
     fun passCurrent_viaOutputJack() {
         val scrambler = Scrambler(1, 3, Bank(1, 12, 3, Bombe(26, 1, 12, 3)))
-        scrambler.placeEnigma(listOf(RotorType.II, RotorType.V, RotorType.III))
+        scrambler.placeRotors(listOf(RotorType.II, RotorType.V, RotorType.III))
 
         val input = 'A'
-        val enigmaOutput = scrambler.enigma!!.encrypt(input, false)
+        val enigmaOutput = scrambler.scramble(input)
         scrambler.outputJack.passCurrentInbound(input)
         val activeOutputContacts = scrambler.inputJack.readActiveContacts()
 

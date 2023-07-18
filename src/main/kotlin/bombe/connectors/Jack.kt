@@ -27,7 +27,7 @@ open class Jack (val externalLabel: String,
     }
 
     // verifies if this jack
-    // - is plugged up with a plug attached to a cable
+    // - is plugged up with a plug which is attached to a cable
     // - if the other plug of that cable is plugged into a jack of a component whose type is mentioned in the given
     //   list of component types
     // returns a list of verification error messages (empty list when all is OK)

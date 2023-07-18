@@ -1,6 +1,8 @@
-package bombe
+package bombe.components
 
-class IndicatorDrum(val bombe:Bombe) {
+import bombe.Bombe
+
+class IndicatorDrum(val bombe: Bombe) {
 
     var position = 'A'.plus(bombe.alphabetSize -1)
         private set

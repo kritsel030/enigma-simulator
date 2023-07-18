@@ -1,7 +1,5 @@
 package bombe
 
-import enigma.components.RotorType
-
 //fun main() {
 ////    val bombe = Bombe(8, 1, 3)
 //    val bombe = Bombe(26, 1, 3)

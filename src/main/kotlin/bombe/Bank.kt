@@ -5,7 +5,7 @@ import bombe.connectors.Jack
 import bombe.components.CircuitComponent
 import bombe.components.Scrambler
 import bombe.recorder.CurrentPathElement
-import enigma.components.RotorType
+import shared.RotorType
 import java.lang.IllegalStateException
 
 class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int, bombe: Bombe)
@@ -32,6 +32,7 @@ class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int
 
     init {
         for (s in 1..noOfScramblersPerBank) {
+//            scramblers.put(s, Scrambler(s, noOfRotorsPerScrambler, this))
             scramblers.put(s, Scrambler(s, noOfRotorsPerScrambler, this))
         }
     }
@@ -86,7 +87,7 @@ class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int
     // Fit each scrambler in this bank with the given set of drum types
     fun placeDrums(rotorTypes: List<RotorType>) {
         for (scrambler in scramblers.values) {
-            scrambler.placeEnigma(rotorTypes)
+            scrambler.placeRotors(rotorTypes)
         }
     }
 

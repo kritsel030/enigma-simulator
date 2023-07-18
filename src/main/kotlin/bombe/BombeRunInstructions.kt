@@ -1,7 +1,7 @@
 package bombe
 
 import enigma.components.ReflectorType
-import enigma.components.RotorType
+import shared.RotorType
 
 class BombeRunInstructions (
     val menu: List<String>,

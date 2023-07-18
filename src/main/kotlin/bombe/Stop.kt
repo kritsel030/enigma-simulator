@@ -1,6 +1,6 @@
 package bombe
 
-import enigma.components.RotorType
+import shared.RotorType
 
 class Stop (
     val rotor1RotorType: RotorType,
