@@ -179,20 +179,20 @@ class Bombe(
         drumRotations++
         // every drum rotation, all drums representing the left rotor (position 1) in an enigma machine take a step
         // and the corresponding indicator drum takes a step
-        banks.values.forEach{it.getScramblers().forEach { it.enigma?.getRotor(1)!!.stepRotor() }}
+        banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(1)!!.stepRotor() }}
         indicatorDrums[0].rotate()
 
         // every 26th rotation, all drums representing the middle rotor in an enigma machine (position 2) take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % alphabetSize == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.enigma?.getRotor(2)!!.stepRotor() }}
+            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(2)!!.stepRotor() }}
             indicatorDrums[1].rotate()
         }
 
         // every 26*26th rotation, all drums representing the right rotor (position 3) in an enigma machine take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % (alphabetSize * alphabetSize) == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.enigma?.getRotor(3)!!.stepRotor() }}
+            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(3)!!.stepRotor() }}
             indicatorDrums[2].rotate()
         }
     }
@@ -212,11 +212,11 @@ class Bombe(
 
     var stops : MutableList<Stop> = mutableListOf()
         private set
-    private fun captureStop(bank:Bank, centralLetter: Char, possibleSteckerPartnersForCentralLetter : List<Char>) {
+    private fun captureStop(bank: Bank, centralLetter: Char, possibleSteckerPartnersForCentralLetter : List<Char>) {
         // rotor types on all scramblers are identical, so we can simply use the first enigma to act as our source
-        val rotor1RotorType = bank.getScrambler(1).enigma!!.getRotor(1).getRotorType()
-        val rotor2RotorType = bank.getScrambler(1).enigma!!.getRotor(2).getRotorType()
-        val rotor3RotorType = bank.getScrambler(1).enigma!!.getRotor(3).getRotorType()
+        val rotor1RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(1).getRotorType()
+        val rotor2RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(2).getRotorType()
+        val rotor3RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(3).getRotorType()
         stops.add(Stop(rotor1RotorType, rotor2RotorType, rotor3RotorType,
             indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
             centralLetter, possibleSteckerPartnersForCentralLetter))

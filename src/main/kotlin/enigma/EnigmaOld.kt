@@ -2,9 +2,8 @@ package enigma
 
 import enigma.components.Plugboard
 import enigma.components.Reflector
-import enigma.components.Rotor
 import enigma.components.recorder.StepRecorder
-import enigma.util.Util.Companion.validate
+import shared.Util.Companion.validate
 import shared.AbstractRotor
 import java.lang.IllegalArgumentException
 

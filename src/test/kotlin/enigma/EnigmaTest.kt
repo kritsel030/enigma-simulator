@@ -36,9 +36,9 @@ class EnigmaTest {
         enigma.stepRotors()
 
         // only the right rotor should have a different position
-        assertEquals(leftRotor.startRingOrientation, leftRotor.currentRingOrientation())
-        assertEquals(middleRotor.startRingOrientation, middleRotor.currentRingOrientation())
-        assertEquals(rightRotor.startRingOrientation + 1, rightRotor.currentRingOrientation())
+        assertEquals(leftRotor.startRingOrientation(), leftRotor.currentRingOrientation())
+        assertEquals(middleRotor.startRingOrientation(), middleRotor.currentRingOrientation())
+        assertEquals(rightRotor.startRingOrientation() + 1, rightRotor.currentRingOrientation())
     }
 
     @Test
@@ -54,9 +54,9 @@ class EnigmaTest {
         enigma.stepRotors()
 
         // both the right and middle rotor should have a different position
-        assertEquals(leftRotor.startRingOrientation, leftRotor.currentRingOrientation())
-        assertEquals(middleRotor.startRingOrientation + 1, middleRotor.currentRingOrientation())
-        assertEquals(rightRotor.startRingOrientation + 1, rightRotor.currentRingOrientation())
+        assertEquals(leftRotor.startRingOrientation(), leftRotor.currentRingOrientation())
+        assertEquals(middleRotor.startRingOrientation() + 1, middleRotor.currentRingOrientation())
+        assertEquals(rightRotor.startRingOrientation() + 1, rightRotor.currentRingOrientation())
     }
 
     @Test
@@ -73,9 +73,9 @@ class EnigmaTest {
         enigma.stepRotors()
 
         // right and left rotor should have taken a single step, middle rotor two steps
-        assertEquals(leftRotor.startRingOrientation + 1, leftRotor.currentRingOrientation())
-        assertEquals(middleRotor.startRingOrientation + 2, middleRotor.currentRingOrientation())
-        assertEquals(rightRotor.startRingOrientation + 1, rightRotor.currentRingOrientation())
+        assertEquals(leftRotor.startRingOrientation() + 1, leftRotor.currentRingOrientation())
+        assertEquals(middleRotor.startRingOrientation() + 2, middleRotor.currentRingOrientation())
+        assertEquals(rightRotor.startRingOrientation() + 1, rightRotor.currentRingOrientation())
     }
 
     @Test
@@ -97,9 +97,9 @@ class EnigmaTest {
         // the reset should cause all rotors to have returned to their start positions
         enigma.resetRotors()
 
-        assertEquals(leftRotor.startRingOrientation, leftRotor.currentRingOrientation())
-        assertEquals(middleRotor.startRingOrientation, middleRotor.currentRingOrientation())
-        assertEquals(rightRotor.startRingOrientation, rightRotor.currentRingOrientation())
+        assertEquals(leftRotor.startRingOrientation(), leftRotor.currentRingOrientation())
+        assertEquals(middleRotor.startRingOrientation(), middleRotor.currentRingOrientation())
+        assertEquals(rightRotor.startRingOrientation(), rightRotor.currentRingOrientation())
     }
 
 }

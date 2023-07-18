@@ -1,7 +1,7 @@
 package enigma.components.recorder
 
 import enigma.components.ReflectorType
-import enigma.util.Util
+import shared.Util
 
 class ReflectorStepRecorder (
     var reflectorType: ReflectorType? = null,

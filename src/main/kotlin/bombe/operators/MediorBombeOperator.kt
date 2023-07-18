@@ -1,5 +1,7 @@
-package bombe
+package bombe.operators
 
+import bombe.components.Bank
+import bombe.Stop
 import bombe.components.*
 import java.lang.IllegalStateException
 

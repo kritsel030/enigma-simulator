@@ -1,6 +1,6 @@
 package enigma.components
 
-import enigma.util.Util
+import shared.Util
 import shared.AbstractRotor
 import shared.RotorCore
 import shared.RotorType
@@ -17,7 +17,6 @@ open class Rotor private constructor (rotorType: RotorType, override val letterR
     AbstractRotor(
         RotorCore(rotorType, Util.normalize(Util.toInt(startRingOrientation) - Util.toInt(ringSetting))),
         letterRing,
-        startRingOrientation,
         ringSetting) {
 
     constructor(rotorType: RotorType, startRingOrientation: Char, ringSetting: Char) : this(rotorType, LetterRingWithNotches(rotorType), startRingOrientation, ringSetting)

@@ -1,11 +1,11 @@
-package bombe
+package bombe.components
 
+import bombe.BankControlPanel
+import bombe.BankDisplay
+import bombe.Bombe
 import bombe.connectors.Connector
 import bombe.connectors.Jack
-import bombe.components.CircuitComponent
-import bombe.components.Scrambler
 import bombe.recorder.CurrentPathElement
-import shared.RotorType
 import java.lang.IllegalStateException
 
 class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int, bombe: Bombe)
@@ -85,9 +85,9 @@ class Bank (val id: Int, noOfScramblersPerBank: Int, noOfRotorsPerScrambler: Int
     // Features to support the plugging up of a bombe based on a menu
 
     // Fit each scrambler in this bank with the given set of drum types
-    fun placeDrums(rotorTypes: List<RotorType>) {
+    fun placeDrums(drumTypes: List<DrumType>) {
         for (scrambler in scramblers.values) {
-            scrambler.placeRotors(rotorTypes)
+            scrambler.placeDrums(drumTypes)
         }
     }
 

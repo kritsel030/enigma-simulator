@@ -2,10 +2,10 @@ package enigma.components
 
 import enigma.components.recorder.StepRecorder
 import enigma.components.recorder.ReflectorStepRecorder
-import enigma.util.Util.Companion.normalize
-import enigma.util.Util.Companion.toInt
-import enigma.util.Util.Companion.toChar
-import enigma.util.Util.Companion.validate
+import shared.Util.Companion.normalize
+import shared.Util.Companion.toInt
+import shared.Util.Companion.toChar
+import shared.Util.Companion.validate
 import java.lang.IllegalArgumentException
 
 class Reflector (

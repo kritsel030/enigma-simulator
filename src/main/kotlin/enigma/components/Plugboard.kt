@@ -2,7 +2,7 @@ package enigma.components
 
 import enigma.components.recorder.PlugboardStepRecorder
 import enigma.components.recorder.StepRecorder
-import enigma.util.Util
+import shared.Util
 
 class Plugboard(
     // e.g. AC-DK-GI-JX-OE-XZ

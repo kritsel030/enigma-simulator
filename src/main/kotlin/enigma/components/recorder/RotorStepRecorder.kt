@@ -1,7 +1,7 @@
 package enigma.components.recorder
 
 import shared.RotorType
-import enigma.util.Util
+import shared.Util
 
 class RotorStepRecorder (
     var rotorType: RotorType? = null,

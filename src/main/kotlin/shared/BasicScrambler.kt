@@ -2,8 +2,7 @@ package shared
 
 import enigma.components.Reflector
 import enigma.components.recorder.StepRecorder
-import enigma.util.Util.Companion.validate
-import java.lang.IllegalArgumentException
+import shared.Util.Companion.validate
 
 /**
  * A scrambler consisting of a reflector and 3 or 4 rotors. No plugboard.
@@ -43,7 +42,7 @@ open class BasicScrambler private constructor (
     // list of rotors, starting with the left-most rotor
     var rotors = listOf(leftLeftRotor, leftRotor, middleRotor, rightRotor).filterNotNull()
 
-    fun placeRotors(rotors:List<AbstractRotor>) {
+    fun placeDrums(rotors:List<AbstractRotor>) {
         leftLeftRotor = if (rotors.size == 4) rotors[0] else null
         leftRotor = rotors[rotors.size-3]
         middleRotor = rotors[rotors.size-2]
@@ -70,13 +69,10 @@ open class BasicScrambler private constructor (
         checkRotors()
 
         // validate input
-        if (!validate(inputContactId, 26)) {
-            //TODO("we need alphabetsize here")
-            throw IllegalArgumentException("input must be a number between 0 and 25")
-        }
+        //TODO("we need alphabetsize here")
+        check(validate(inputContactId, 26)) {"input must number bebe a tween 0 and 25"}
 
         var contactOffset = inputContactId
-
 
         // start with the right-most rotor (last one in the list)
         for (rotor in rotors.reversed()) {
@@ -93,6 +89,8 @@ open class BasicScrambler private constructor (
             contactOffset = rotor.encryptLeftToRight(contactOffset, recorders)
         }
 
+        // TODO remove
+        check(Util.Companion.validate(contactOffset, 26)) { "$contactOffset should be between 0 and 25"}
         return contactOffset
     }
 

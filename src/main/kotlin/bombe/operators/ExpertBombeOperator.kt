@@ -1,5 +1,6 @@
-package bombe
+package bombe.operators
 
+import bombe.*
 import bombe.components.*
 import bombe.connectors.CablePlug
 import bombe.connectors.Jack
@@ -38,7 +39,7 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
     private fun createBombe(instructions: BombeRunInstructions) {
         // we can create a bombe with dimensions (link number of banks) which are specifically targeted
         // to suit the instructions
-        var constructionParams = BombeConstructionParameters(26, instructions.rotorConfigurations.size, 12, 3)
+        var constructionParams = BombeConstructionParameters(26, instructions.drumConfigurations.size, 12, 3)
         // but this can be overruled in the instructions by choosing a specific bombe template
         // (e.g. 'ATLANTA' which will produce a bombe with the ATLANTA dimensions
         if (instructions.bombeTemplate != BombeTemplate.MAGIC) {
@@ -49,14 +50,14 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
 
     fun plugUpBackSide(instructions: BombeRunInstructions) {
         when(instructions.bombeStrategy) {
-            BombeStrategy.SINGLE_LINE_SCANNING -> plugUpBackSide_singleLineScanning(instructions)
-            BombeStrategy.SIMULTANEOUS_SCANNING -> plugUpBackSide_simultaneousScanning(instructions)
-            BombeStrategy.DIAGONAL_BOARD -> plugUpBackSide_diagonalBoard(instructions)
+            BombeRunStrategy.SINGLE_LINE_SCANNING -> plugUpBackSide_singleLineScanning(instructions)
+            BombeRunStrategy.SIMULTANEOUS_SCANNING -> plugUpBackSide_simultaneousScanning(instructions)
+            BombeRunStrategy.DIAGONAL_BOARD -> plugUpBackSide_diagonalBoard(instructions)
         }
     }
     fun plugUpBackSide_diagonalBoard(instructions: BombeRunInstructions) {
         // note: we use 1 bank for every rotor configuration
-        for (bankId in 1..instructions.rotorConfigurations.size) {
+        for (bankId in 1..instructions.drumConfigurations.size) {
             val bank = getBombe().getBank(bankId)
             // 1. claim a scrambler for each link in a menu chain
             // and place bridges between each pair of consecutive scramblers/menulinks in a menu chain
@@ -124,7 +125,7 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
 
     fun verifyPluggedUpBackSide(instructions: BombeRunInstructions) : List<String> {
         val errors = mutableListOf<String>()
-        for ( (index, rc) in instructions.rotorConfigurations.withIndex()) {
+        for ( (index, rc) in instructions.drumConfigurations.withIndex()) {
             val bank = getBombe().getBank(index + 1)
             errors.addAll(instructions.parsedMenu.map { chain ->
                 chain.map { menuLink ->
@@ -139,24 +140,24 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
         // install drums (in 'Z' position)
         // each rotorConfiguration in the instructions will get its own bank
         // every scrambler in that bank will be set-up with the same set of drum/rotor types
-        for ((index, rotorConfig) in instructions.rotorConfigurations.withIndex()) {
-            getBombe().getBank(index + 1).placeDrums(rotorConfig)
+        for ((index, drumConfig) in instructions.drumConfigurations.withIndex()) {
+            getBombe().getBank(index + 1).placeDrums(drumConfig)
         }
 
         // set the offset for every first drum of each scrambler
-        for ((index, rotorConfig) in instructions.rotorConfigurations.withIndex()) {
+        for ((index, drumConfig) in instructions.drumConfigurations.withIndex()) {
             val bank = getBombe().getBank(index + 1)
             for (chain in instructions.parsedMenu) {
                 for (link in chain) {
                     val scrambler = bank.getScrambler(link.positionInMenu)
-                    scrambler.rotate(link.rotorOffset)
+                    scrambler.setRelativePosition(link.rotorOffset)
                 }
             }
         }
     }
 
     fun prepareRightSide(instructions: BombeRunInstructions) {
-        for (i in 1 .. instructions.rotorConfigurations.size) {
+        for (i in 1 .. instructions.drumConfigurations.size) {
             getBombe().getBank(i).switchOn()
             getBombe().getBank(i).setContactToActivate(instructions.activateContact)
         }

@@ -1,5 +1,6 @@
-package bombe
+package bombe.operators
 
+import bombe.Bombe
 import bombe.components.*
 import bombe.connectors.Jack
 
@@ -48,6 +49,16 @@ open class JuniorBombeOperator() {
         return cable
     }
 
+    /**
+     * Scrambler <scramblerId> of bank <bankId> has a number of drums.
+     * Those drums should be set to the specified startOrientations.
+     *
+     * Example: startOrientations DXF means that the top drum will be rotated
+     *    to start orientation 'D', the middle drum to 'X' and the lower drum to 'F'
+     */
+    fun setStartRingOrientations(bankId: Int, scramblerId: Int, startOrientations: String) {
+        getBombe().getBank(bankId).getScrambler(scramblerId).setDrumStartOrientations(startOrientations)
+    }
 
 //    fun setUpMenu_example1 (){
 //        setUpMenuOld(RotorType.III, RotorType.V, RotorType.II,

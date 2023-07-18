@@ -1,5 +1,6 @@
 package bombe
 
+import bombe.components.DrumType
 import enigma.components.ReflectorType
 import shared.RotorType
 
@@ -7,10 +8,10 @@ class BombeRunInstructions (
     val menu: List<String>,
     val centralLetter: Char,
     // in the order as they would appear from left to right on an Enigma machine
-    val rotorConfigurations: List<List<RotorType>>,
+    val drumConfigurations: List<List<DrumType>>,
     val reflectorType: ReflectorType = ReflectorType.B,
     val activateContact: Char = 'A',
-    val bombeStrategy: BombeStrategy = BombeStrategy.DIAGONAL_BOARD,
+    val bombeStrategy: BombeRunStrategy = BombeRunStrategy.DIAGONAL_BOARD,
     val bombeTemplate: BombeTemplate = BombeTemplate.MAGIC) {
 
     var parsedMenu = mutableListOf<List<MenuLink>>()

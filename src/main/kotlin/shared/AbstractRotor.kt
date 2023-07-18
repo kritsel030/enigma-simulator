@@ -1,9 +1,8 @@
 package shared
 
 import enigma.components.recorder.StepRecorder
-import enigma.util.Util
 
-open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLetterRing, val startRingOrientation: Char, val ringSetting: Char) {
+open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLetterRing, val ringSetting: Char) {
 
     private val _ringSetting : Int = Util.toInt(ringSetting)
 
@@ -11,13 +10,20 @@ open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLet
         return rotorCore.rotorType
     }
 
-    // orientation?
+    fun startRingOrientation() : Char {
+        return 'A'.plus(Util.normalize(rotorCore.startOffset + _ringSetting))
+    }
+
     fun currentRingOrientation() : Char {
         return 'A'.plus(Util.normalize(rotorCore.currentOffset + _ringSetting))
     }
 
     fun rotateToRingOrientation(newStartRingOrientation: Char) {
         rotorCore.rotateToStartOffset(Util.normalize(Util.toInt(newStartRingOrientation) - _ringSetting))
+    }
+
+    fun advanceRingOrientation() {
+        rotorCore.increaseStartOffset()
     }
 
     /**

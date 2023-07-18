@@ -1,7 +1,3 @@
-import enigma.Enigma
-import enigma.components.*
-import shared.RotorType
-
 /**
  * example from https://www.lysator.liu.se/~koma/turingbombe/TuringBombeTutorial.pdf
  *     var rotor1 = Rotor(RotorType.II, 'Y', 4)

@@ -1,47 +1,46 @@
 package bombe.components
 
-import bombe.Bank
 import bombe.MenuLink
 import bombe.connectors.*
 import bombe.recorder.CurrentPathElement
 import enigma.components.*
-import enigma.util.Util
+import shared.Util
 import shared.BasicScrambler
-import shared.RotorType
 
 class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
 
     val inputJack = Jack("IN$id", "IN$id", this)
     val outputJack = Jack("OUT$id", "OUT$id", this)
-    val enigma: BasicScrambler = BasicScrambler(noOfRotorsPerScrambler, Reflector(ReflectorType.B))
+    val internalScrambler: BasicScrambler = BasicScrambler(noOfRotorsPerScrambler, Reflector(ReflectorType.B))
 
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
 
-    fun placeRotors(rotorTypes: List<RotorType>) {
-        check (rotorTypes.size == noOfRotorsPerScrambler)
-        {"expected $noOfRotorsPerScrambler rotor types to be placed on this scrambler, but received only ${rotorTypes.size}"}
+    fun placeDrums(drumTypes: List<DrumType>) {
+        check (drumTypes.size == noOfRotorsPerScrambler)
+        {"expected $noOfRotorsPerScrambler rotor types to be placed on this scrambler, but received only ${drumTypes.size}"}
 
-        val reflector = Reflector(ReflectorType.B)
+        val drums = drumTypes.map{Drum(it)}.toList()
 
-        val rotors = rotorTypes.map{Drum(DrumType.getDrumTypeForRotorType(it))}.toList()
-
-        enigma.placeRotors(rotors)
+        internalScrambler.placeDrums(drums)
     }
 
-    fun rotate(steps:Int) {
-        enigma.checkRotors()
+    fun setRelativePosition(steps:Int) {
+        internalScrambler.checkRotors()
         for (p in 1..steps) {
             // step the drum representing the right-rotor in the enigma
-            enigma.rightRotor!!.stepRotor()
+            internalScrambler.rightRotor!!.advanceRingOrientation()
         }
     }
 
-    fun setRotorStartPositions(startPositions:String) {
-        enigma.checkRotors()
-        check(enigma.rotors.size == startPositions.length) {"this scrambler has ${enigma.rotors.size} scramblers, got ${startPositions.length} rotor start positions"}
-        for ( (index, startPos) in startPositions.withIndex() ) {
-            enigma.getRotor(index+1).rotateToRingOrientation(startPos)
+    /**
+     * startOrientations: String where each character specifies the start orientation of a rotor in this scrambler
+     */
+    fun setDrumStartOrientations(startOrientations:String) {
+        internalScrambler.checkRotors()
+        check(internalScrambler.rotors.size == startOrientations.length) {"this scrambler has ${internalScrambler.rotors.size} scramblers, got ${startOrientations.length} rotor start positions"}
+        for ( (index, startPos) in startOrientations.withIndex() ) {
+            internalScrambler.getRotor(index+1).rotateToRingOrientation(startPos)
         }
     }
 
@@ -105,7 +104,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
     }
 
     fun checkRotors() {
-        enigma.checkRotors()
+        internalScrambler.checkRotors()
     }
 
 
@@ -129,7 +128,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
 
     fun scramble(input: Char) : Char {
 //        println("scrambler input: $input (${input.code})")
-        val output = Util.toChar(enigma!!.encrypt(Util.toInt(input)))
+        val output = Util.toChar(internalScrambler!!.encrypt(Util.toInt(input)))
 //        println("scrambler output: $output")
         return output
     }

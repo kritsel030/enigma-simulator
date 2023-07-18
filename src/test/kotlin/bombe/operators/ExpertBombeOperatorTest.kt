@@ -1,5 +1,7 @@
-package bombe
+package bombe.operators
 
+import bombe.BombeRunInstructions
+import bombe.components.DrumType
 import enigma.components.ReflectorType
 import shared.RotorType
 import org.junit.jupiter.api.Test
@@ -37,7 +39,7 @@ class ExpertBombeOperatorTest {
             listOf("U-11-E-5-G-6-R-14-A-13-S-7-V-16-E-2-N", "H-10-Z-9-R-12-G-15-L"),
             'G',
             // left, middle, right rotor
-            listOf(listOf(RotorType.II, RotorType.V, RotorType.III)),
+            listOf(listOf(DrumType.II, DrumType.V, DrumType.III)),
             ReflectorType.B
         )
         val operator = AutomatedBombeOperator()

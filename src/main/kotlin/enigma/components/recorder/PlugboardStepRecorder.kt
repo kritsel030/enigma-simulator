@@ -1,6 +1,6 @@
 package enigma.components.recorder
 
-import enigma.util.Util
+import shared.Util
 
 class PlugboardStepRecorder(
     var connectedLetters:String? = null,

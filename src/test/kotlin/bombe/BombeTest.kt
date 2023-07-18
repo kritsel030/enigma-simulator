@@ -1,5 +1,6 @@
 package bombe
 
+import bombe.components.DrumType
 import shared.RotorType
 import org.junit.jupiter.api.Test
 import java.lang.IllegalStateException
@@ -70,7 +71,7 @@ class BombeTest {
         val bombe = Bombe(26, 1, 1, 3)
         bombe.banks.values.forEach { bank ->
             run {
-                bank.placeDrums(listOf(RotorType.V, RotorType.I, RotorType.III))
+                bank.placeDrums(listOf(DrumType.V, DrumType.I, DrumType.III))
             }
         }
 
@@ -91,9 +92,9 @@ class BombeTest {
                 bank.getScramblers().forEach { scrambler ->
                     run {
                         // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
-                        assertEquals(fastDrumSteps, scrambler.enigma!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
-                        assertEquals(middleDrumSteps, scrambler.enigma!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
-                        assertEquals(slowDrumSteps, scrambler.enigma!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
+                        assertEquals(fastDrumSteps, scrambler.internalScrambler!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
+                        assertEquals(middleDrumSteps, scrambler.internalScrambler!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
+                        assertEquals(slowDrumSteps, scrambler.internalScrambler!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
                     }
                 }
             }
@@ -112,8 +113,8 @@ class BombeTest {
             run{
                 bank.getScramblers().forEach { scrambler ->
                     run {
-                        assertNotNull(scrambler.enigma,"expect an internal scrambler - without rotors - to be present")
-                        assertEquals(bombe.noOfRotorsPerScrambler, scrambler.enigma.rotorPositions)
+                        assertNotNull(scrambler.internalScrambler,"expect an internal scrambler - without rotors - to be present")
+                        assertEquals(bombe.noOfRotorsPerScrambler, scrambler.internalScrambler.rotorPositions)
                     }
                 }
             }

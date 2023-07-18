@@ -1,5 +1,6 @@
-package bombe
+package bombe.operators
 
+import bombe.Bombe
 import bombe.components.DummyComponent
 import bombe.connectors.CablePlug
 import bombe.connectors.Jack

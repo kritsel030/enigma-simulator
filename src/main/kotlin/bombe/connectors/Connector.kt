@@ -79,6 +79,8 @@ abstract class Connector (val label:String, val attachedTo: CircuitComponent) {
     }
 
     fun isContactActive(contact:Char) : Boolean {
+        // todo remove
+        check(contacts.containsKey(contact)) {"contact $contact does not exist"}
         return contacts[contact]!!;
     }
 

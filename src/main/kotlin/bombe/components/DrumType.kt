@@ -11,11 +11,4 @@ enum class DrumType(
     III (RotorType.III, 1),
     IV (RotorType.IV, 2),
     V (RotorType.V, 3);
-
-    companion object {
-        fun getDrumTypeForRotorType(rotorType: RotorType): DrumType {
-            return values().first { it.rotorType == rotorType }
-        }
-    }
-
 }

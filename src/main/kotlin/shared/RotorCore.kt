@@ -2,9 +2,8 @@ package shared
 
 import enigma.components.recorder.RotorStepRecorder
 import enigma.components.recorder.StepRecorder
-import enigma.util.Util
-import enigma.util.Util.Companion.normalize
-import enigma.util.Util.Companion.validate
+import shared.Util.Companion.normalize
+import shared.Util.Companion.validate
 
 /**
  * The associations between all left-contacts and right-contacts of a rotor are unique for a particular rotor type
@@ -52,6 +51,11 @@ open class RotorCore (
 
     fun rotateToStartOffset(offset: Int) {
         startOffset = offset
+        currentOffset = startOffset
+    }
+
+    fun increaseStartOffset() {
+        startOffset++
         currentOffset = startOffset
     }
 
@@ -112,9 +116,10 @@ open class RotorCore (
      * @return integer between 0 (representing 'A') and 25 (representing 'Z')
      */
     fun encryptRightToLeft(rightActiveContactOffset:Int, recorders:MutableList<StepRecorder>? = null) : Int {
-        require (validate(rightActiveContactOffset, alphabetsize)) {"input must be a int between 0 and ${alphabetsize-1}, actual input is $rightActiveContactOffset"}
+        val normalized = Util.normalize(rightActiveContactOffset, 26)
+        require (validate(normalized, alphabetsize)) {"input must be a int between 0 and ${alphabetsize-1}, actual input is $rightActiveContactOffset"}
 //        println("currentOffset: $currentOffset")
-        val rightContactId = this.offsetToContact(rightActiveContactOffset)
+        val rightContactId = this.offsetToContact(normalized)
         val leftContactId = encryptContactRightToLeft(rightContactId)
         val leftContactOffset = this.contactToOffset(leftContactId)
 
@@ -130,6 +135,7 @@ open class RotorCore (
             recorder.outputValue = leftContactId
             recorder.outputContactChannel = leftContactOffset
         }
+        check (validate(leftContactOffset, alphabetsize)) {"$leftContactOffset must be between 0 and ${alphabetsize-1}"}
         return leftContactOffset
     }
 
@@ -158,6 +164,7 @@ open class RotorCore (
             recorder.outputValue = rightContact
             recorder.outputContactChannel = rightContactChannel
         }
+        check (validate(rightContactChannel, alphabetsize)) {"$rightContactChannel must be between 0 and ${alphabetsize-1}"}
         return rightContactChannel
     }
 
