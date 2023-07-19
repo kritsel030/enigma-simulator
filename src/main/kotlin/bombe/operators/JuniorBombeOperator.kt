@@ -60,6 +60,10 @@ open class JuniorBombeOperator() {
         getBombe().getBank(bankId).getScrambler(scramblerId).setDrumStartOrientations(startOrientations)
     }
 
+    fun placeDrums(bankId: Int, scramblerId: Int, drumTypes: List<DrumType>) {
+        getBombe().getBank(bankId).getScrambler(scramblerId).placeDrums(drumTypes)
+    }
+
 //    fun setUpMenu_example1 (){
 //        setUpMenuOld(RotorType.III, RotorType.V, RotorType.II,
 //        "11-UE, 5-EG, 6-GR, 13-AS, 7-SV, 16-VE, 2-EN, 10-HZ, 9-ZR, 12-RG, 15-GL", 'G')

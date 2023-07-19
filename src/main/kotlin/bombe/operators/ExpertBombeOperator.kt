@@ -16,7 +16,7 @@ import bombe.connectors.Jack
  * without requiring any additional instructions from you.
  */
 
-class AutomatedBombeOperator() : MediorBombeOperator() {
+class ExpertBombeOperator() : MediorBombeOperator() {
 
     fun executeRun(
         instructions: BombeRunInstructions,
@@ -30,7 +30,7 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
         verifyPluggedUpBackSide(instructions)
         prepareFrontSide(instructions)
         prepareRightSide(instructions)
-        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath, instructions.centralLetter)
+        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath)
     }
 
     // Our expert bombe operator can actually conjure a new bombe machine out of thin air,
@@ -105,7 +105,7 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
                 }
             }
             // 3. connect the bank's input jack
-            connectJackToALetterJack(bankId, getBombe().getBank(bankId).inputJack, instructions.centralLetter)
+            connectJackToALetterJack(bankId, getBombe().getChain(bankId).inputJack, instructions.centralLetter)
         }
     }
 
@@ -158,8 +158,8 @@ class AutomatedBombeOperator() : MediorBombeOperator() {
 
     fun prepareRightSide(instructions: BombeRunInstructions) {
         for (i in 1 .. instructions.drumConfigurations.size) {
-            getBombe().getBank(i).switchOn()
-            getBombe().getBank(i).setContactToActivate(instructions.activateContact)
+            getBombe().getChain(i).switchOn()
+            getBombe().getChain(i).setContactToActivate(instructions.activateContact)
         }
     }
 

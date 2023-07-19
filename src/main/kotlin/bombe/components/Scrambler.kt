@@ -40,7 +40,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
         internalScrambler.checkRotors()
         check(internalScrambler.rotors.size == startOrientations.length) {"this scrambler has ${internalScrambler.rotors.size} scramblers, got ${startOrientations.length} rotor start positions"}
         for ( (index, startPos) in startOrientations.withIndex() ) {
-            internalScrambler.getRotor(index+1).rotateToRingOrientation(startPos)
+            internalScrambler.getRotor(index+1)!!.rotateToRingOrientation(startPos)
         }
     }
 

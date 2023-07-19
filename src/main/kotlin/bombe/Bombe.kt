@@ -5,7 +5,8 @@ import bombe.recorder.CurrentPathElement
 import java.lang.IllegalStateException
 import kotlin.math.pow
 
-const val COMMONSSETS_PER_COLUMN = 5
+// TODO: make this dynamic?
+const val COMMONSSETS_PER_COLUMN = 8
 
 class Bombe(
     // physical construction parameters
@@ -24,7 +25,7 @@ class Bombe(
 
     // we can support both 3 and 4 rotor scramblers
     val noOfRotorsPerScrambler: Int
-) {
+) : BombeControlPanel {
     constructor(params: BombeConstructionParameters) : this(params.alphabetSize, params.noOfBanks, params.noOfScramblersPerBank, params.noOfRotorsPerScrambler)
     constructor() : this(BombeConstructionParameters.getBombeConstructionParameters(BombeTemplate.ATLANTA))
 
@@ -32,6 +33,7 @@ class Bombe(
     // Features needed to represent and access the components of a bombe
     // Including initialization/reset
 
+    var chains = mutableMapOf<Int, Chain>()
     var banks = mutableMapOf<Int, Bank>()
     var diagonalBoards = mutableMapOf<Int, DiagonalBoard>()
     var commonsSetsColumns = mutableMapOf<Int, MutableList<CommonsSet>>()
@@ -42,6 +44,11 @@ class Bombe(
         reset()
     }
     fun reset() {
+        chains = mutableMapOf<Int, Chain>()
+        for (b in 1..noOfBanks) {
+            chains.put(b, Chain(b, this))
+        }
+
         banks = mutableMapOf<Int, Bank>()
         for (b in 1..noOfBanks) {
             banks.put(b, Bank(b, noOfScramblersPerBank, noOfRotorsPerScrambler, this))
@@ -83,12 +90,31 @@ class Bombe(
         drumRotations = 0
     }
 
+    fun getChain(id:Int) : Chain {
+        return chains.get(id)!!
+    }
+
     fun getBank(id:Int) : Bank {
         return banks.get(id)!!
     }
 
     fun getDiagonalBoard(id:Int) : DiagonalBoard {
         return diagonalBoards.get(id)!!
+    }
+
+    // ***********************************************************************************************************
+    // Bombe ontrol panel support
+
+    private var doubleInputOn: Boolean = false
+
+    override fun switchDoubleInputOn() {
+        doubleInputOn = true
+    }
+    override fun switchDoubleInputOff() {
+        doubleInputOn = false
+    }
+    override fun isDoubleInputOn() : Boolean {
+        return doubleInputOn
     }
 
     // ******************************************************************************************************
@@ -133,24 +159,39 @@ class Bombe(
     // ******************************************************************************************************
     // Features needed to support executing a run on a bombe
 
-    fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false, centralLetter: Char) : List<Stop> {
+    fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false) : List<Stop> {
         for (step in 1.. if (numberOfSteps != null) numberOfSteps!! else pow(alphabetSize,3) ) {
-            for (bank in banks.values) {
-                if (bank.isOn()) {
-                    var root = CurrentPathElement.createRoot(bank.getContactToActivate()!!)
-                    bank.run(root)
+            val doubleInputStops = mutableListOf<Stop>()
+            for (chain in chains.values) {
+                if (chain.isOn()) {
+                    var root = CurrentPathElement.createRoot(chain.getContactToActivate()!!)
+                    chain.run(root)
                     if (printStepResult) {
-                        bank.testRegisterConnectedTo?.printStatus()
+                        chain.testRegisterConnectedTo?.printStatus()
                     }
                     if (printCurrentPath) {
-                        println("bank ${bank.id} current path")
+                        println("chain ${chain.id} current path")
                         root.print()
                     }
-                    checkResult(centralLetter)
+                    val stop = checkResult(chain)
+                    if (stop != null) {
+                        if (!isDoubleInputOn()) {
+                            stops.add(stop)
+                        } else {
+                            doubleInputStops.add(stop)
+                        }
+                    }
+                }
+            }
+            if (isDoubleInputOn()) {
+                // when 'double input' is switch on, all active chains must have produced a stop
+
+                if (doubleInputStops.size == chains.values.filter { it.isOn() }.count()) {
+                    stops.addAll(doubleInputStops)
                 }
             }
             resetCurrent()
-            rotateDrums()
+            stepDrums()
         }
         return stops
     }
@@ -163,7 +204,7 @@ class Bombe(
     fun resetCurrent() {
         // reset all connectors of all components
         banks.values.forEach{it.getScramblers().forEach { s -> s.resetCurrent()} }
-        banks.values.forEach{it.resetCurrent()}
+        chains.values.forEach{it.resetCurrent()}
         diagonalBoards.values.forEach { it.resetCurrent() }
         commonsSetsColumns.values.forEach{it.forEach { c -> c.resetCurrent()}}
         cables.forEach { it.resetCurrent() }
@@ -175,24 +216,24 @@ class Bombe(
     // https://www.codesandciphers.org.uk/virtualbp/tbombe/thebmb.htm
     // "the top, fast, drum on the Bombe corresponds to the slow left hand drum on the Enigma machine"
     // meaning: the (top) fast-moving drum on a bombe corresponds with the (left) slow-moving rotor
-    fun rotateDrums() {
+    fun stepDrums() {
         drumRotations++
         // every drum rotation, all drums representing the left rotor (position 1) in an enigma machine take a step
         // and the corresponding indicator drum takes a step
-        banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(1)!!.stepRotor() }}
+        banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(1)?.stepRotor() }}
         indicatorDrums[0].rotate()
 
         // every 26th rotation, all drums representing the middle rotor in an enigma machine (position 2) take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % alphabetSize == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(2)!!.stepRotor() }}
+            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(2)?.stepRotor() }}
             indicatorDrums[1].rotate()
         }
 
         // every 26*26th rotation, all drums representing the right rotor (position 3) in an enigma machine take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % (alphabetSize * alphabetSize) == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(3)!!.stepRotor() }}
+            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(3)?.stepRotor() }}
             indicatorDrums[2].rotate()
         }
     }
@@ -200,27 +241,27 @@ class Bombe(
     /**
      * - steps: number of drum rotations done so far
      */
-    private fun checkResult(centralLetter: Char) {
-        for (bank in banks.values) {
-            val stepResult = bank.checkStepResult()
-            // stepResult.first indicates whether the result of this step is a valid stop
-            if (stepResult.first) {
-                captureStop(bank, centralLetter, stepResult.second!!)
+    private fun checkResult(chain: Chain) : Stop?{
+//        for (chain in chains.values) {
+            if (chain.isOn()) {
+                val stepResult = chain.checkStepResult()
+                // stepResult.first indicates whether the result of this step is a valid stop
+                if (stepResult.first) {
+//                    captureStop(chain, stepResult.second!!)
+                    return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+                        chain.getContactToActivate()!!, stepResult.second!!)
+                }
             }
-        }
+//        }
+        return null
     }
 
     var stops : MutableList<Stop> = mutableListOf()
         private set
-    private fun captureStop(bank: Bank, centralLetter: Char, possibleSteckerPartnersForCentralLetter : List<Char>) {
-        // rotor types on all scramblers are identical, so we can simply use the first enigma to act as our source
-        val rotor1RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(1).getRotorType()
-        val rotor2RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(2).getRotorType()
-        val rotor3RotorType = bank.getScrambler(1).internalScrambler!!.getRotor(3).getRotorType()
-        stops.add(Stop(rotor1RotorType, rotor2RotorType, rotor3RotorType,
-            indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-            centralLetter, possibleSteckerPartnersForCentralLetter))
-    }
+//    private fun captureStop(chain: Chain, possibleSteckerPartnersForCentralLetter : List<Char>) {
+//        stops.add(Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+//            chain.getContactToActivate()!!, possibleSteckerPartnersForCentralLetter))
+//    }
 
     // ******************************************************************************************************
     // Helper methods

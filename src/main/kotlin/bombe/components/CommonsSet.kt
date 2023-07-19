@@ -14,17 +14,21 @@ import java.lang.IllegalStateException
  * a letter with more links than just a single input and output.
  */
 
-// On an actual bombe, the set of Jacks attached to the same CommonsSet would all carry an identical
-// label which contains the ID of the CommonsSet
-fun externalLabel(id: Int) : String {
-    return "CO$id"
-}
+
 
 /**
  * - id: unique ID for this CommonsSet
  * - bombe: the bombe machine this CommonsSet belongs to
  */
 class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLabel(id), bombe){
+
+    companion object {
+        // On an actual bombe, the set of Jacks attached to the same CommonsSet would all carry an identical
+        // label which contains the ID of the CommonsSet
+        fun externalLabel(id: Int): String {
+            return "CO$id"
+        }
+    }
 
     // each Jack constructor registers the Jack with the component it is attached to,
     // so please do not remove these member initializers

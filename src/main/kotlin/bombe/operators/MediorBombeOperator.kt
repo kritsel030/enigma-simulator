@@ -21,13 +21,12 @@ import java.lang.IllegalStateException
 open class MediorBombeOperator() : JuniorBombeOperator() {
 
     fun executeRun(
-        centralLetter: Char,
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
         printCurrentPath: Boolean = false,
     ): List<Stop> {
         verifyPluggedUpBackSide()
-        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath, centralLetter)
+        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath)
     }
 
     /**
@@ -39,9 +38,9 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         val errors = mutableListOf<String>()
 
         // each Bank has an input-jack, when plugged up it should be connected - via a cable - to a CommonsSet or DiagonalBoard
-        getBombe().banks.values.forEach { bank ->
-            if (bank.inputJack.pluggedUpBy() != null) {
-                errors.addAll(bank.inputJack.verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
+        getBombe().chains.values.forEach { chain ->
+            if (chain.inputJack.pluggedUpBy() != null) {
+                errors.addAll(chain.inputJack.verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
             }
         }
 

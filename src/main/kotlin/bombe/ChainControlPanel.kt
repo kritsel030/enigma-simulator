@@ -1,6 +1,6 @@
 package bombe
 
-interface BankControlPanel {
+interface ChainControlPanel {
 
     fun switchOn()
     fun switchOff()

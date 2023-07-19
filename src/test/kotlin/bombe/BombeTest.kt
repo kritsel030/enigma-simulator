@@ -1,7 +1,6 @@
 package bombe
 
 import bombe.components.DrumType
-import shared.RotorType
 import org.junit.jupiter.api.Test
 import java.lang.IllegalStateException
 import kotlin.test.*
@@ -84,7 +83,7 @@ class BombeTest {
                 middleDrumSteps * bombe.alphabetSize +
                 fastDrumSteps
         for (i in 1 .. steps) {
-            bombe.rotateDrums()
+            bombe.stepDrums()
         }
         // check
         bombe.banks.values.forEach { bank ->
@@ -154,10 +153,10 @@ class BombeTest {
     }
 
     private fun assertNoCurrent(bombe: Bombe) {
-        // banks
-         bombe.banks.values.forEach { bank ->
+        // chains
+         bombe.chains.values.forEach { chain ->
             run{
-                assertEquals(0,bank.inputJack.readActiveContacts().size, "expect each bank's inputJack to have no active contacts")
+                assertEquals(0,chain.inputJack.readActiveContacts().size, "expect each chain's inputJack to have no active contacts")
             }
         }
 

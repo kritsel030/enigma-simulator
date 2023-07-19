@@ -36,9 +36,9 @@ abstract class Connector (val label:String, val attachedTo: CircuitComponent) {
     protected fun connectTo(otherConnector : Connector) {
         // both connectors need to be free
         if (this.connectedTo != null) {
-            throw IllegalStateException("Cannot plug ${this.label} to ${otherConnector.label} because ${this.label} is already plugged into ${this.connectedTo!!.label}")
+            throw IllegalStateException("Cannot plug ${this.attachedTo.label}.${this.label} to ${otherConnector.attachedTo.label}.${otherConnector.label} because ${this.attachedTo.label}.${this.label} is already plugged into ${this.connectedTo!!.attachedTo.label}.${this.connectedTo!!.label}")
         } else if (otherConnector.connectedTo != null) {
-            throw IllegalStateException("Cannot plug ${this.label} to ${otherConnector.label} because ${otherConnector.connectedTo!!.label} is already plugged into ${otherConnector.label}")
+            throw IllegalStateException("Cannot plug ${this.attachedTo.label}.${this.label} to ${otherConnector.attachedTo.label}.${otherConnector.label} because ${otherConnector.connectedTo!!.attachedTo.label}.${otherConnector.connectedTo!!.label} is already plugged into ${otherConnector.attachedTo.label}.${otherConnector.label}")
         }
         this.connectedTo = otherConnector
         otherConnector.connectedTo = this

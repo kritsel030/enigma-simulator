@@ -52,16 +52,16 @@ open class BasicScrambler private constructor (
     }
 
     fun checkRotors() {
-        check(rotorPositions == rotors.size) {"expected $rotorPositions to be present, but there are ${rotors.size}"}
+        check(rotorPositions == rotors.size) {"expected $rotorPositions rotors to be placed, but there are ${rotors.size}"}
     }
 
     // position is 1-based
     // getRotor(1) returns the left-most rotor
-    fun getRotor(position: Int) : AbstractRotor {
+    fun getRotor(position: Int) : AbstractRotor? {
         // first check if we're ready to go
-        checkRotors()
+        //checkRotors()
 
-        return rotors[position-1]
+        return rotors.getOrNull(position-1)
     }
 
     fun encrypt(inputContactId: Int, recorders:MutableList<StepRecorder>?=null) :Int {

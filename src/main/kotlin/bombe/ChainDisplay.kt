@@ -1,6 +1,6 @@
 package bombe
 
-interface BankDisplay {
+interface ChainDisplay {
 
     fun readTestRegister() : Map<Char, Boolean>
 }

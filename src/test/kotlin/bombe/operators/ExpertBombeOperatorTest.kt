@@ -3,7 +3,6 @@ package bombe.operators
 import bombe.BombeRunInstructions
 import bombe.components.DrumType
 import enigma.components.ReflectorType
-import shared.RotorType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -42,7 +41,7 @@ class ExpertBombeOperatorTest {
             listOf(listOf(DrumType.II, DrumType.V, DrumType.III)),
             ReflectorType.B
         )
-        val operator = AutomatedBombeOperator()
+        val operator = ExpertBombeOperator()
         val stops = operator.executeRun(instructions)
 
         assertTrue(stops.size > 1)
