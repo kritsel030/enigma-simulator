@@ -1,6 +1,5 @@
 package bombe.operators
 
-import bombe.components.Bank
 import bombe.Stop
 import bombe.components.*
 import java.lang.IllegalStateException
@@ -20,6 +19,10 @@ import java.lang.IllegalStateException
  */
 open class MediorBombeOperator() : JuniorBombeOperator() {
 
+
+    // ************************************************************************************************
+    // Bombe run features
+
     fun executeRun(
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
@@ -38,16 +41,16 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         val errors = mutableListOf<String>()
 
         // each Bank has an input-jack, when plugged up it should be connected - via a cable - to a CommonsSet or DiagonalBoard
-        getBombe().chains.values.forEach { chain ->
-            if (chain.inputJack.pluggedUpBy() != null) {
-                errors.addAll(chain.inputJack.verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
+        getBombeInterface().getChainJackPanels().forEach { panel ->
+            if (panel.getInputJack().pluggedUpBy() != null) {
+                errors.addAll(panel.getInputJack().verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
             }
         }
 
         // each diagonal board jack which is plugged up should be connected - via a cable - to a bridge, commonsSet, scrambler or bank
         // (connected to a bank is only the case when the 'central letter' does not appear in the menu)
-        getBombe().diagonalBoards.values.forEach {
-            it.jacks.values.forEach { jack ->
+        getBombeInterface().getDiagonalBoardJackPanels().forEach {
+            it.getJacks().forEach { jack ->
                 run {
                     if (jack.pluggedUpBy() != null) {
                         errors.addAll(
@@ -56,7 +59,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
                                     CommonsSet::class.java.simpleName,
                                     Bridge::class.java.simpleName,
                                     Scrambler::class.java.simpleName,
-                                    Bank::class.java.simpleName
+                                    Chain::class.java.simpleName
                                 )
                             )
                         )
@@ -68,7 +71,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         // all bridges
         // - should have both plugs connected
         // - should be (via their jack) connected - via a cable - to a diagonal board or a commonsSet
-        getBombe().bridges.forEach { bridge ->
+        getBombeInterface().getBridges().forEach { bridge ->
             run {
                 if (bridge.inPlug.pluggedInto() == null) {
                     errors.add("${bridge.label}.${bridge.inPlug.label} is not plugged in")
@@ -89,14 +92,12 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         }
 
         // all scramblers should have none or both jacks plugged up
-        getBombe().banks.values.forEach {
-            it.getScramblers().forEach { scrambler ->
-                run {
-                    if (!((scrambler.inputJack.pluggedUpBy() == null && scrambler.outputJack.pluggedUpBy() == null) ||
-                                (scrambler.inputJack.pluggedUpBy() != null && scrambler.outputJack.pluggedUpBy() != null))
-                    ) {
-                        errors.add("${scrambler.label} has only 1 jack plugged in, expected none or both")
-                    }
+        getBombeInterface().getScramblerJackPanels().forEach {
+            run {
+                if (!((it.getInputJack().pluggedUpBy() == null && it.getOutputJack().pluggedUpBy() == null) ||
+                            (it.getInputJack().pluggedUpBy() != null && it.getOutputJack().pluggedUpBy() != null))
+                ) {
+                    errors.add("${it.getExternalLabel()} has only 1 jack plugged in, expected none or both")
                 }
             }
         }
@@ -104,9 +105,8 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         // for each CommonsSet the following should be true
         // - either 0 or at least jacks are plugged up
         // - of the set of plugged op jacks, exactly 1 is connected to a DiagonalBoardJack
-        errors.addAll(getBombe().commonsSetsColumns.values.map { list ->
-            list.map { cs -> cs.verifyConnections() }.toList().flatten()
-        }.toList().flatten())
+        errors.addAll(getBombe().getCommonsSets().map {
+            it.verifyConnections() }.toList().flatten())
 
         if (errors.size > 0) {
             throw IllegalStateException("errors found in plugging up of bombe back-side: ${errors.joinToString(", ")}")

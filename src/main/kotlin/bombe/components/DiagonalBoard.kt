@@ -6,13 +6,16 @@ import bombe.connectors.DiagonalBoardJack
 import bombe.connectors.Jack
 import bombe.recorder.CurrentPathElement
 
-class DiagonalBoard(id: Int, bombe: Bombe) : CircuitComponent ("DB-$id", bombe){
+class DiagonalBoard(id: Int, bombe: Bombe) : CircuitComponent ("DB-$id", bombe), DiagonalBoardJackPanel{
 
-    val jacks = mutableMapOf<Char, DiagonalBoardJack>()
+    val _jacks = mutableMapOf<Char, DiagonalBoardJack>()
+    override fun getJacks() : List<Jack> {
+        return _jacks.values.toList()
+    }
     init {
         for (i in 0 .. bombe.alphabetSize) {
             var letter = 'A'.plus(i)
-            jacks.put(letter, DiagonalBoardJack(letter, this))
+            _jacks.put(letter, DiagonalBoardJack(letter, this))
         }
     }
     override fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement?) {
@@ -25,7 +28,7 @@ class DiagonalBoard(id: Int, bombe: Bombe) : CircuitComponent ("DB-$id", bombe){
         outputJack.passCurrentOutbound(activatedVia.label.first(), newPathElement)
     }
 
-    fun getJack(letter: Char) : Jack {
-        return jacks.get(letter)!!
+    override fun getJack(letter: Char) : Jack {
+        return _jacks.get(letter)!!
     }
 }

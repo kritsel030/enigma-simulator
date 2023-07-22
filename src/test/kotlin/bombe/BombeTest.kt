@@ -1,6 +1,7 @@
 package bombe
 
 import bombe.components.DrumType
+import enigma.components.ReflectorType
 import org.junit.jupiter.api.Test
 import java.lang.IllegalStateException
 import kotlin.test.*
@@ -13,64 +14,37 @@ class BombeTest {
         val noOfBanks = 5
         val noOfScramblersPerBank = 7
         val noOfRotorsPerScrambler = 3
-        val bombe = Bombe(alphabetSize, noOfBanks, noOfScramblersPerBank, noOfRotorsPerScrambler)
+        val noOfCommonsSetsPerBank = 5
+        val reflectorType = ReflectorType.B
+        val bombe = Bombe(alphabetSize, noOfBanks, noOfScramblersPerBank, noOfRotorsPerScrambler, noOfCommonsSetsPerBank, reflectorType)
 
         assertResetResult(bombe)
         assertNoCurrent(bombe)
     }
 
     @Test
-    fun claimAvailableCommonsSet_ok() {
-        val bombe = Bombe(3, 1, 1, 3)
-        val commonsSet = bombe.claimAvailableCommonsSet(1, 'X')
-        assertNotNull(commonsSet)
-    }
-
-    @Test
-    fun claimAvailableCommonsSet_identical() {
-        val bombe = Bombe(3, 1, 1, 3)
-        bombe.claimAvailableCommonsSet(1, 'X')
-        // not allowed to have 2 or more CommonsSets in the same column for the same letter
-        // (this is not a feature of an actual bombe machine, it is a limitation of this specific bombe implementation)
-        assertFailsWith<IllegalStateException> { bombe.claimAvailableCommonsSet(1, 'X') }
-    }
-
-    @Test
-    fun claimAvailableCommonsSet_tooMany() {
-        val bombe = Bombe(3, 1,1, 3 )
-        val noOfCommonsSetsInColumn = bombe.commonsSetsColumns[1]!!.size
-        val letter = 'A'
-        for (i in 1 .. noOfCommonsSetsInColumn) {
-            // this should be safe
-            bombe.claimAvailableCommonsSet(1, letter.plus(i))
-        }
-        // but the next one should fail
-        assertFailsWith<IllegalStateException> { bombe.claimAvailableCommonsSet(1, 'Z') }
-    }
-
-    @Test
     fun createCable() {
-        val bombe = Bombe(3, 1, 1, 3)
+        val bombe = Bombe(3, 1, 1, 3, 1, ReflectorType.B)
         val cable = bombe.createCable()
         assertNotNull(cable)
-        assertEquals(1, bombe.cables.size)
+        assertEquals(1, bombe.getCables().size)
     }
 
     @Test
     fun createBridge() {
-        val bombe = Bombe(3, 1, 1, 3)
+        val bombe = Bombe(3, 1, 1, 3, 1, ReflectorType.B)
         val bridge = bombe.createBridge()
         assertNotNull(bridge)
-        assertEquals(1, bombe.bridges.size)
+        assertEquals(1, bombe.getBridges().size)
     }
 
     @Test
     fun rotateDrums() {
         // prepare a bombe with scramblers
-        val bombe = Bombe(26, 1, 1, 3)
-        bombe.banks.values.forEach { bank ->
+        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        bombe.getScramblers().forEach {
             run {
-                bank.placeDrums(listOf(DrumType.V, DrumType.I, DrumType.III))
+                it.placeDrums(listOf(DrumType.V, DrumType.I, DrumType.III))
             }
         }
 
@@ -86,62 +60,46 @@ class BombeTest {
             bombe.stepDrums()
         }
         // check
-        bombe.banks.values.forEach { bank ->
+        bombe.getScramblers().forEach { it ->
             run {
-                bank.getScramblers().forEach { scrambler ->
-                    run {
-                        // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
-                        assertEquals(fastDrumSteps, scrambler.internalScrambler!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
-                        assertEquals(middleDrumSteps, scrambler.internalScrambler!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
-                        assertEquals(slowDrumSteps, scrambler.internalScrambler!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
-                    }
-                }
+                // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
+                assertEquals(fastDrumSteps, it.internalScrambler!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
+                assertEquals(middleDrumSteps, it.internalScrambler!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
+                assertEquals(slowDrumSteps, it.internalScrambler!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
             }
         }
     }
 
     private fun assertResetResult(bombe: Bombe) {
-        // banks
-        val actualNoOfBanks = bombe.banks.size
-        assertEquals(bombe.noOfBanks, actualNoOfBanks, "expected $bombe.noOfBanks banks, got $actualNoOfBanks")
-
         // scramblers
-        val actualNoOfScramblersPerBank = bombe.banks.values.first().getScramblers().size
-        assertEquals(bombe.noOfScramblersPerBank, actualNoOfScramblersPerBank, "expected $bombe.noOfScramblersPerBank scramblers per bank, got $actualNoOfScramblersPerBank")
-        bombe.banks.values.forEach { bank ->
-            run{
-                bank.getScramblers().forEach { scrambler ->
-                    run {
-                        assertNotNull(scrambler.internalScrambler,"expect an internal scrambler - without rotors - to be present")
-                        assertEquals(bombe.noOfRotorsPerScrambler, scrambler.internalScrambler.rotorPositions)
-                    }
-                }
+        assertEquals(bombe.noOfBanks * bombe.noOfScramblersPerBank, bombe.getScramblers().size, "number of scramblers in the bombe")
+
+        bombe.getScramblers().forEach { scrambler ->
+            run {
+                assertNotNull(scrambler.internalScrambler,"expect an internal scrambler - without rotors - to be present")
+                assertEquals(bombe.noOfRotorsPerScrambler, scrambler.internalScrambler.rotorPositions)
             }
         }
 
+        // commons sets
+        assertEquals(bombe.noOfBanks * bombe.noOfCommonsSetsPerBank, bombe.getCommonsSets().size, "number of commonsSets in the bombe")
+
         // diagonal boards
-        val actualNoOfDiagonalBoards = bombe.diagonalBoards.size
+        val actualNoOfDiagonalBoards = bombe.getDiagonalBoardJackPanels().size
         assertEquals(bombe.noOfBanks, actualNoOfDiagonalBoards,  "expected $bombe.noOfBanks diagonal boards, got $actualNoOfDiagonalBoards")
 
         // commons columns
-        val actualNoOfCommonsColumns = bombe.commonsSetsColumns.size
-        assertEquals(bombe.noOfBanks, actualNoOfCommonsColumns,  "expected $bombe.noOfBanks commons columns, got $actualNoOfCommonsColumns")
-        bombe.commonsSetsColumns.values.forEach{ commonsColumn ->
-            run {
-                assertTrue(commonsColumn.size > 1, "expected several CommonsSets in every commons column")
-                commonsColumn.forEach { commonsSet ->
-                    run{
-                        assertTrue(commonsSet.jacks().size > 2, "expected several jacks for each CommonsSet")
-                    }
-                }
+        bombe.getCommonsSets().forEach { commonsSet ->
+            run{
+                assertTrue(commonsSet.jacks().size > 2, "expected several jacks for each CommonsSet")
             }
         }
 
         // bridges
-        assertEquals(0, bombe.bridges.size, "expected an empty list of bridges")
+        assertEquals(0, bombe.getBridges().size, "expected an empty list of bridges")
 
         // cables
-        assertEquals(0, bombe.cables.size, "expected an empty list of cables")
+        assertEquals(0, bombe.getCables().size, "expected an empty list of cables")
 
         // indicator drums
         bombe.indicatorDrums.forEach { drum ->
@@ -154,47 +112,41 @@ class BombeTest {
 
     private fun assertNoCurrent(bombe: Bombe) {
         // chains
-         bombe.chains.values.forEach { chain ->
+         bombe.getChainJackPanels().forEach { chain ->
             run{
-                assertEquals(0,chain.inputJack.readActiveContacts().size, "expect each chain's inputJack to have no active contacts")
+                assertEquals(0,chain.getInputJack().readActiveContacts().size, "expect each chain's inputJack to have no active contacts")
             }
         }
 
         // scramblers
-        bombe.banks.values.forEach { bank ->
-            run{
-                bank.getScramblers().forEach { scrambler ->
-                    run {
-                        assertEquals(0,scrambler.inputJack.readActiveContacts().size, "expect each scrambler's inputJack to have no active contacts")
-                        assertEquals(0,scrambler.outputJack.readActiveContacts().size, "expect each bank's inputJack to have no active contacts")
-                    }
-                }
+        bombe.getScramblers().forEach { scrambler ->
+            run {
+                assertEquals(0,scrambler._inputJack.readActiveContacts().size, "expect each scrambler's inputJack to have no active contacts")
+                assertEquals(0,scrambler._outputJack.readActiveContacts().size, "expect each bank's inputJack to have no active contacts")
             }
         }
 
         // diagonal boards
-        bombe.diagonalBoards.values.forEach { db ->
+        bombe.getDiagonalBoardJackPanels().forEach { db ->
             run{
-                db.connectors.forEach { connector ->
+                db.getJacks().forEach { connector ->
                     run {
                         assertEquals(0,connector.readActiveContacts().size, "expect all diagonal board's jacks to have no active contacts")
                     }
                 }
             }
         }
+
         // commons columns
-        bombe.commonsSetsColumns.values.forEach{ commonsColumn ->
-            run {
-                commonsColumn.forEach { commonsSet ->
-                    run{
-                        commonsSet.connectors.forEach { connector ->
-                            run {
-                                assertEquals(0,connector.readActiveContacts().size, "expect all commonsSets' jacks to have no active contacts")
-                            }
-                        }
+        bombe.getCommonsSets().forEach { commonsSet ->
+            run{
+                commonsSet.connectors.forEach { connector ->
+                    run {
+                        assertEquals(0,connector.readActiveContacts().size, "expect all commonsSets' jacks to have no active contacts")
                     }
                 }
             }
+
         }
     }
 }

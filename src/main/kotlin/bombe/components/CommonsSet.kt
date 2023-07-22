@@ -45,24 +45,12 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
     // ******************************************************************************************************
     // Features needed to plug up a bombe based on a menu
 
-    // When setting up a bombe based on a menu, we need a way of requesting an available
-    // (= not yet claimed) CommonsSet from the total set of CommonsSet instances available
-    // on a bombe. These fields and methods support this feature.
-    // As a CommonsSet is always used to represent a certain letter in the menu,
-    // we also register that letter for debugging/informational purposes.
-    var claimedForLetter : Char? = null
-    fun isAvailable() : Boolean {
-        return claimedForLetter == null
-    }
-    fun claimFor(letter:Char) {
-        claimedForLetter = letter
-    }
 
     // When setting up a bombe based on a menu, we need a way of requesting an available (=unplugged) Jack
     // of a particular CommonsSet
     fun getAvailableJack() : Jack {
         try {
-            return jacks().filter { it.pluggedUpBy() == null }.first() as Jack
+            return jacks().filter { it.pluggedUpBy() == null }.first()
         } catch (ex:NoSuchElementException) {
             throw IllegalStateException("[CommonsSet ${label}] Trying to use more than 5 Jacks from this CommonsSet.")
         }

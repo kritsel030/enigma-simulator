@@ -25,7 +25,7 @@ class DiagonalBoardTest {
         val inputJack = db.getJack(inputJackLetter)
         inputJack.passCurrentInbound(inputContactId)
 
-        db.jacks.forEach { letter, jack ->
+        db._jacks.forEach { letter, jack ->
             // when contact X is activated in jack B,
             // the result should be that contact B gets activated in jack X
             // all other contacts besides these two should be inactive

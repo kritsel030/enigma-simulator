@@ -8,11 +8,15 @@ import bombe.connectors.Jack
 import bombe.recorder.CurrentPathElement
 
 class Chain (val id: Int, bombe: Bombe)
-    : CircuitComponent("Chain-$id", bombe), ChainControlPanel, ChainDisplay {
+    : CircuitComponent("Chain-$id", bombe), ChainJackPanel, ChainControlPanel, ChainDisplay {
 
     // create a Jack for the chain which will be present at the back of the bombe
     // (on a real bombe these Jacks are named CH1, CH2 and CH3, one for each Bank)
-    val inputJack = Jack("CH$id", "input-CH$id", this)
+    val _inputJack = Jack("CH$id", "input-CH$id", this)
+
+    override fun getInputJack() : Jack {
+        return _inputJack
+    }
 
     // ***********************************************************************************************************
     // control panel support
@@ -41,7 +45,7 @@ class Chain (val id: Int, bombe: Bombe)
     // BankDisplay support
 
     // by default the bank's test register is connected to the bank's input Jack
-    var testRegisterConnectedTo : Connector = inputJack
+    var testRegisterConnectedTo : Connector = _inputJack
 
     // The test register can be connected to another connector to demonstrate
     //  single line scanning as was the case in the first bombe prototype (Victory))
@@ -51,14 +55,14 @@ class Chain (val id: Int, bombe: Bombe)
 
     // Return the currently active contacts in the test register
     override fun readTestRegister() : Map<Char, Boolean> {
-        return inputJack.readContacts()
+        return _inputJack.readContacts()
     }
 
     // ***********************************************************************************************************
     // Features to support the running of a bombe
     fun run(previousPathElement: CurrentPathElement) {
         if (on) {
-            inputJack.passCurrentOutbound(this.contactToActivate!!, previousPathElement)
+            _inputJack.passCurrentOutbound(this.contactToActivate!!, previousPathElement)
         }
     }
     override fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement?) {

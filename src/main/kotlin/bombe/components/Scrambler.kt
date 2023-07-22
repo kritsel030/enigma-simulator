@@ -1,5 +1,6 @@
 package bombe.components
 
+import bombe.Bombe
 import bombe.MenuLink
 import bombe.connectors.*
 import bombe.recorder.CurrentPathElement
@@ -7,11 +8,24 @@ import enigma.components.*
 import shared.Util
 import shared.BasicScrambler
 
-class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) : CircuitComponent("Scrambler-${bank.id}.$id", bank.bombe){
+class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflector?, bombe: Bombe) :
+    CircuitComponent("Scrambler-$id", bombe), ScramblerJackPanel {
 
-    val inputJack = Jack("IN$id", "IN$id", this)
-    val outputJack = Jack("OUT$id", "OUT$id", this)
-    val internalScrambler: BasicScrambler = BasicScrambler(noOfRotorsPerScrambler, Reflector(ReflectorType.B))
+    val _inputJack = Jack("IN$id", "IN$id", this)
+    val _outputJack = Jack("OUT$id", "OUT$id", this)
+
+    override fun getExternalLabel() : String {
+        return id.toString()
+    }
+
+    override fun getInputJack() : Jack {
+        return _inputJack
+    }
+    override fun getOutputJack() : Jack {
+        return _outputJack
+    }
+
+    val internalScrambler: BasicScrambler = BasicScrambler(id.toString(), noOfRotorsPerScrambler, reflector)
 
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
@@ -26,7 +40,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
     }
 
     fun setRelativePosition(steps:Int) {
-        internalScrambler.checkRotors()
+        internalScrambler.checkRotorsAndReflector()
         for (p in 1..steps) {
             // step the drum representing the right-rotor in the enigma
             internalScrambler.rightRotor!!.advanceRingOrientation()
@@ -37,11 +51,17 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
      * startOrientations: String where each character specifies the start orientation of a rotor in this scrambler
      */
     fun setDrumStartOrientations(startOrientations:String) {
-        internalScrambler.checkRotors()
+        internalScrambler.checkRotorsAndReflector()
         check(internalScrambler.rotors.size == startOrientations.length) {"this scrambler has ${internalScrambler.rotors.size} scramblers, got ${startOrientations.length} rotor start positions"}
         for ( (index, startPos) in startOrientations.withIndex() ) {
             internalScrambler.getRotor(index+1)!!.rotateToRingOrientation(startPos)
         }
+    }
+
+    // ******************************************************************************************************
+    // Features needed to support changing/removing/placing of reflector boards on the left side of the bombe
+    fun setReflector(reflector: Reflector?) {
+        internalScrambler.reflector = reflector
     }
 
     // ******************************************************************************************************
@@ -57,8 +77,8 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
     // - scrambler.in/outputJack --bridge--> commonsSet --cable--> diagonalBoard
     fun checkConnections(menuLink: MenuLink) : MutableList<String> {
         val errors = mutableListOf<String>()
-        errors.addAll(checkJackConnections(inputJack, menuLink.inputLetter))
-        errors.addAll(checkJackConnections(outputJack, menuLink.outputLetter))
+        errors.addAll(checkJackConnections(_inputJack, menuLink.inputLetter))
+        errors.addAll(checkJackConnections(_outputJack, menuLink.outputLetter))
         return errors
     }
     fun checkJackConnections(scramblerJack: Jack, representsLetter: Char) : MutableList<String>{
@@ -103,15 +123,14 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
         return null
     }
 
-    fun checkRotors() {
-        internalScrambler.checkRotors()
-    }
-
 
     // ******************************************************************************************************
     // Features needed to execute a bombe run
 
     override fun passCurrent(contact: Char, activatedVia : Connector, previousPathElement: CurrentPathElement?) {
+        // check to see if the reflector and rotors are set-up on the internal scrambler
+        internalScrambler.checkRotorsAndReflector()
+
         // println("pass current from ${activatedVia.connectedTo?.component?.label}-${activatedVia.connectedTo?.label} to ${this.label} at contact $contact")
         val resultContact = scramble(contact)
         var newPathElement : CurrentPathElement? = null
@@ -119,10 +138,10 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, val bank: Bank) :
             newPathElement = CurrentPathElement(label, javaClass.simpleName, contact, resultContact, previousPathElement, previousPathElement.root)
             previousPathElement.addNext(newPathElement)
         }
-        if (activatedVia == inputJack) {
-            outputJack.passCurrentOutbound(resultContact, newPathElement)
+        if (activatedVia == _inputJack) {
+            _outputJack.passCurrentOutbound(resultContact, newPathElement)
         } else {
-            inputJack.passCurrentOutbound(resultContact, newPathElement)
+            _inputJack.passCurrentOutbound(resultContact, newPathElement)
         }
     }
 

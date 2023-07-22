@@ -1,6 +1,7 @@
 package bombe.operators
 
 import bombe.Bombe
+import bombe.BombeInterface
 import bombe.components.*
 import bombe.connectors.Jack
 
@@ -19,7 +20,11 @@ import bombe.connectors.Jack
 open class JuniorBombeOperator() {
 
     var _bombe: Bombe? = null
-    fun getBombe(): Bombe {
+    fun getBombeInterface(): BombeInterface {
+        return getBombe()
+    }
+
+    protected fun getBombe(): Bombe {
         require(_bombe != null) { "Bombe has not been initialized" }
         return _bombe!!
     }
@@ -28,6 +33,8 @@ open class JuniorBombeOperator() {
         _bombe = bombe
     }
 
+    // *************************************************************************************************
+    // Bombe back side set-up features
 
     fun attachBridgeTo(
         firstScramblerOutputJack: Jack,
@@ -49,6 +56,29 @@ open class JuniorBombeOperator() {
         return cable
     }
 
+    // Pair<Int, Char> : Pair of a group ID of commonsSets and a menu letter the commons set represents
+    // When setting up a bombe to run the same menu for various rotor configurations, each configuration
+    // will use its own group of commonsSets. In such a group, each commonsSet is used for a particular
+    // letter in the menu.
+    val commonsSetRegister = mutableMapOf<Pair<Int, Char>, CommonsSet>()
+
+    fun findFreeCommonsSet() : CommonsSet{
+        val freeCommonsSet = getBombe().getCommonsSets().filter {
+            // free commonsSet:
+            // - no jack is plugged up
+            // - it hasn't already been claimed/registered
+            it.jacks().filter { jack -> jack.pluggedUpBy() != null}.isEmpty() && !commonsSetRegister.values.contains(it)
+        }.firstOrNull()
+        check(freeCommonsSet != null) {"no more free commonsSet available"}
+        return freeCommonsSet
+    }
+
+    // *************************************************************************************************
+    // Bombe front side set-up features
+    fun placeDrums(scramblerId: Int, drumTypes: List<DrumType>) {
+        getBombe().getScrambler(scramblerId)!!.placeDrums(drumTypes)
+    }
+
     /**
      * Scrambler <scramblerId> of bank <bankId> has a number of drums.
      * Those drums should be set to the specified startOrientations.
@@ -56,12 +86,8 @@ open class JuniorBombeOperator() {
      * Example: startOrientations DXF means that the top drum will be rotated
      *    to start orientation 'D', the middle drum to 'X' and the lower drum to 'F'
      */
-    fun setStartRingOrientations(bankId: Int, scramblerId: Int, startOrientations: String) {
-        getBombe().getBank(bankId).getScrambler(scramblerId).setDrumStartOrientations(startOrientations)
-    }
-
-    fun placeDrums(bankId: Int, scramblerId: Int, drumTypes: List<DrumType>) {
-        getBombe().getBank(bankId).getScrambler(scramblerId).placeDrums(drumTypes)
+    fun setStartRingOrientations(scramblerId: Int, startOrientations: String) {
+        getBombe().getScrambler(scramblerId)!!.setDrumStartOrientations(startOrientations)
     }
 
 //    fun setUpMenu_example1 (){

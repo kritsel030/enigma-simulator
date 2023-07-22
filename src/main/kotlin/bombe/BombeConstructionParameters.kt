@@ -1,5 +1,6 @@
 package bombe
 
+import enigma.components.ReflectorType
 import java.lang.IllegalStateException
 
 class BombeConstructionParameters(
@@ -17,12 +18,14 @@ class BombeConstructionParameters(
     val noOfScramblersPerBank : Int,
 
     // usually 3, but can also be 4
-    val noOfRotorsPerScrambler : Int
+    val noOfRotorsPerScrambler : Int,
+
+    val noOfCommonsSetsPerBank: Int
 ) {
     companion object {
         fun getBombeConstructionParameters(bombeTemplate: BombeTemplate) : BombeConstructionParameters {
             when(bombeTemplate) {
-                BombeTemplate.ATLANTA -> return BombeConstructionParameters(26, 3, 12, 3)
+                BombeTemplate.ATLANTA -> return BombeConstructionParameters(26, 3, 12, 3, 4)
                 BombeTemplate.MAGIC -> throw IllegalStateException("BombeTemplate.MAGIC means that the bombe construction parameters are based on the instructions and cannot be hardcoded")
             }
         }

@@ -2,13 +2,16 @@ package bombe
 
 import bombe.components.*
 import bombe.recorder.CurrentPathElement
+import enigma.components.ReflectorType
 import java.lang.IllegalStateException
 import kotlin.math.pow
 
 // TODO: make this dynamic?
 const val COMMONSSETS_PER_COLUMN = 8
 
-class Bombe(
+val DEFAULT_REFLECTOR_TYPE = ReflectorType.B
+
+class Bombe (
     // physical construction parameters
 
     // the german enigma supported an alphabet consisting of 26 letters,
@@ -24,21 +27,26 @@ class Bombe(
     val noOfScramblersPerBank : Int,
 
     // we can support both 3 and 4 rotor scramblers
-    val noOfRotorsPerScrambler: Int
-) : BombeControlPanel {
-    constructor(params: BombeConstructionParameters) : this(params.alphabetSize, params.noOfBanks, params.noOfScramblersPerBank, params.noOfRotorsPerScrambler)
-    constructor() : this(BombeConstructionParameters.getBombeConstructionParameters(BombeTemplate.ATLANTA))
+    val noOfRotorsPerScrambler: Int,
+
+    val noOfCommonsSetsPerBank: Int,
+
+    val initialReflectorType: ReflectorType
+) : BombeControlPanel, BombeInterface {
+    constructor(params: BombeConstructionParameters, reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(params.alphabetSize, params.noOfBanks, params.noOfScramblersPerBank, params.noOfRotorsPerScrambler, params.noOfCommonsSetsPerBank, reflectorType)
+    constructor(reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(BombeConstructionParameters.getBombeConstructionParameters(BombeTemplate.ATLANTA), reflectorType)
 
     // ******************************************************************************************************
     // Features needed to represent and access the components of a bombe
     // Including initialization/reset
 
-    var chains = mutableMapOf<Int, Chain>()
-    var banks = mutableMapOf<Int, Bank>()
-    var diagonalBoards = mutableMapOf<Int, DiagonalBoard>()
-    var commonsSetsColumns = mutableMapOf<Int, MutableList<CommonsSet>>()
-    var cables = mutableListOf<Cable>()
-    var bridges = mutableListOf<Bridge>()
+    private var chains = mutableMapOf<Int, Chain>()
+    private var scramblers = mutableMapOf<Int, Scrambler>()
+    private var reflectorBoardBays = mutableMapOf<Int, ReflectorBoardBay>()
+    private var diagonalBoards = mutableMapOf<Int, DiagonalBoard>()
+    private var _commonsSets = mutableMapOf<Int, CommonsSet>()
+    private var _cables = mutableListOf<Cable>()
+    private var _bridges = mutableListOf<Bridge>()
     var indicatorDrums = mutableListOf<IndicatorDrum>()
     init {
         reset()
@@ -49,9 +57,19 @@ class Bombe(
             chains.put(b, Chain(b, this))
         }
 
-        banks = mutableMapOf<Int, Bank>()
+        scramblers = mutableMapOf()
         for (b in 1..noOfBanks) {
-            banks.put(b, Bank(b, noOfScramblersPerBank, noOfRotorsPerScrambler, this))
+            for (s in 1..noOfScramblersPerBank) {
+                val scramblerId = ((b-1) * noOfScramblersPerBank) + s
+                scramblers.put(scramblerId, Scrambler(scramblerId, noOfRotorsPerScrambler, null, this))
+            }
+        }
+
+        reflectorBoardBays = mutableMapOf()
+        for (b in 1..noOfBanks) {
+            val reflectorBoardBay = ReflectorBoardBay(b, this)
+            reflectorBoardBay.placeReflectorBoard(ReflectorBoard(initialReflectorType))
+            reflectorBoardBays.put(b, reflectorBoardBay)
         }
 
         diagonalBoards = mutableMapOf<Int,DiagonalBoard>()
@@ -63,14 +81,22 @@ class Bombe(
         // (note that a columns of CommonsSets is not physically connected to a bank,
         // it is just a way of organizing the Jacks of the CommonsSets on the back panel
         // of an actual bombe machine)
-        commonsSetsColumns = mutableMapOf<Int,MutableList<CommonsSet>>()
-        val claimedCommonsSets = mutableMapOf<Pair<Int, Char>, CommonsSet>()
+//        commonsSetsColumns = mutableMapOf<Int,MutableList<CommonsSet>>()
+//        val claimedCommonsSets = mutableMapOf<Pair<Int, Char>, CommonsSet>()
+//        for (b in 1..noOfBanks) {
+//            val commonsSetList = mutableListOf<CommonsSet>()
+//            commonsSetsColumns.put(b, commonsSetList)
+//            for (c in 1 .. COMMONSSETS_PER_COLUMN) {
+//                // assign each CommonsSet a unique id, starting with 1
+//                commonsSetList.add(CommonsSet(commonsSetsColumns.map { it.value.size }.sum() + 1, this))
+//            }
+//        }
+
+        _commonsSets = mutableMapOf()
         for (b in 1..noOfBanks) {
-            val commonsSetList = mutableListOf<CommonsSet>()
-            commonsSetsColumns.put(b, commonsSetList)
-            for (c in 1 .. COMMONSSETS_PER_COLUMN) {
-                // assign each CommonsSet a unique id, starting with 1
-                commonsSetList.add(CommonsSet(commonsSetsColumns.map { it.value.size }.sum() + 1, this))
+            for (cs in 1..noOfCommonsSetsPerBank) {
+                val id = ((b-1) * noOfCommonsSetsPerBank) + cs
+                _commonsSets.put(id, CommonsSet(id, this))
             }
         }
 
@@ -79,8 +105,8 @@ class Bombe(
         // which are pre-created and subsequently claimed when needed).
         // Because of this, resetting is as simple as 'throwing away' any previous set of cables/bridges
         // which were created in the previous run by re-initializing with an empty list.
-        cables = mutableListOf<Cable>()
-        bridges = mutableListOf<Bridge>()
+        _cables = mutableListOf<Cable>()
+        _bridges = mutableListOf<Bridge>()
 
         indicatorDrums = mutableListOf<IndicatorDrum>()
         for (i in 1..3) {
@@ -90,20 +116,89 @@ class Bombe(
         drumRotations = 0
     }
 
-    fun getChain(id:Int) : Chain {
-        return chains.get(id)!!
+    override fun getBombeControlpanel(): BombeControlPanel? {
+        return this
     }
 
-    fun getBank(id:Int) : Bank {
-        return banks.get(id)!!
+    override fun getChainControlPanel(id:Int) : ChainControlPanel? {
+        return chains.get(id)
     }
 
-    fun getDiagonalBoard(id:Int) : DiagonalBoard {
-        return diagonalBoards.get(id)!!
+    override fun getChainJackPanel(id:Int) : ChainJackPanel? {
+        return chains.get(id)
+    }
+
+    override fun getChainJackPanels() : List<ChainJackPanel> {
+        return chains.values.toList()
+    }
+
+    override fun getChainDisplay(id:Int) : ChainDisplay? {
+        return chains.get(id)
+    }
+
+    fun getScrambler(id: Int): Scrambler? {
+        return scramblers.get(id)
+    }
+
+    fun getScramblers() : List<Scrambler> {
+        return scramblers.values.toList()
+    }
+
+    // both bankId and scramblerIndexId are 1-based
+    // scramblerIndexId is the sequence number of a scrambler *within a scrambler*
+    fun getScrambler(bankId: Int, scramblerIndexId: Int): Scrambler? {
+        return scramblers.get( ((bankId-1) * noOfScramblersPerBank) + scramblerIndexId)
+    }
+
+    override fun getScramblerJackPanel(id: Int): ScramblerJackPanel? {
+        return scramblers.get(id)
+    }
+
+    override fun getScramblerJackPanel(bankId: Int, scramblerIndexId: Int): ScramblerJackPanel? {
+        return getScrambler(bankId, scramblerIndexId)
+    }
+
+    override fun getScramblerJackPanels(): List<ScramblerJackPanel> {
+        return scramblers.values.toList()
+    }
+
+    override fun getReflectorBoardBay(id:Int) : ReflectorBoardBay? {
+        return reflectorBoardBays.get(id)
+    }
+
+    override fun getDiagonalBoardJackPanel(id:Int) : DiagonalBoardJackPanel? {
+        return diagonalBoards.get(id)
+    }
+
+    override fun getDiagonalBoardJackPanels() : List<DiagonalBoardJackPanel> {
+        return diagonalBoards.values.toList()
+    }
+
+    override fun getCables(): List<Cable> {
+        return _cables
+    }
+
+    override fun getBridges(): List<Bridge> {
+        return _bridges
+    }
+
+
+    fun getCommonsSet(id: Int): CommonsSet? {
+        return _commonsSets.get(id)
+    }
+
+    fun getCommonsSets() : List<CommonsSet> {
+        return _commonsSets.values.toList()
+    }
+
+    // both columnId and commonsSetIndexInColumn are 1-based
+    // commonsSetIndexInColumn is the sequence number of a scrambler *within a scrambler*
+    fun getCommonsSet(columnId: Int, commonsSetIndexInColumn: Int): CommonsSet? {
+        return _commonsSets.get( ((columnId-1) * noOfCommonsSetsPerBank) + commonsSetIndexInColumn)
     }
 
     // ***********************************************************************************************************
-    // Bombe ontrol panel support
+    // Bombe control panel support
 
     private var doubleInputOn: Boolean = false
 
@@ -120,39 +215,15 @@ class Bombe(
     // ******************************************************************************************************
     // Features needed to support setting up a menu on the back-side of a bombe
 
-    val claimedCommonsSets = mutableMapOf<Pair<Int, Char>, CommonsSet>()
-    /**
-     * - column: there are multiple columns of CommonsSets available, you must indicate in which column
-     *   you want to claim the first available one
-     *   (this has no impact on the operation of the bombe, you can set-up a menu on bank 1 and use the
-     *    CommonsSets in columns 2; it is more a matter of convention to use the commons which are close
-     *     to the scramblers you're setting up for the menu)
-     * - letter: each CommonsSet is used to represent a certain letter, for debugging/informational
-     *   purposes we register this letter
-     */
-    fun claimAvailableCommonsSet(column: Int, letter:Char) : CommonsSet {
-        if (claimedCommonsSets.containsKey(Pair(column, letter))) {
-            throw IllegalStateException("commons column $column already has a CommonsSet for '$letter', it is not possible to claim another one for this same combination")
-        }
-        val availableCommonsSet = commonsSetsColumns.get(column)!!.filter{ it -> it.isAvailable()}.firstOrNull()
-        if (availableCommonsSet == null) {
-            throw IllegalStateException("[column $column] no free CommonsSet available anymore in this column; "+
-                    "${commonsSetsColumns.get(column)!!.filter{ it -> !it.isAvailable()}.count()} have been claimed already")
-        }
-        availableCommonsSet.claimFor(letter)
-        claimedCommonsSets.put(Pair(column, letter), availableCommonsSet)
-        return availableCommonsSet
-    }
-
     fun createCable() : Cable {
-        val cable = Cable("cable-${cables.size+1}", this)
-        cables.add(cable)
+        val cable = Cable("cable-${_cables.size+1}", this)
+        _cables.add(cable)
         return cable
     }
 
     fun createBridge() : Bridge {
-        val bridge = Bridge("bridge-${bridges.size+1}", this)
-        bridges.add(bridge)
+        val bridge = Bridge("bridge-${_bridges.size+1}", this)
+        _bridges.add(bridge)
         return bridge
     }
 
@@ -185,7 +256,6 @@ class Bombe(
             }
             if (isDoubleInputOn()) {
                 // when 'double input' is switch on, all active chains must have produced a stop
-
                 if (doubleInputStops.size == chains.values.filter { it.isOn() }.count()) {
                     stops.addAll(doubleInputStops)
                 }
@@ -203,12 +273,12 @@ class Bombe(
      */
     fun resetCurrent() {
         // reset all connectors of all components
-        banks.values.forEach{it.getScramblers().forEach { s -> s.resetCurrent()} }
+        scramblers.values.forEach{it.resetCurrent() }
         chains.values.forEach{it.resetCurrent()}
         diagonalBoards.values.forEach { it.resetCurrent() }
-        commonsSetsColumns.values.forEach{it.forEach { c -> c.resetCurrent()}}
-        cables.forEach { it.resetCurrent() }
-        bridges.forEach {it.resetCurrent()}
+        _commonsSets.values.forEach{it.resetCurrent()}
+        _bridges.forEach {it.resetCurrent()}
+        _cables.forEach { it.resetCurrent() }
     }
 
     var drumRotations = 0
@@ -220,39 +290,31 @@ class Bombe(
         drumRotations++
         // every drum rotation, all drums representing the left rotor (position 1) in an enigma machine take a step
         // and the corresponding indicator drum takes a step
-        banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(1)?.stepRotor() }}
+        scramblers.values.forEach { it.internalScrambler?.getRotor(1)?.stepRotor() }
         indicatorDrums[0].rotate()
 
         // every 26th rotation, all drums representing the middle rotor in an enigma machine (position 2) take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % alphabetSize == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(2)?.stepRotor() }}
+            scramblers.values.forEach { it.internalScrambler?.getRotor(2)?.stepRotor() }
             indicatorDrums[1].rotate()
         }
 
         // every 26*26th rotation, all drums representing the right rotor (position 3) in an enigma machine take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % (alphabetSize * alphabetSize) == 0) {
-            banks.values.forEach{it.getScramblers().forEach { it.internalScrambler?.getRotor(3)?.stepRotor() }}
+            scramblers.values.forEach { it.internalScrambler?.getRotor(3)?.stepRotor() }
             indicatorDrums[2].rotate()
         }
     }
 
-    /**
-     * - steps: number of drum rotations done so far
-     */
     private fun checkResult(chain: Chain) : Stop?{
-//        for (chain in chains.values) {
-            if (chain.isOn()) {
-                val stepResult = chain.checkStepResult()
-                // stepResult.first indicates whether the result of this step is a valid stop
-                if (stepResult.first) {
-//                    captureStop(chain, stepResult.second!!)
-                    return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-                        chain.getContactToActivate()!!, stepResult.second!!)
-                }
-            }
-//        }
+        val stepResult = chain.checkStepResult()
+        // stepResult.first indicates whether the result of this step is a valid stop
+        if (stepResult.first) {
+            return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+                chain.getContactToActivate()!!, stepResult.second!!)
+        }
         return null
     }
 

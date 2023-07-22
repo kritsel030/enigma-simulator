@@ -27,7 +27,7 @@ class ExpertBombeOperatorTest {
     // - rotor 3 (right): III-Y-24
     // - plugboard: UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO
     //
-    // This test depends on Scrambler.fixRotorStartPositionMap because we need to accommodate for this mistake:
+    // This test depends on DrumType.coreOffset because we need to accommodate for this mistake:
     // (quoted from page 2 of the PDF)
     // "Probably by mistake, drums I, II, III, VI, VII and VIII on the Bombe
     //   are one letter ahead of the corresponding Enigma rotors.

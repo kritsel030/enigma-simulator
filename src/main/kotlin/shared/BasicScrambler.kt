@@ -12,9 +12,11 @@ import shared.Util.Companion.validate
 // - both 3 and 4 wheel scramblers
 // - scramblers where the actual rotors are place later on in the process
 open class BasicScrambler private constructor (
+    val label: String,
+
     val rotorPositions: Int,
 
-    val reflector: Reflector,
+    var reflector: Reflector?,
 
     // optional 4th rotor
     var leftLeftRotor : AbstractRotor? = null,
@@ -27,16 +29,16 @@ open class BasicScrambler private constructor (
 
     ){
     // constructor for a 4-wheel scrambler
-    constructor(reflector: Reflector, leftLeftRotor: AbstractRotor?, leftRotor: AbstractRotor, middleRotor: AbstractRotor, rightRotor: AbstractRotor) : this(4, reflector, leftLeftRotor, leftRotor, middleRotor, rightRotor)
+    constructor(label: String, reflector: Reflector, leftLeftRotor: AbstractRotor?, leftRotor: AbstractRotor, middleRotor: AbstractRotor, rightRotor: AbstractRotor) : this(label, 4, reflector, leftLeftRotor, leftRotor, middleRotor, rightRotor)
 
     // constructor for a 3-wheel scrambler
-    constructor(reflector: Reflector, leftRotor: AbstractRotor, middleRotor: AbstractRotor, rightRotor: AbstractRotor) : this(3, reflector, null, leftRotor, middleRotor, rightRotor)
+    constructor(label: String, reflector: Reflector, leftRotor: AbstractRotor, middleRotor: AbstractRotor, rightRotor: AbstractRotor) : this(label, 3, reflector, null, leftRotor, middleRotor, rightRotor)
 
     // constructor with a list of rotors must accommodate for both 3 and 4 wheel enigmas
-    constructor(reflector: Reflector, rotors: List<AbstractRotor>) : this(rotors.size, reflector, if (rotors.size == 4) rotors[0] else null, rotors[rotors.size-3], rotors[rotors.size-2], rotors[rotors.size-1])
+    constructor(label: String, reflector: Reflector, rotors: List<AbstractRotor>) : this(label, rotors.size, reflector, if (rotors.size == 4) rotors[0] else null, rotors[rotors.size-3], rotors[rotors.size-2], rotors[rotors.size-1])
 
     // constructor without a list of rotors, they will be placed later on
-    constructor(rotorPositions: Int, reflector: Reflector) : this(rotorPositions, reflector, null, null, null, null)
+    constructor(label: String, rotorPositions: Int, reflector: Reflector?) : this(label, rotorPositions, reflector, null, null, null, null)
 
 
     // list of rotors, starting with the left-most rotor
@@ -48,11 +50,12 @@ open class BasicScrambler private constructor (
         middleRotor = rotors[rotors.size-2]
         rightRotor = rotors[rotors.size-1]
         this.rotors = listOf(leftLeftRotor, leftRotor, middleRotor, rightRotor).filterNotNull()
-        checkRotors()
+        checkRotorsAndReflector()
     }
 
-    fun checkRotors() {
-        check(rotorPositions == rotors.size) {"expected $rotorPositions rotors to be placed, but there are ${rotors.size}"}
+    fun checkRotorsAndReflector() {
+        check(rotorPositions == rotors.size) {"[$label] expected $rotorPositions rotors to be placed, but there are only ${rotors.size}"}
+        check (reflector != null) {"[$label] scrambler has no reflector"}
     }
 
     // position is 1-based
@@ -66,7 +69,7 @@ open class BasicScrambler private constructor (
 
     fun encrypt(inputContactId: Int, recorders:MutableList<StepRecorder>?=null) :Int {
         // first check if we're ready to go
-        checkRotors()
+        checkRotorsAndReflector()
 
         // validate input
         //TODO("we need alphabetsize here")
@@ -81,7 +84,7 @@ open class BasicScrambler private constructor (
 
         // Reflector
         val reflectorInput = 'A'.plus(contactOffset)
-        val reflectorOutput = reflector.encrypt(reflectorInput, recorders)
+        val reflectorOutput = reflector!!.encrypt(reflectorInput, recorders)
 
         // now start with the left-most rotor (first one in the list)
         contactOffset = reflectorOutput.code - 'A'.code
@@ -111,7 +114,7 @@ open class BasicScrambler private constructor (
      */
     internal fun stepRotors() {
         // first check if we're ready to go
-        checkRotors()
+        checkRotorsAndReflector()
 
         val turnOverToMiddle = rightRotor!!.stepRotor()
         if (turnOverToMiddle) {
@@ -130,7 +133,7 @@ open class BasicScrambler private constructor (
      */
     internal fun resetRotors() {
         // first check if we're ready to go
-        checkRotors()
+        checkRotorsAndReflector()
 
         rotors.forEach { it.reset() }
     }

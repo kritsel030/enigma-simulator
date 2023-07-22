@@ -5,15 +5,18 @@ import bombe.components.DrumType
 import bombe.components.DummyComponent
 import bombe.connectors.CablePlug
 import bombe.connectors.Jack
+import enigma.components.ReflectorType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class JuniorBombeOperatorTest {
 
     @Test
     fun createAndConnectCable() {
-        val bombe = Bombe(3, 1, 1, 1)
+        val bombe = Bombe(3, 1, 1, 1, 1,ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
@@ -29,17 +32,129 @@ class JuniorBombeOperatorTest {
 
     @Test
     fun createAndConnectBridge() {
-        val bombe = Bombe(3, 1, 2, 1)
+        val bombe = Bombe(3, 1, 2, 1, 1, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
-        val scrambler1 = bombe.getBank(1).getScrambler(1)
-        val scrambler2 = bombe.getBank(1).getScrambler(2)
+        val scrambler1 = bombe.getScramblerJackPanel(1)
+        val scrambler2 = bombe.getScramblerJackPanel(2)
 
-        val bridge = operator.attachBridgeTo(scrambler1!!.outputJack, scrambler2!!.inputJack)
+        val bridge = operator.attachBridgeTo(scrambler1!!.getOutputJack(), scrambler2!!.getInputJack())
         assertNotNull(bridge)
-        assertNotNull(scrambler1.outputJack.pluggedUpBy())
-        assertNotNull(scrambler2.inputJack.pluggedUpBy())
+        assertNotNull(scrambler1.getOutputJack().pluggedUpBy())
+        assertNotNull(scrambler2.getInputJack().pluggedUpBy())
+    }
+
+    @Test
+    fun findFreeCommonsSets_1() {
+        val bombe = Bombe()
+        val operator = JuniorBombeOperator()
+        operator.setBombe(bombe)
+
+        val freeCommonsSet = operator.findFreeCommonsSet()
+        assertNotNull(freeCommonsSet)
+    }
+
+    @Test
+    fun findFreeCommonsSets_2() {
+        val bombe = Bombe()
+        val operator = JuniorBombeOperator()
+        operator.setBombe(bombe)
+
+        val freeCommonsSetA = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1, 'A'), freeCommonsSetA)
+
+        val freeCommonsSetB = operator.findFreeCommonsSet()
+        assertNotEquals(freeCommonsSetA, freeCommonsSetB)
+    }
+
+    @Test
+    fun registerCommonsSet() {
+        val bombe = Bombe()
+        val operator = JuniorBombeOperator()
+        operator.setBombe(bombe)
+
+        val freeCommonsSetA = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1, 'A'), freeCommonsSetA)
+        val foundCommonsSet = operator.commonsSetRegister.get(Pair(1, 'A'))
+
+        assertNotNull(foundCommonsSet)
+    }
+
+    /**
+     *     ZZA     ZZB     ZZC     ZZD
+     *      1       2       3       4
+     *  A ----- B ----- C ----- A ----- B
+     *
+     *  input on A, wire X
+     */
+    @Test
+    fun simpleMenu() {
+        val bombe = Bombe()
+        val operator = JuniorBombeOperator()
+        operator.setBombe(bombe)
+
+        // front side - place drums
+        val drumTypes = listOf(DrumType.I, DrumType.II, DrumType.III)
+        for (scramblerId in 1..4) {
+            operator.placeDrums(scramblerId, drumTypes)
+        }
+
+        // front side - set start orientation of drums
+        operator.setStartRingOrientations(1, "ZZA")
+        operator.setStartRingOrientations(2, "ZZB")
+        operator.setStartRingOrientations(3, "ZZC")
+        operator.setStartRingOrientations(4, "ZZD")
+
+        // back side - place bridges
+        val bridge_12 = operator.attachBridgeTo(
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
+        )
+        val bridge_23 = operator.attachBridgeTo(
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
+        )
+        val bridge_34 = operator.attachBridgeTo(
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
+        )
+
+        // back side - draw cables for 'A'
+        val commons_A = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'A'), commons_A)
+        // diagonal board to commons
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'), commons_A.getAvailableJack())
+        // scrambler 1 input to commons
+        operator.drawCableBetween(bombe.getScrambler(1)!!.getInputJack(), commons_A.getAvailableJack())
+        // bridge_34 to commons
+        operator.drawCableBetween(bridge_34.jack, commons_A.getAvailableJack())
+        // input chain 1 to commons
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_A.getAvailableJack())
+
+        // back side - draw cables for 'B'
+        // bridge_12 to diagonal board
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('B'))
+
+        // back side - draw cables for 'C'
+        // bridge_23 to diagonal board
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'))
+
+        // switch on the bank
+        // TODO: add a unittest for an off bank
+        bombe.getChainControlPanel(1)!!.switchOn()
+
+        // put the current on the correct wire
+        // TODO: add a unittest for a bank without an active contact
+        bombe.getChainControlPanel(1)!!.setContactToActivate('X')
+
+        // run the job
+        val stops = bombe.run(1)
+        assertTrue(stops.size > 0, "expected stops")
+        if (stops.size > 0) {
+            stops[0].print()
+        }
+        assertTrue(stops[0].possibleSteckerPartnersForCentralLetter.size > 0, "expected multiple possible stecker partners")
     }
 
     // US 6812 Bombe Report 1944 - chapter 3
@@ -55,71 +170,74 @@ class JuniorBombeOperatorTest {
         // front side - place drums
         val drumTypes = listOf(DrumType.III, DrumType.II, DrumType.IV)
         for (scramblerId in 1..7) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "ZZS")
-        operator.setStartRingOrientations(1, 2, "ZZZ")
-        operator.setStartRingOrientations(1, 3, "ZAX")
-        operator.setStartRingOrientations(1, 4, "ZAS")
-        operator.setStartRingOrientations(1, 5, "ZAY")
-        operator.setStartRingOrientations(1, 6, "ZZW")
-        operator.setStartRingOrientations(1, 7, "ZAV")
+        operator.setStartRingOrientations(1, "ZZS")
+        operator.setStartRingOrientations(2, "ZZZ")
+        operator.setStartRingOrientations(3, "ZAX")
+        operator.setStartRingOrientations(4, "ZAS")
+        operator.setStartRingOrientations(5, "ZAY")
+        operator.setStartRingOrientations(6, "ZZW")
+        operator.setStartRingOrientations(7, "ZAV")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
 
         // back side - draw cables for 'U'
-        val commons_U = bombe.claimAvailableCommonsSet(1, 'U')
+        val commons_U = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'U'), commons_U)
         // diagonal board to commons_U
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('U'), commons_U.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'), commons_U.getAvailableJack())
         // scrambler 1 input to commons_U
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, commons_U.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), commons_U.getAvailableJack())
         // bridge_23 to commons_U
         operator.drawCableBetween(bridge_23.jack, commons_U.getAvailableJack())
         // bridge_56 to commons_U
         operator.drawCableBetween(bridge_56.jack, commons_U.getAvailableJack())
 
         // back side - draw cables for 'N'
-        val commons_N = bombe.claimAvailableCommonsSet(1, 'N')
+        val commons_N = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'N'), commons_N)
         // diagonal board to commons_N
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('N'), commons_N.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('N'), commons_N.getAvailableJack())
         // bridge_12 to commons_N
         operator.drawCableBetween(bridge_12.jack, commons_N.getAvailableJack())
         // bridge_34 to commons_N
         operator.drawCableBetween(bridge_34.jack, commons_N.getAvailableJack())
         // scrambler 7 output to commons_N
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(7).outputJack, commons_N.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(7)!!.getOutputJack(), commons_N.getAvailableJack())
 
-        val commons_E = bombe.claimAvailableCommonsSet(1, 'E')
+        val commons_E = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'E'), commons_E)
         // bank input to common_E
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_E.getAvailableJack())
         // diagonal board to commons_E
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('E'), commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'), commons_E.getAvailableJack())
         // bridge_45 to commons_E
         operator.drawCableBetween(bridge_45.jack, commons_E.getAvailableJack())
         // bridge_67 to commons_E
@@ -127,11 +245,11 @@ class JuniorBombeOperatorTest {
 
         // switch on the bank
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('A')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('A')
 
         // run the job
         val stops = bombe.run()
@@ -158,126 +276,133 @@ class JuniorBombeOperatorTest {
         // front side - place drums
         val drumTypes = listOf(DrumType.IV, DrumType.III, DrumType.II)
         for (scramblerId in 1..10) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "EKR")
-        operator.setStartRingOrientations(1, 2, "RTN")
-        operator.setStartRingOrientations(1, 3, "SAO")
-        operator.setStartRingOrientations(1, 4, "EKP")
-        operator.setStartRingOrientations(1, 5, "RTI")
-        operator.setStartRingOrientations(1, 6, "RTQ")
-        operator.setStartRingOrientations(1, 7, "SAT")
-        operator.setStartRingOrientations(1, 8, "SAS")
-        operator.setStartRingOrientations(1, 9, "RTR")
-        operator.setStartRingOrientations(1, 10, "RTJ")
+        operator.setStartRingOrientations(1, "EKR")
+        operator.setStartRingOrientations(2, "RTN")
+        operator.setStartRingOrientations(3, "SAO")
+        operator.setStartRingOrientations(4, "EKP")
+        operator.setStartRingOrientations(5, "RTI")
+        operator.setStartRingOrientations(6, "RTQ")
+        operator.setStartRingOrientations(7, "SAT")
+        operator.setStartRingOrientations(8, "SAS")
+        operator.setStartRingOrientations(9, "RTR")
+        operator.setStartRingOrientations(10, "RTJ")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         // no bridge between 8 and 9
         val bridge_910 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(9).outputJack,
-            bombe.getBank(1).getScrambler(10).inputJack
+            bombe.getScramblerJackPanel(9)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(10)!!.getInputJack()
         )
 
         // back side - draw cables for 'U'
-        val commons_U = bombe.claimAvailableCommonsSet(1, 'U')
+        val commons_U = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'U'), commons_U)
         // diagonal board to commons_U
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('U'), commons_U.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'), commons_U.getAvailableJack())
         // scrambler 1 input to commons_U
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, commons_U.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), commons_U.getAvailableJack())
         // scrambler 9 input to commons_U
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).inputJack, commons_U.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getInputJack(), commons_U.getAvailableJack())
 
         // back side - draw cables for 'E'
-        val commons_E = bombe.claimAvailableCommonsSet(1, 'E')
+        val commons_E = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'E'), commons_E)
         // diagonal board to commons_E
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('E'), commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'), commons_E.getAvailableJack())
         // bridge_12 to commons_E
         operator.drawCableBetween(bridge_12.jack, commons_E.getAvailableJack())
         // bridge_910 to commons_E
         operator.drawCableBetween(bridge_910.jack, commons_E.getAvailableJack())
 
         // back side - draw cables for 'Y'
-        val commons_Y = bombe.claimAvailableCommonsSet(1, 'Y')
+        val commons_Y = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'Y'), commons_Y)
         // diagonal board to commons_Y
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('Y'), commons_Y.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'), commons_Y.getAvailableJack())
         // bridge_23 to commons_Y
         operator.drawCableBetween(bridge_23.jack, commons_Y.getAvailableJack())
 
         // back side - draw cables for 'H'
-        val commons_H = bombe.claimAvailableCommonsSet(1, 'H')
+        val commons_H = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'H'), commons_H)
         // bank input to common_H
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_H.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_H.getAvailableJack())
         // diagonal board to commons_H
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('H'), commons_H.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'), commons_H.getAvailableJack())
         // bridge_34 to commons_H
         operator.drawCableBetween(bridge_34.jack, commons_H.getAvailableJack())
         // bridge_67 to commons_H
         operator.drawCableBetween(bridge_67.jack, commons_H.getAvailableJack())
         // scrambler 8 output to commons_H
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(8).outputJack, commons_H.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(8)!!.getOutputJack(), commons_H.getAvailableJack())
 
         // back side - draw cables for 'F'
-        val commons_F = bombe.claimAvailableCommonsSet(1, 'F')
+        val commons_F = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'F'), commons_F)
         // diagonal board to commons_F
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('F'), commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('F'), commons_F.getAvailableJack())
         // bridge_45 to commons_F
         operator.drawCableBetween(bridge_45.jack, commons_F.getAvailableJack())
 
         // back side - draw cables for 'B'
-        val commons_B = bombe.claimAvailableCommonsSet(1, 'B')
+        val commons_B = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'B'), commons_B)
         // diagonal board to commons_B
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('B'), commons_B.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('B'), commons_B.getAvailableJack())
         // bridge_56 to commons_B
         operator.drawCableBetween(bridge_56.jack, commons_B.getAvailableJack())
 
         // back side - draw cables for 'T'
-        val commons_T = bombe.claimAvailableCommonsSet(1, 'T')
+        val commons_T = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'T'), commons_T)
         // diagonal board to commons_T
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('T'), commons_T.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('T'), commons_T.getAvailableJack())
         // bridge_78 to commons_T
         operator.drawCableBetween(bridge_78.jack, commons_T.getAvailableJack())
 
         // back side - draw cables for 'X'
         // diagonal board to scrambler 10 out
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('X'), bombe.getBank(1).getScrambler(10).outputJack)
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('X'), bombe.getScramblerJackPanel(10)!!.getOutputJack())
 
         // switch on the bank
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('A')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('A')
 
         // run the job
         val stops = bombe.run()
@@ -289,7 +414,6 @@ class JuniorBombeOperatorTest {
         assertEquals('J', stops.get(0).rotor2RingStellung)
         assertEquals('W', stops.get(0).rotor3RingStellung)
         assertEquals(listOf('F'), stops.get(0).possibleSteckerPartnersForCentralLetter)
-
     }
 
     // US 6812 Bombe Report 1944 - chapter 3
@@ -305,115 +429,119 @@ class JuniorBombeOperatorTest {
         // front side - place drums
         val drumTypes = listOf(DrumType.I, DrumType.V, DrumType.III)
         for (scramblerId in 1..10) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "ZAP")
-        operator.setStartRingOrientations(1, 2, "ZZJ")
-        operator.setStartRingOrientations(1, 3, "ZAJ")
-        operator.setStartRingOrientations(1, 4, "ZZP")
-        operator.setStartRingOrientations(1, 5, "ZZN")
-        operator.setStartRingOrientations(1, 6, "ZAN")
-        operator.setStartRingOrientations(1, 7, "ZZK")
-        operator.setStartRingOrientations(1, 8, "ZAQ") // initially read 'ZAG', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
-        operator.setStartRingOrientations(1, 9, "ZZO")
-        operator.setStartRingOrientations(1, 10, "ZZR")
+        operator.setStartRingOrientations(1, "ZAP")
+        operator.setStartRingOrientations(2, "ZZJ")
+        operator.setStartRingOrientations(3, "ZAJ")
+        operator.setStartRingOrientations(4, "ZZP")
+        operator.setStartRingOrientations(5, "ZZN")
+        operator.setStartRingOrientations(6, "ZAN")
+        operator.setStartRingOrientations(7, "ZZK")
+        operator.setStartRingOrientations(8, "ZAQ") // initially read 'ZAG', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
+        operator.setStartRingOrientations(9, "ZZO")
+        operator.setStartRingOrientations(10, "ZZR")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         val bridge_89 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         // no bridge between 9 and 10
 
         // back side - draw cables for 'T'
-        val commons_T = bombe.claimAvailableCommonsSet(1, 'T')
+        val commons_T = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'T'), commons_T)
         // scrambler 1 input to commons_T
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, commons_T.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), commons_T.getAvailableJack())
 
         // back side - draw cables for 'E'
-        val commons_E = bombe.claimAvailableCommonsSet(1, 'E')
+        val commons_E = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'E'), commons_E)
         // diagonal board to commons_E
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('E'), commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'), commons_E.getAvailableJack())
         // bridge_12 to commons_E
         operator.drawCableBetween(bridge_12.jack, commons_E.getAvailableJack())
         // bridge_89 to commons_E
         operator.drawCableBetween(bridge_89.jack, commons_E.getAvailableJack())
         // scrambler 10 input to commons_E
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).inputJack, commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getInputJack(), commons_E.getAvailableJack())
 
         // back side - draw cables for 'S'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('S'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('S'))
 
         // back side - draw cables for 'Y'
         // bridge_34 to diagonal board
-        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoard(1).getJack('Y'))
+        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'))
 
         // back side - draw cables for 'F'
-        val commons_F = bombe.claimAvailableCommonsSet(1, 'F')
+        val commons_F = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'F'), commons_F)
         // bank input to common_F
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_F.getAvailableJack())
         // diagonal board to commons_F
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('F'), commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('F'), commons_F.getAvailableJack())
         // bridge_45 to commons_F
         operator.drawCableBetween(bridge_45.jack, commons_F.getAvailableJack())
         // scrambler 10 output to commons_F
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).outputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getOutputJack(), commons_F.getAvailableJack())
 
         // back side - draw cables for 'G'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('G'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('G'))
 
         // back side - draw cables for 'C'
-        val commons_C = bombe.claimAvailableCommonsSet(1, 'C')
+        val commons_C = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'C'), commons_C)
         // diagonal board to commons_C
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('C'), commons_C.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'), commons_C.getAvailableJack())
         // bridge_67 to commons_C
         operator.drawCableBetween(bridge_67.jack, commons_C.getAvailableJack())
         // scrambler 9 output to commons_c
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).outputJack, commons_C.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getOutputJack(), commons_C.getAvailableJack())
 
         // back side - draw cables for 'R'
         // bridge_78 to diagonal board
-        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoard(1).getJack('R'))
+        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('R'))
 
         // switch on the bank
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('A')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('A')
 
         // run the job
         val stops = bombe.run()
@@ -434,162 +562,164 @@ class JuniorBombeOperatorTest {
     // http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_IV.txt
     @Test
     fun usBombeReport1944_testMenu_IV() {
-        val bombe = Bombe(26, 1, 14, 3)
+        val bombe = Bombe(26, 1, 14, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.II, DrumType.IV, DrumType.III)
         for (scramblerId in 1..14) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums( scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "ZAB")
-        operator.setStartRingOrientations(1, 2, "ZZB")
-        operator.setStartRingOrientations(1, 3, "ZZK")
-        operator.setStartRingOrientations(1, 4, "ZZL")
-        operator.setStartRingOrientations(1, 5, "ZZE")
-        operator.setStartRingOrientations(1, 6, "ZZH")
-        operator.setStartRingOrientations(1, 7, "ZZN")
-        operator.setStartRingOrientations(1, 8, "ZZF")
-        operator.setStartRingOrientations(1, 9, "ZZM")
-        operator.setStartRingOrientations(1, 10, "ZZG")
-        operator.setStartRingOrientations(1, 11, "ZAA")
-        operator.setStartRingOrientations(1, 12, "ZZA")
-        operator.setStartRingOrientations(1, 13, "ZZI")
-        operator.setStartRingOrientations(1, 14, "ZZJ")
+        operator.setStartRingOrientations(1, "ZAB")
+        operator.setStartRingOrientations(2, "ZZB")
+        operator.setStartRingOrientations(3, "ZZK")
+        operator.setStartRingOrientations(4, "ZZL")
+        operator.setStartRingOrientations(5, "ZZE")
+        operator.setStartRingOrientations(6, "ZZH")
+        operator.setStartRingOrientations(7, "ZZN")
+        operator.setStartRingOrientations(8, "ZZF")
+        operator.setStartRingOrientations(9, "ZZM")
+        operator.setStartRingOrientations(10, "ZZG")
+        operator.setStartRingOrientations(11, "ZAA")
+        operator.setStartRingOrientations(12, "ZZA")
+        operator.setStartRingOrientations(13, "ZZI")
+        operator.setStartRingOrientations(14, "ZZJ")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         val bridge_89 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         val bridge_910 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(9).outputJack,
-            bombe.getBank(1).getScrambler(10).inputJack
+            bombe.getScramblerJackPanel(9)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(10)!!.getInputJack()
         )
         val bridge_1011 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(10).outputJack,
-            bombe.getBank(1).getScrambler(11).inputJack
+            bombe.getScramblerJackPanel(10)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(11)!!.getInputJack()
         )
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         // no bridge between 12 and 13
         // no bridge between 13 and 14
 
         // back side - draw cables for 'R'
         // scrambler 1 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, bombe.getDiagonalBoard(1).getJack('R'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('R'))
 
         // back side - draw cables for 'O'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('O'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'))
 
         // back side - draw cables for 'I'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('I'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('I'))
 
         // back side - draw cables for 'L'
         // bridge_34 to diagonal board
-        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoard(1).getJack('L'))
+        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('L'))
 
         // back side - draw cables for 'A'
-        val commons_A = bombe.claimAvailableCommonsSet(1, 'A')
+        val commons_A = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'A'), commons_A)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('A'), commons_A.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'), commons_A.getAvailableJack())
         // bridge_45 to commons
         operator.drawCableBetween(bridge_45.jack, commons_A.getAvailableJack())
         // scrambler 13 input to commons
         // this connection is not mentioned in the menu, but it is depicted in the drawing
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(13).inputJack, commons_A.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(13)!!.getInputJack(), commons_A.getAvailableJack())
 
         // back side - draw cables for 'K'
         // scrambler 13 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(13).outputJack, bombe.getDiagonalBoard(1).getJack('K'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(13)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'))
 
         // back side - draw cables for 'Y'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('Y'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'))
 
         // back side - draw cables for 'F'
-        val commons_F = bombe.claimAvailableCommonsSet(1, 'F')
+        val commons_F = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'F'), commons_F)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('F'), commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('F'), commons_F.getAvailableJack())
         // bridge_67 to commons
         operator.drawCableBetween(bridge_67.jack, commons_F.getAvailableJack())
         // scrambler 12 output to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(12).outputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(12)!!.getOutputJack(), commons_F.getAvailableJack())
         // bank input to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_F.getAvailableJack())
 
         // back side - draw cables for 'H'
         // bridge_78 to diagonal board
-        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoard(1).getJack('H'))
+        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'))
 
         // back side - draw cables for 'T'
         // bridge_89 to diagonal board
-        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoard(1).getJack('T'))
+        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('T'))
 
         // back side - draw cables for 'D'
         // bridge_910 to diagonal board
-        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'Z'
         // bridge_1011 to diagonal board
-        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoard(1).getJack('Z'))
+        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Z'))
 
         // back side - draw cables for 'E'
-        val commons_E = bombe.claimAvailableCommonsSet(1, 'E')
+        val commons_E = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'E'), commons_E)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('E'), commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'), commons_E.getAvailableJack())
         // bridge_1112 to commons
         operator.drawCableBetween(bridge_1112.jack, commons_E.getAvailableJack())
         // scrambler 14 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).inputJack, commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getInputJack(), commons_E.getAvailableJack())
 
         // back side - draw cables for 'U'
         // scrambler 14 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).outputJack, bombe.getDiagonalBoard(1).getJack('U'))
-
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'))
 
         // switch on the bank
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('I')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('I')
 
         // run the job
         val stops = bombe.run()
@@ -608,168 +738,172 @@ class JuniorBombeOperatorTest {
     // https://www.codesandciphers.org.uk/documents/bmbrpt/index.htm
     // http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_IVa.txt
     @Test
-    fun usBombeReport1944_testMenu_IVa_doubleinput() {
+    fun usBombeReport1944_testMenu_IVa() {
         // we need 2 banks for this one!
-        val bombe = Bombe(26, 2, 14, 3)
+        val bombe = Bombe(26, 2, 14, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.II, DrumType.IV, DrumType.III)
         for (scramblerId in 1..14) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "ZAB")
-        operator.setStartRingOrientations(1, 2, "ZZB")
-        operator.setStartRingOrientations(1, 3, "ZZK")
-        operator.setStartRingOrientations(1, 4, "ZZL")
-        operator.setStartRingOrientations(1, 5, "ZZE")
-        operator.setStartRingOrientations(1, 6, "ZZR")  // change compared to IV
-        operator.setStartRingOrientations(1, 7, "ZZN")
-        operator.setStartRingOrientations(1, 8, "ZZF")
-        operator.setStartRingOrientations(1, 9, "ZZM")
-        operator.setStartRingOrientations(1, 10, "ZZG")
-        operator.setStartRingOrientations(1, 11, "ZAA")
-        operator.setStartRingOrientations(1, 12, "ZZA")
-        operator.setStartRingOrientations(1, 13, "ZZI")
-        operator.setStartRingOrientations(1, 14, "ZZJ")
+        operator.setStartRingOrientations(1, "ZAB")
+        operator.setStartRingOrientations(2, "ZZB")
+        operator.setStartRingOrientations(3, "ZZK")
+        operator.setStartRingOrientations(4, "ZZL")
+        operator.setStartRingOrientations(5, "ZZE")
+        operator.setStartRingOrientations(6, "ZZR")  // change compared to IV
+        operator.setStartRingOrientations(7, "ZZN")
+        operator.setStartRingOrientations(8, "ZZF")
+        operator.setStartRingOrientations(9, "ZZM")
+        operator.setStartRingOrientations(10, "ZZG")
+        operator.setStartRingOrientations(11, "ZAA")
+        operator.setStartRingOrientations(12, "ZZA")
+        operator.setStartRingOrientations(13, "ZZI")
+        operator.setStartRingOrientations(14, "ZZJ")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         // no bridge between 6 and 7 , change compared to menu IV
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         val bridge_89 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         val bridge_910 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(9).outputJack,
-            bombe.getBank(1).getScrambler(10).inputJack
+            bombe.getScramblerJackPanel(9)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(10)!!.getInputJack()
         )
         val bridge_1011 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(10).outputJack,
-            bombe.getBank(1).getScrambler(11).inputJack
+            bombe.getScramblerJackPanel(10)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(11)!!.getInputJack()
         )
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         // no bridge between 12 and 13
         // no bridge between 13 and 14
 
         // back side - draw cables for 'R', change compared to menu IV
-        val commons_R = bombe.claimAvailableCommonsSet(1, 'R')
+        val commons_R = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'R'), commons_R)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('R'), commons_R.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('R'), commons_R.getAvailableJack())
         // scrambler 1 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, commons_R.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), commons_R.getAvailableJack())
         // scrambler 6 output to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(6).outputJack, commons_R.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(6)!!.getOutputJack(), commons_R.getAvailableJack())
 
         // back side - draw cables for 'O'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('O'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'))
 
         // back side - draw cables for 'I'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('I'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('I'))
 
         // back side - draw cables for 'L'
         // bridge_34 to diagonal board
-        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoard(1).getJack('L'))
+        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('L'))
 
         // back side - draw cables for 'A',  change compared to menu IV
-        val commons_A = bombe.claimAvailableCommonsSet(1, 'A')
+        val commons_A = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'A'), commons_A)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('A'), commons_A.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'), commons_A.getAvailableJack())
         // bridge_45 to commons
         operator.drawCableBetween(bridge_45.jack, commons_A.getAvailableJack())
         // scrambler 13 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(13).inputJack, commons_A.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(13)!!.getInputJack(), commons_A.getAvailableJack())
         // input 2 to commons
-        operator.drawCableBetween(bombe.getChain(2).inputJack, commons_A.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(2)!!.getInputJack(), commons_A.getAvailableJack())
 
         // back side - draw cables for 'K'
         // scrambler 13 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(13).outputJack, bombe.getDiagonalBoard(1).getJack('K'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(13)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'))
 
         // back side - draw cables for 'Y'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('Y'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'))
 
         // back side - draw cables for 'F', change compared to menu IV
-        val commons_F = bombe.claimAvailableCommonsSet(1, 'F')
+        val commons_F = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'F'), commons_F)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('F'), commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('F'), commons_F.getAvailableJack())
         // scrambler 12 output to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(12).outputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(12)!!.getOutputJack(), commons_F.getAvailableJack())
         // scrambler 7 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(7).inputJack, commons_F.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(7)!!.getInputJack(), commons_F.getAvailableJack())
 
         // back side - draw cables for 'H'
         // bridge_78 to diagonal board
-        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoard(1).getJack('H'))
+        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'))
 
         // back side - draw cables for 'T'
         // bridge_89 to diagonal board
-        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoard(1).getJack('T'))
+        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('T'))
 
         // back side - draw cables for 'D'
         // bridge_910 to diagonal board
-        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'Z'
         // bridge_1011 to diagonal board
-        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoard(1).getJack('Z'))
+        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Z'))
 
         // back side - draw cables for 'E', change compared to menu IV
-        val commons_E = bombe.claimAvailableCommonsSet(1, 'E')
+        val commons_E = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'E'), commons_E)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('E'), commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'), commons_E.getAvailableJack())
         // bridge_1112 to commons
         operator.drawCableBetween(bridge_1112.jack, commons_E.getAvailableJack())
         // scrambler 14 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).inputJack, commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getInputJack(), commons_E.getAvailableJack())
         // input 1 to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_E.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_E.getAvailableJack())
 
         // back side - draw cables for 'U'
         // scrambler 14 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).outputJack, bombe.getDiagonalBoard(1).getJack('U'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'))
 
         // switch on the used chains
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
-        bombe.getChain(2).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
+        bombe.getChainControlPanel(2)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('R')
-        bombe.getChain(2).setContactToActivate('E')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('R')
+        bombe.getChainControlPanel(2)!!.setContactToActivate('E')
 
         // switch on 'double input'
         bombe.switchDoubleInputOn()
@@ -793,160 +927,162 @@ class JuniorBombeOperatorTest {
     // http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_V.txt
     @Test
     fun usBombeReport1944_testMenu_V_1() {
-        val bombe = Bombe(26, 1, 14, 3)
+        val bombe = Bombe(26, 1, 14, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.I, DrumType.IV, DrumType.V)
         for (scramblerId in 1..14) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "YXW") // initially read 'VXW', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
-        operator.setStartRingOrientations(1, 2, "OKM")
-        operator.setStartRingOrientations(1, 3, "AME")
-        operator.setStartRingOrientations(1, 4, "FMQ")
-        operator.setStartRingOrientations(1, 5, "OKN")
-        operator.setStartRingOrientations(1, 6, "OTO")
-        operator.setStartRingOrientations(1, 7, "YXV")
-        operator.setStartRingOrientations(1, 8, "OTP")
-        operator.setStartRingOrientations(1, 9, "AMG")
-        operator.setStartRingOrientations(1, 10, "OTN")
-        operator.setStartRingOrientations(1, 11, "OKO")
-        operator.setStartRingOrientations(1, 12, "FMR")
-        operator.setStartRingOrientations(1, 13, "AMF")
-        operator.setStartRingOrientations(1, 14, "YXX")
+        operator.setStartRingOrientations(1, "YXW") // initially read 'VXW', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
+        operator.setStartRingOrientations(2, "OKM")
+        operator.setStartRingOrientations(3, "AME")
+        operator.setStartRingOrientations(4, "FMQ")
+        operator.setStartRingOrientations(5, "OKN")
+        operator.setStartRingOrientations(6, "OTO")
+        operator.setStartRingOrientations(7, "YXV")
+        operator.setStartRingOrientations(8, "OTP")
+        operator.setStartRingOrientations(9, "AMG")
+        operator.setStartRingOrientations(10, "OTN")
+        operator.setStartRingOrientations(11, "OKO")
+        operator.setStartRingOrientations(12, "FMR")
+        operator.setStartRingOrientations(13, "AMF")
+        operator.setStartRingOrientations(14, "YXX")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         // no bridge between scrambler 7 and 8
         val bridge_89 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         // no bridge between scrambler 9 and 10
         // no bridge between scrambler 10 and 11
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         val bridge_1213 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(12).outputJack,
-            bombe.getBank(1).getScrambler(13).inputJack
+            bombe.getScramblerJackPanel(12)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(13)!!.getInputJack()
         )
         val bridge_1314 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(13).outputJack,
-            bombe.getBank(1).getScrambler(14).inputJack
+            bombe.getScramblerJackPanel(13)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(14)!!.getInputJack()
         )
 
         // back side - draw cables for 'W'
         // scrambler 1 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, bombe.getDiagonalBoard(1).getJack('W'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('W'))
 
         // back side - draw cables for 'D'
         // bridge_12 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'Z'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('Z'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Z'))
 
         // back side - draw cables for 'O'
-        val commons_O = bombe.claimAvailableCommonsSet(1, 'O')
+        val commons_O = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'O'), commons_O)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('O'), commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'), commons_O.getAvailableJack())
         // bridge_34 to commons
         operator.drawCableBetween(bridge_34.jack, commons_O.getAvailableJack())
         // scrambler 10 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).inputJack, commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getInputJack(), commons_O.getAvailableJack())
 
         // back side - draw cables for 'B'
         // bridge_45 to diagonal board
-        operator.drawCableBetween(bridge_45.jack, bombe.getDiagonalBoard(1).getJack('B'))
+        operator.drawCableBetween(bridge_45.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('B'))
 
         // back side - draw cables for 'H'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('H'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'))
 
         // back side - draw cables for 'K'
-        val commons_K = bombe.claimAvailableCommonsSet(1, 'K')
+        val commons_K = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'K'), commons_K)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('K'), commons_K.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'), commons_K.getAvailableJack())
         // bridge_67 to commons
         operator.drawCableBetween(bridge_67.jack, commons_K.getAvailableJack())
         // bridge_1213 to commons
         operator.drawCableBetween(bridge_1213.jack, commons_K.getAvailableJack())
         // chain input to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_K.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_K.getAvailableJack())
 
         // back side - draw cables for 'C'
         // bridge_1314 to diagonal board
-        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoard(1).getJack('C'))
+        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'))
 
         // back side - draw cables for 'N'
         // bridge_1112 to diagonal board
-        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoard(1).getJack('N'))
+        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('N'))
 
         // back side - draw cables for 'L'
         // bridge_89 to diagonal board
-        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoard(1).getJack('L'))
+        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('L'))
 
         // back side - draw cables for 'G'
         // scrambler 8 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(8).inputJack, bombe.getDiagonalBoard(1).getJack('G'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(8)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('G'))
 
         // back side - draw cables for 'A'
         // scrambler 11 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(11).inputJack, bombe.getDiagonalBoard(1).getJack('A'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(11)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'))
 
         // back side - draw cables for 'J'
         // scrambler 10 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).outputJack, bombe.getDiagonalBoard(1).getJack('J'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('J'))
 
         // back side - draw cables for 'U'
         // scrambler 9 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).outputJack, bombe.getDiagonalBoard(1).getJack('U'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'))
 
         // back side - draw cables for 'E'
         // scrambler 7 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(7).outputJack, bombe.getDiagonalBoard(1).getJack('E'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(7)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'))
 
         // back side - draw cables for 'X'
         // scrambler 14 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).outputJack, bombe.getDiagonalBoard(1).getJack('X'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('X'))
 
         // switch on the used chains
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('Z')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('Z')
 
         // run the job
         val stops = bombe.run()
@@ -966,160 +1102,162 @@ class JuniorBombeOperatorTest {
     // http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
     @Test
     fun usBombeReport1944_testMenu_V_2() {
-        val bombe = Bombe(26, 1, 14, 3)
+        val bombe = Bombe(26, 1, 14, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.I, DrumType.IV, DrumType.V)
         for (scramblerId in 1..14) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "YXW") // initially read 'VXW', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
-        operator.setStartRingOrientations(1, 2, "OKM")
-        operator.setStartRingOrientations(1, 3, "AME")
-        operator.setStartRingOrientations(1, 4, "FMQ")
-        operator.setStartRingOrientations(1, 5, "OKN")
-        operator.setStartRingOrientations(1, 6, "OTO")
-        operator.setStartRingOrientations(1, 7, "YXV")
-        operator.setStartRingOrientations(1, 8, "OTP")
-        operator.setStartRingOrientations(1, 9, "AMG")
-        operator.setStartRingOrientations(1, 10, "OLN") // OTN in other variant
-        operator.setStartRingOrientations(1, 11, "OKO")
-        operator.setStartRingOrientations(1, 12, "FMR")
-        operator.setStartRingOrientations(1, 13, "AMF")
-        operator.setStartRingOrientations(1, 14, "YXV") // YXX in other variant
+        operator.setStartRingOrientations(1, "YXW") // initially read 'VXW', corrected based on http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_Va.txt
+        operator.setStartRingOrientations(2, "OKM")
+        operator.setStartRingOrientations(3, "AME")
+        operator.setStartRingOrientations(4, "FMQ")
+        operator.setStartRingOrientations(5, "OKN")
+        operator.setStartRingOrientations(6, "OTO")
+        operator.setStartRingOrientations(7, "YXV")
+        operator.setStartRingOrientations(8, "OTP")
+        operator.setStartRingOrientations(9, "AMG")
+        operator.setStartRingOrientations(10, "OLN") // OTN in other variant
+        operator.setStartRingOrientations(11, "OKO")
+        operator.setStartRingOrientations(12, "FMR")
+        operator.setStartRingOrientations(13, "AMF")
+        operator.setStartRingOrientations(14, "YXV") // YXX in other variant
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         // no bridge between scrambler 7 and 8
         val bridge_89 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         // no bridge between scrambler 9 and 10
         // no bridge between scrambler 10 and 11
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         val bridge_1213 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(12).outputJack,
-            bombe.getBank(1).getScrambler(13).inputJack
+            bombe.getScramblerJackPanel(12)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(13)!!.getInputJack()
         )
         val bridge_1314 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(13).outputJack,
-            bombe.getBank(1).getScrambler(14).inputJack
+            bombe.getScramblerJackPanel(13)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(14)!!.getInputJack()
         )
 
         // back side - draw cables for 'W'
         // scrambler 1 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, bombe.getDiagonalBoard(1).getJack('W'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('W'))
 
         // back side - draw cables for 'D'
         // bridge_12 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'Z'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('Z'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Z'))
 
         // back side - draw cables for 'O'
-        val commons_O = bombe.claimAvailableCommonsSet(1, 'O')
+        val commons_O = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'O'), commons_O)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('O'), commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'), commons_O.getAvailableJack())
         // bridge_34 to commons
         operator.drawCableBetween(bridge_34.jack, commons_O.getAvailableJack())
         // scrambler 10 input to commons
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).inputJack, commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getInputJack(), commons_O.getAvailableJack())
 
         // back side - draw cables for 'B'
         // bridge_45 to diagonal board
-        operator.drawCableBetween(bridge_45.jack, bombe.getDiagonalBoard(1).getJack('B'))
+        operator.drawCableBetween(bridge_45.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('B'))
 
         // back side - draw cables for 'H'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('H'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'))
 
         // back side - draw cables for 'K'
-        val commons_K = bombe.claimAvailableCommonsSet(1, 'K')
+        val commons_K = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'K'), commons_K)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('K'), commons_K.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'), commons_K.getAvailableJack())
         // bridge_67 to commons
         operator.drawCableBetween(bridge_67.jack, commons_K.getAvailableJack())
         // bridge_1213 to commons
         operator.drawCableBetween(bridge_1213.jack, commons_K.getAvailableJack())
         // chain input to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_K.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_K.getAvailableJack())
 
         // back side - draw cables for 'C'
         // bridge_1314 to diagonal board
-        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoard(1).getJack('C'))
+        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'))
 
         // back side - draw cables for 'N'
         // bridge_1212 to diagonal board
-        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoard(1).getJack('N'))
+        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('N'))
 
         // back side - draw cables for 'L'
         // bridge_89 to diagonal board
-        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoard(1).getJack('L'))
+        operator.drawCableBetween(bridge_89.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('L'))
 
         // back side - draw cables for 'G'
         // scrambler 8 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(8).inputJack, bombe.getDiagonalBoard(1).getJack('G'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(8)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('G'))
 
         // back side - draw cables for 'A'
         // scrambler 11 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(11).inputJack, bombe.getDiagonalBoard(1).getJack('A'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(11)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'))
 
         // back side - draw cables for 'J'
         // scrambler 10 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).outputJack, bombe.getDiagonalBoard(1).getJack('J'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('J'))
 
         // back side - draw cables for 'U'
         // scrambler 9 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).outputJack, bombe.getDiagonalBoard(1).getJack('U'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'))
 
         // back side - draw cables for 'E'
         // scrambler 7 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(7).outputJack, bombe.getDiagonalBoard(1).getJack('E'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(7)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'))
 
         // back side - draw cables for 'X'
         // scrambler 14 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).outputJack, bombe.getDiagonalBoard(1).getJack('X'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('X'))
 
         // switch on the used chains
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('Z')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('Z')
 
         // run the job
         val stops = bombe.run()
@@ -1140,166 +1278,168 @@ class JuniorBombeOperatorTest {
     @Test
     fun usBombeReport1944_testMenu_VI() {
         // double input, so we need to banks in order to get 2 chains
-        val bombe = Bombe(26, 2, 14, 3)
+        val bombe = Bombe(26, 2, 14, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.I, DrumType.II, DrumType.III)
         for (scramblerId in 1..14) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "ZZA")
-        operator.setStartRingOrientations(1, 2, "ZZD")
-        operator.setStartRingOrientations(1, 3, "ZAD")
-        operator.setStartRingOrientations(1, 4, "ZAI")
-        operator.setStartRingOrientations(1, 5, "ZZB")
-        operator.setStartRingOrientations(1, 6, "ZZO")
-        operator.setStartRingOrientations(1, 7, "ZZK")
-        operator.setStartRingOrientations(1, 8, "ZAF")
-        operator.setStartRingOrientations(1, 9, "ZAD")
-        operator.setStartRingOrientations(1, 10, "ZZR")
-        operator.setStartRingOrientations(1, 11, "ZAJ")
-        operator.setStartRingOrientations(1, 12, "ZAE")
-        operator.setStartRingOrientations(1, 13, "ZAY")
-        operator.setStartRingOrientations(1, 14, "ZAK")
+        operator.setStartRingOrientations(1, "ZZA")
+        operator.setStartRingOrientations(2, "ZZD")
+        operator.setStartRingOrientations(3, "ZAD")
+        operator.setStartRingOrientations(4, "ZAI")
+        operator.setStartRingOrientations(5, "ZZB")
+        operator.setStartRingOrientations(6, "ZZO")
+        operator.setStartRingOrientations(7, "ZZK")
+        operator.setStartRingOrientations(8, "ZAF")
+        operator.setStartRingOrientations(9, "ZAD")
+        operator.setStartRingOrientations(10, "ZZR")
+        operator.setStartRingOrientations(11, "ZAJ")
+        operator.setStartRingOrientations(12, "ZAE")
+        operator.setStartRingOrientations(13, "ZAY")
+        operator.setStartRingOrientations(14, "ZAK")
 
         // back side - place bridges
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         val bridge_23 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         val bridge_45 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         val bridge_67 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         // no bridge between scrambler 8 and 9
         val bridge_910 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(9).outputJack,
-            bombe.getBank(1).getScrambler(10).inputJack
+            bombe.getScramblerJackPanel(9)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(10)!!.getInputJack()
         )
         val bridge_1011 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(10).outputJack,
-            bombe.getBank(1).getScrambler(11).inputJack
+            bombe.getScramblerJackPanel(10)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(11)!!.getInputJack()
         )
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         val bridge_1213 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(12).outputJack,
-            bombe.getBank(1).getScrambler(13).inputJack
+            bombe.getScramblerJackPanel(12)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(13)!!.getInputJack()
         )
         val bridge_1314 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(13).outputJack,
-            bombe.getBank(1).getScrambler(14).inputJack
+            bombe.getScramblerJackPanel(13)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(14)!!.getInputJack()
         )
 
         // back side - draw cables for 'A'
         // scrambler 1 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, bombe.getDiagonalBoard(1).getJack('A'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'))
 
         // back side - draw cables for 'I'
         // bridge_12 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('I'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('I'))
 
         // back side - draw cables for 'H'
         // bridge_23 to diagonal board
-        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoard(1).getJack('H'))
+        operator.drawCableBetween(bridge_23.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('H'))
 
         // back side - draw cables for 'F'
         // bridge_34 to diagonal board
-        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoard(1).getJack('F'))
+        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('F'))
 
         // back side - draw cables for 'Y'
-        val commons_Y = bombe.claimAvailableCommonsSet(1, 'Y')
+        val commons_Y = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'Y'), commons_Y)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('Y'), commons_Y.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'), commons_Y.getAvailableJack())
         // bridge_45 to commons
         operator.drawCableBetween(bridge_45.jack, commons_Y.getAvailableJack())
         // chain 1 input to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_Y.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_Y.getAvailableJack())
 
         // back side - draw cables for 'K'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('K'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'))
 
         // back side - draw cables for 'D'
         // bridge_67 to diagonal board
-        operator.drawCableBetween(bridge_67.jack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bridge_67.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'L'
         // bridge_78 to diagonal board
-        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoard(1).getJack('L'))
+        operator.drawCableBetween(bridge_78.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('L'))
 
         // back side - draw cables for 'Q'  // initially read this as a 'G
         // scrambler 8 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(8).outputJack, bombe.getDiagonalBoard(1).getJack('Q'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(8)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('Q'))
 
         // back side - draw cables for 'T'
         // scrambler 9 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).inputJack, bombe.getDiagonalBoard(1).getJack('T'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('T'))
 
         // back side - draw cables for 'W'
         // bridge_910 to diagonal board
-        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoard(1).getJack('W'))
+        operator.drawCableBetween(bridge_910.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('W'))
 
         // back side - draw cables for 'U'
         // bridge_1011 to diagonal board
-        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoard(1).getJack('U'))
+        operator.drawCableBetween(bridge_1011.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('U'))
 
         // back side - draw cables for 'O'
-        val commons_O = bombe.claimAvailableCommonsSet(1, 'O')
+        val commons_O = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'O'), commons_O)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('O'), commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'), commons_O.getAvailableJack())
         // bridge_1112 to commons
         operator.drawCableBetween(bridge_1112.jack, commons_O.getAvailableJack())
         // chain 1I input to commons
-        operator.drawCableBetween(bombe.getChain(2).inputJack, commons_O.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(2)!!.getInputJack(), commons_O.getAvailableJack())
 
         // back side - draw cables for 'S'
         // bridge_1213 to diagonal board
-        operator.drawCableBetween(bridge_1213.jack, bombe.getDiagonalBoard(1).getJack('S'))
+        operator.drawCableBetween(bridge_1213.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('S'))
 
         // back side - draw cables for 'P'
         // bridge_1314 to diagonal board
-        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoard(1).getJack('P'))
+        operator.drawCableBetween(bridge_1314.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('P'))
 
         // back side - draw cables for 'C'
         // scrambler 14 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(14).outputJack, bombe.getDiagonalBoard(1).getJack('C'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(14)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'))
 
         // switch on the used chains
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
-        bombe.getChain(2).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
+        bombe.getChainControlPanel(2)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('O')
-        bombe.getChain(2).setContactToActivate('Y')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('O')
+        bombe.getChainControlPanel(2)!!.setContactToActivate('Y')
 
         // switch on 'double input'
         bombe.switchDoubleInputOn()
@@ -1322,209 +1462,211 @@ class JuniorBombeOperatorTest {
     // http://www.jfbouch.fr/crypto/enigma/bombe/us6812/test_VII.txt
     @Test
     fun usBombeReport1944_testMenu_VII() {
-        val bombe = Bombe(26, 1, 27, 3)
+        val bombe = Bombe(26, 1, 27, 3, 5, ReflectorType.B)
         val operator = JuniorBombeOperator()
         operator.setBombe(bombe)
 
         // front side - place drums
         val drumTypes = listOf(DrumType.V, DrumType.IV, DrumType.III)
         for (scramblerId in 1..27) {
-            operator.placeDrums(1, scramblerId, drumTypes)
+            operator.placeDrums(scramblerId, drumTypes)
         }
 
         // front side - set start orientation of drums
-        operator.setStartRingOrientations(1, 1, "AGP")
-        operator.setStartRingOrientations(1, 2, "ENF")
-        operator.setStartRingOrientations(1, 3, "EMI")
-        operator.setStartRingOrientations(1, 4, "ENH")
-        operator.setStartRingOrientations(1, 5, "EMK")
-        operator.setStartRingOrientations(1, 6, "ENL")
-        operator.setStartRingOrientations(1, 7, "EMO")
-        operator.setStartRingOrientations(1, 8, "ENK")
-        operator.setStartRingOrientations(1, 9, "EMN")
-        operator.setStartRingOrientations(1, 10, "ENM")
-        operator.setStartRingOrientations(1, 11, "EMP")
-        operator.setStartRingOrientations(1, 12, "CIQ")
-        operator.setStartRingOrientations(1, 13, "EMT")
-        operator.setStartRingOrientations(1, 14, "ENQ")
-        operator.setStartRingOrientations(1, 15, "ENN")
-        operator.setStartRingOrientations(1, 16, "EMQ")
-        operator.setStartRingOrientations(1, 17, "ENG")
-        operator.setStartRingOrientations(1, 18, "EMJ")
-        operator.setStartRingOrientations(1, 19, "ENR")
-        operator.setStartRingOrientations(1, 20, "EMU")
-        operator.setStartRingOrientations(1, 21, "CIR")
-        operator.setStartRingOrientations(1, 22, "EML")
-        operator.setStartRingOrientations(1, 23, "ENI")
-        operator.setStartRingOrientations(1, 24, "EMR")
-        operator.setStartRingOrientations(1, 25, "ENO")
-        operator.setStartRingOrientations(1, 26, "CIP")
-        operator.setStartRingOrientations(1, 27, "AGN")
+        operator.setStartRingOrientations(1, "AGP")
+        operator.setStartRingOrientations(2, "ENF")
+        operator.setStartRingOrientations( 3,"EMI")
+        operator.setStartRingOrientations( 4,"ENH")
+        operator.setStartRingOrientations( 5,"EMK")
+        operator.setStartRingOrientations( 6,"ENL")
+        operator.setStartRingOrientations( 7,"EMO")
+        operator.setStartRingOrientations(8, "ENK")
+        operator.setStartRingOrientations(9, "EMN")
+        operator.setStartRingOrientations(10, "ENM")
+        operator.setStartRingOrientations(11, "EMP")
+        operator.setStartRingOrientations(12, "CIQ")
+        operator.setStartRingOrientations(13, "EMT")
+        operator.setStartRingOrientations(14, "ENQ")
+        operator.setStartRingOrientations(15, "ENN")
+        operator.setStartRingOrientations(16, "EMQ")
+        operator.setStartRingOrientations(17, "ENG")
+        operator.setStartRingOrientations(18, "EMJ")
+        operator.setStartRingOrientations(19, "ENR")
+        operator.setStartRingOrientations(20, "EMU")
+        operator.setStartRingOrientations(21, "CIR")
+        operator.setStartRingOrientations(22, "EML")
+        operator.setStartRingOrientations(23, "ENI")
+        operator.setStartRingOrientations(24, "EMR")
+        operator.setStartRingOrientations(25, "ENO")
+        operator.setStartRingOrientations(26, "CIP")
+        operator.setStartRingOrientations(27, "AGN")
 
-        // back side - place bridges
+        // back side - place bridges between scramblers
         val bridge_12 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(1).outputJack,
-            bombe.getBank(1).getScrambler(2).inputJack
+            bombe.getScramblerJackPanel(1)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(2)!!.getInputJack()
         )
         // bridge 2 to 3 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(2).outputJack,
-            bombe.getBank(1).getScrambler(3).inputJack
+            bombe.getScramblerJackPanel(2)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(3)!!.getInputJack()
         )
         val bridge_34 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(3).outputJack,
-            bombe.getBank(1).getScrambler(4).inputJack
+            bombe.getScramblerJackPanel(3)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(4)!!.getInputJack()
         )
         // bridge 4 to 5 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(4).outputJack,
-            bombe.getBank(1).getScrambler(5).inputJack
+            bombe.getScramblerJackPanel(4)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(5)!!.getInputJack()
         )
         val bridge_56 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(5).outputJack,
-            bombe.getBank(1).getScrambler(6).inputJack
+            bombe.getScramblerJackPanel(5)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(6)!!.getInputJack()
         )
         // bridge 6 to 7 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(6).outputJack,
-            bombe.getBank(1).getScrambler(7).inputJack
+            bombe.getScramblerJackPanel(6)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(7)!!.getInputJack()
         )
         val bridge_78 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(7).outputJack,
-            bombe.getBank(1).getScrambler(8).inputJack
+            bombe.getScramblerJackPanel(7)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(8)!!.getInputJack()
         )
         // bridge 8 to 9 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(8).outputJack,
-            bombe.getBank(1).getScrambler(9).inputJack
+            bombe.getScramblerJackPanel(8)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(9)!!.getInputJack()
         )
         // no bridge between scrambler 9 and 10
         // bridge 10 to 11 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(10).outputJack,
-            bombe.getBank(1).getScrambler(11).inputJack
+            bombe.getScramblerJackPanel(10)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(11)!!.getInputJack()
         )
         val bridge_1112 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(11).outputJack,
-            bombe.getBank(1).getScrambler(12).inputJack
+            bombe.getScramblerJackPanel(11)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(12)!!.getInputJack()
         )
         // no bridge between 12 and 13
         // bridge 13 to 14 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(13).outputJack,
-            bombe.getBank(1).getScrambler(14).inputJack
+            bombe.getScramblerJackPanel(13)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(14)!!.getInputJack()
         )
         val bridge_1415 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(14).outputJack,
-            bombe.getBank(1).getScrambler(15).inputJack
+            bombe.getScramblerJackPanel(14)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(15)!!.getInputJack()
         )
         // bridge 15 to 16 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(15).outputJack,
-            bombe.getBank(1).getScrambler(16).inputJack
+            bombe.getScramblerJackPanel(15)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(16)!!.getInputJack()
         )
         val bridge_1617 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(16).outputJack,
-            bombe.getBank(1).getScrambler(17).inputJack
+            bombe.getScramblerJackPanel(16)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(17)!!.getInputJack()
         )
         // bridge 17 to 18 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(17).outputJack,
-            bombe.getBank(1).getScrambler(18).inputJack
+            bombe.getScramblerJackPanel(17)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(18)!!.getInputJack()
         )
         // no bridge between 18 and 19
         // bridge 19 to 20 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(19).outputJack,
-            bombe.getBank(1).getScrambler(20).inputJack
+            bombe.getScramblerJackPanel(19)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(20)!!.getInputJack()
         )
         val bridge_2021 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(20).outputJack,
-            bombe.getBank(1).getScrambler(21).inputJack
+            bombe.getScramblerJackPanel(20)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(21)!!.getInputJack()
         )
         val bridge_2122 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(21).outputJack,
-            bombe.getBank(1).getScrambler(22).inputJack
+            bombe.getScramblerJackPanel(21)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(22)!!.getInputJack()
         )
         // bridge 22 to 23 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(22).outputJack,
-            bombe.getBank(1).getScrambler(23).inputJack
+            bombe.getScramblerJackPanel(22)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(23)!!.getInputJack()
         )
         val bridge_2324 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(23).outputJack,
-            bombe.getBank(1).getScrambler(24).inputJack
+            bombe.getScramblerJackPanel(23)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(24)!!.getInputJack()
         )
         // bridge 24 to 25 represents a ?
         operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(24).outputJack,
-            bombe.getBank(1).getScrambler(25).inputJack
+            bombe.getScramblerJackPanel(24)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(25)!!.getInputJack()
         )
         // no bridge between 25 en 26
         val bridge_2627 = operator.attachBridgeTo(
-            bombe.getBank(1).getScrambler(26).outputJack,
-            bombe.getBank(1).getScrambler(27).inputJack
+            bombe.getScramblerJackPanel(26)!!.getOutputJack(),
+            bombe.getScramblerJackPanel(27)!!.getInputJack()
         )
 
         // back side - draw cables for 'Q'
         // scrambler 1 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(1).inputJack, bombe.getDiagonalBoard(1).getJack('Q'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(1)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('Q'))
 
         // back side - draw cables for 'N'
         // bridge_12 to diagonal board
-        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoard(1).getJack('N'))
+        operator.drawCableBetween(bridge_12.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('N'))
 
         // back side - draw cables for 'O'
         // bridge_34 to diagonal board
-        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoard(1).getJack('O'))
+        operator.drawCableBetween(bridge_34.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('O'))
 
         // back side - draw cables for 'K'
         // bridge_56 to diagonal board
-        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoard(1).getJack('K'))
+        operator.drawCableBetween(bridge_56.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('K'))
 
         // back side - draw cables for 'V'
-        val commons_V = bombe.claimAvailableCommonsSet(1, 'V')
+        val commons_V = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'V'), commons_V)
         // diagonal board to commons
-        operator.drawCableBetween(bombe.getDiagonalBoard(1).getJack('V'), commons_V.getAvailableJack())
+        operator.drawCableBetween(bombe.getDiagonalBoardJackPanel(1)!!.getJack('V'), commons_V.getAvailableJack())
         // bridge_78 to commons
         operator.drawCableBetween(bridge_78.jack, commons_V.getAvailableJack())
         // scrambler 10 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(10).inputJack, commons_V.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(10)!!.getInputJack(), commons_V.getAvailableJack())
         // scrambler 13 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(13).inputJack, commons_V.getAvailableJack())
+        operator.drawCableBetween(bombe.getScramblerJackPanel(13)!!.getInputJack(), commons_V.getAvailableJack())
         // chain 1 input to commons
-        operator.drawCableBetween(bombe.getChain(1).inputJack, commons_V.getAvailableJack())
+        operator.drawCableBetween(bombe.getChainJackPanel(1)!!.getInputJack(), commons_V.getAvailableJack())
 
         // back side - draw cables for 'A'
         // scrambler 9 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(9).outputJack, bombe.getDiagonalBoard(1).getJack('A'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(9)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('A'))
 
         // back side - draw cables for 'J'
         // bridge_1112 to diagonal board
-        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoard(1).getJack('J'))
+        operator.drawCableBetween(bridge_1112.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('J'))
 
         // back side - draw cables for 'I'
         // scrambler 12 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(12).outputJack, bombe.getDiagonalBoard(1).getJack('I'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(12)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('I'))
 
         // back side - draw cables for 'Z'
         // bridge_1415 to diagonal board
-        operator.drawCableBetween(bridge_1415.jack, bombe.getDiagonalBoard(1).getJack('Z'))
+        operator.drawCableBetween(bridge_1415.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Z'))
 
         // back side - draw cables for 'Y'
         // bridge_1617 to diagonal board
-        operator.drawCableBetween(bridge_1617.jack, bombe.getDiagonalBoard(1).getJack('Y'))
+        operator.drawCableBetween(bridge_1617.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('Y'))
 
         // back side - draw cables for 'M'
         // scrambler 18 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(18).outputJack, bombe.getDiagonalBoard(1).getJack('M'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(18)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('M'))
 
         // back side - draw cables for 'W'
         // scrambler 19 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(19).inputJack, bombe.getDiagonalBoard(1).getJack('W'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(19)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('W'))
 
         // back side - draw cables for 'P'
-        val commons_P = bombe.claimAvailableCommonsSet(1, 'P')
+        val commons_P = operator.findFreeCommonsSet()
+        operator.commonsSetRegister.put(Pair(1,'P'), commons_P)
         // bridge_2021 to diagonal board
         operator.drawCableBetween(bridge_2021.jack, commons_P.getAvailableJack())
         // bridge_2324 to diagonal board
@@ -1532,35 +1674,39 @@ class JuniorBombeOperatorTest {
 
         // back side - draw cables for 'S'
         // bridge_2122 to diagonal board
-        operator.drawCableBetween(bridge_2122.jack, bombe.getDiagonalBoard(1).getJack('S'))
+        operator.drawCableBetween(bridge_2122.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('S'))
 
         // back side - draw cables for 'E'
         // scrambler 25 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(25).outputJack, bombe.getDiagonalBoard(1).getJack('E'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(25)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('E'))
 
         // back side - draw cables for 'D'
         // scrambler 26 input to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(26).inputJack, bombe.getDiagonalBoard(1).getJack('D'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(26)!!.getInputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('D'))
 
         // back side - draw cables for 'C'
         // bridge_2627 to diagonal board
-        operator.drawCableBetween(bridge_2627.jack, bombe.getDiagonalBoard(1).getJack('C'))
+        operator.drawCableBetween(bridge_2627.jack, bombe.getDiagonalBoardJackPanel(1)!!.getJack('C'))
 
         // back side - draw cables for 'B'
         // scrambler 27 output to diagonal board
-        operator.drawCableBetween(bombe.getBank(1).getScrambler(27).outputJack, bombe.getDiagonalBoard(1).getJack('B'))
+        operator.drawCableBetween(bombe.getScramblerJackPanel(27)!!.getOutputJack(), bombe.getDiagonalBoardJackPanel(1)!!.getJack('B'))
 
         // switch on the used chains
         // TODO: add a unittest for an off bank
-        bombe.getChain(1).switchOn()
+        bombe.getChainControlPanel(1)!!.switchOn()
 
         // put the current on the correct wire
         // TODO: add a unittest for a bank without an active contact
-        bombe.getChain(1).setContactToActivate('A')
+        bombe.getChainControlPanel(1)!!.setContactToActivate('A')
 
         // count scramblers which don't have both input and output plugged up
-        val incompleteScramblers = bombe.getBank(1).getScramblers().filter { it.inputJack.pluggedUpBy() == null || it.outputJack.pluggedUpBy() == null }.count()
+        val incompleteScramblers = bombe.getScramblers().filter { it!!.getInputJack().pluggedUpBy() == null || it!!.getOutputJack().pluggedUpBy() == null }.count()
         println("$incompleteScramblers scramblers without both jacks plugged up")
+
+        // count bridges who's jack is not plugged up (this should be equal to the number of '?' in the menu)
+        val unpluggedBridges = bombe.getBridges().filter { it.jack.pluggedUpBy() == null }.count()
+        println("$unpluggedBridges bridges which are not plugged up (represent '?' in the menu)")
 
         // run the job
         val stops = bombe.run()
