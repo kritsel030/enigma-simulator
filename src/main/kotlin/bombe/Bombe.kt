@@ -107,12 +107,15 @@ class Bombe (
         return this
     }
 
-    override fun getChainControlPanel(id:Int) : ChainControlPanel? {
+    fun getChain(id:Int) : Chain? {
         return chains.get(id)
+    }
+    override fun getChainControlPanel(id:Int) : ChainControlPanel? {
+        return getChain(id)
     }
 
     override fun getChainJackPanel(id:Int) : ChainJackPanel? {
-        return chains.get(id)
+        return getChain(id)
     }
 
     override fun getChainJackPanels() : List<ChainJackPanel> {
@@ -120,7 +123,7 @@ class Bombe (
     }
 
     override fun getChainDisplay(id:Int) : ChainDisplay? {
-        return chains.get(id)
+        return getChain(id)
     }
 
     fun getScrambler(id: Int): Scrambler? {
@@ -226,9 +229,6 @@ class Bombe (
                 if (chain.isOn()) {
                     var root = CurrentPathElement.createRoot(chain.getContactToActivate()!!)
                     chain.run(root)
-                    if (printStepResult) {
-                        chain.testRegisterConnectedTo?.printStatus()
-                    }
                     if (printCurrentPath) {
                         println("chain ${chain.id} current path")
                         root.print()
@@ -237,6 +237,8 @@ class Bombe (
                     if (stop != null) {
                         if (!isDoubleInputOn()) {
                             stops.add(stop)
+                            // fill test register with a copy of the input jack contacts
+//                            chain.fillTestRegister(chain.getInputJack().readContacts().toMap())
                         } else {
                             doubleInputStops.add(stop)
                         }
@@ -247,6 +249,9 @@ class Bombe (
                 // when 'double input' is switch on, all active chains must have produced a stop
                 if (doubleInputStops.size == chains.values.filter { it.isOn() }.count()) {
                     stops.addAll(doubleInputStops)
+                    // fill test registers with a copy of the chain input jack contacts
+//                    getChain(1)!!.fillTestRegister(getChain(1)!!.getInputJack().readContacts().toMap())
+//                    getChain(2)!!.fillTestRegister(getChain(2)!!.getInputJack().readContacts().toMap())
                 }
             }
             resetCurrent()

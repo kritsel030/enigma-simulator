@@ -44,19 +44,29 @@ class Chain (val id: Int, bombe: Bombe)
     // ***********************************************************************************************************
     // BankDisplay support
 
-    // by default the bank's test register is connected to the bank's input Jack
-    var testRegisterConnectedTo : Connector = _inputJack
+    var testRegister : Map<Char, Boolean> = mapOf<Char, Boolean>()
 
-    // The test register can be connected to another connector to demonstrate
-    //  single line scanning as was the case in the first bombe prototype (Victory))
-    fun connectTestRegisterTo(connector: Connector) {
-        testRegisterConnectedTo = connector
+    fun fillTestRegister(contactsOfInputJack:Map<Char, Boolean>) {
+        testRegister = contactsOfInputJack
     }
 
-    // Return the currently active contacts in the test register
     override fun readTestRegister() : Map<Char, Boolean> {
-        return _inputJack.readContacts()
+        return testRegister
     }
+
+//    // by default the bank's test register is connected to the bank's input Jack
+//    var testRegisterConnectedTo : Connector = _inputJack
+//
+//    // The test register can be connected to another connector to demonstrate
+//    //  single line scanning as was the case in the first bombe prototype (Victory))
+//    fun connectTestRegisterTo(connector: Connector) {
+//        testRegisterConnectedTo = connector
+//    }
+//
+//    // Return the currently active contacts in the test register
+//    override fun readTestRegister() : Map<Char, Boolean> {
+//        return _inputJack.readContacts()
+//    }
 
     // ***********************************************************************************************************
     // Features to support the running of a bombe
@@ -71,7 +81,7 @@ class Chain (val id: Int, bombe: Bombe)
 
     fun checkStepResult() : Pair<Boolean, List<Char>?> {
         var potentialSteckerPartners : List<Char>? = null
-        val activeContacts = readTestRegister().filter{entry -> entry.value }.map{it.key}.toList()
+        val activeContacts = _inputJack.readContacts().filter{entry -> entry.value }.map{it.key}.toList()
         val stop = activeContacts.size < bombe.alphabetSize
         if (stop) {
             if (activeContacts.size == 1) {
@@ -80,7 +90,7 @@ class Chain (val id: Int, bombe: Bombe)
             } else {
                 // pick all inactive entries in the test register
                 potentialSteckerPartners =
-                    readTestRegister().filter { entry -> !entry.value }.map { it.key }.toList()
+                    _inputJack.readContacts().filter { entry -> !entry.value }.map { it.key }.toList()
             }
         }
         return Pair(stop, potentialSteckerPartners)
