@@ -44,29 +44,26 @@ class Chain (val id: Int, bombe: Bombe)
     // ***********************************************************************************************************
     // BankDisplay support
 
-    var testRegister : Map<Char, Boolean> = mapOf<Char, Boolean>()
-
+    private var testRegister : Map<Char, Boolean> = mapOf<Char, Boolean>()
+    init {
+        resetTestRegister()
+    }
     fun fillTestRegister(contactsOfInputJack:Map<Char, Boolean>) {
         testRegister = contactsOfInputJack
+    }
+
+    fun resetTestRegister() {
+        val freshRegister = mutableMapOf<Char, Boolean>()
+        var char = 'A'
+        for (i in 0..bombe.alphabetSize-1) {
+            freshRegister[char.plus(i)] = false;
+        }
+        testRegister = freshRegister
     }
 
     override fun readTestRegister() : Map<Char, Boolean> {
         return testRegister
     }
-
-//    // by default the bank's test register is connected to the bank's input Jack
-//    var testRegisterConnectedTo : Connector = _inputJack
-//
-//    // The test register can be connected to another connector to demonstrate
-//    //  single line scanning as was the case in the first bombe prototype (Victory))
-//    fun connectTestRegisterTo(connector: Connector) {
-//        testRegisterConnectedTo = connector
-//    }
-//
-//    // Return the currently active contacts in the test register
-//    override fun readTestRegister() : Map<Char, Boolean> {
-//        return _inputJack.readContacts()
-//    }
 
     // ***********************************************************************************************************
     // Features to support the running of a bombe

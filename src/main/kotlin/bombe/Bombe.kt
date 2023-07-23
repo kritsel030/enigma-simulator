@@ -224,6 +224,9 @@ class Bombe (
         private set
     fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false) : List<Stop> {
         for (step in 1.. if (numberOfSteps != null) numberOfSteps!! else pow(alphabetSize,3) ) {
+            // reset the test registers for all active chains first
+            chains.values.filter{it.isOn()}.forEach { it.resetTestRegister() }
+            // now run all active chains
             val doubleInputStops = mutableListOf<Stop>()
             for ((index, chain) in chains.values.withIndex()) {
                 if (chain.isOn()) {
@@ -238,7 +241,7 @@ class Bombe (
                         if (!isDoubleInputOn()) {
                             stops.add(stop)
                             // fill test register with a copy of the input jack contacts
-//                            chain.fillTestRegister(chain.getInputJack().readContacts().toMap())
+                            chain.fillTestRegister(chain.getInputJack().readContacts().toMap())
                         } else {
                             doubleInputStops.add(stop)
                         }
@@ -250,8 +253,8 @@ class Bombe (
                 if (doubleInputStops.size == chains.values.filter { it.isOn() }.count()) {
                     stops.addAll(doubleInputStops)
                     // fill test registers with a copy of the chain input jack contacts
-//                    getChain(1)!!.fillTestRegister(getChain(1)!!.getInputJack().readContacts().toMap())
-//                    getChain(2)!!.fillTestRegister(getChain(2)!!.getInputJack().readContacts().toMap())
+                    getChain(1)!!.fillTestRegister(getChain(1)!!.getInputJack().readContacts().toMap())
+                    getChain(2)!!.fillTestRegister(getChain(2)!!.getInputJack().readContacts().toMap())
                 }
             }
             resetCurrent()
