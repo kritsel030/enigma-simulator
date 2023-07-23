@@ -31,7 +31,7 @@ class CommonsSet (val id: Int, bombe : Bombe) : PassThroughComponent(externalLab
     }
 
     // each Jack constructor registers the Jack with the component it is attached to,
-    // so please do not remove these member initializers
+    // so please do not remove these constructors
     private val jack1 = Jack(externalLabel(id), "jack-1", this)
     private val jack2 = Jack(externalLabel(id), "jack-2", this)
     private val jack3 = Jack(externalLabel(id), "jack-3", this)

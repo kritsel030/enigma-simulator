@@ -3,7 +3,6 @@ package bombe
 import bombe.components.DrumType
 import enigma.components.ReflectorType
 import org.junit.jupiter.api.Test
-import java.lang.IllegalStateException
 import kotlin.test.*
 
 class BombeTest {
@@ -11,12 +10,13 @@ class BombeTest {
     @Test
     fun constructor() {
         val alphabetSize = 12
+        val noOfChains = 3
         val noOfBanks = 5
         val noOfScramblersPerBank = 7
         val noOfRotorsPerScrambler = 3
         val noOfCommonsSetsPerBank = 5
         val reflectorType = ReflectorType.B
-        val bombe = Bombe(alphabetSize, noOfBanks, noOfScramblersPerBank, noOfRotorsPerScrambler, noOfCommonsSetsPerBank, reflectorType)
+        val bombe = Bombe(alphabetSize, noOfChains, noOfBanks, noOfScramblersPerBank, noOfRotorsPerScrambler, noOfCommonsSetsPerBank, reflectorType)
 
         assertResetResult(bombe)
         assertNoCurrent(bombe)
@@ -24,7 +24,7 @@ class BombeTest {
 
     @Test
     fun createCable() {
-        val bombe = Bombe(3, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(3, 1, 1, 1, 3, 1, ReflectorType.B)
         val cable = bombe.createCable()
         assertNotNull(cable)
         assertEquals(1, bombe.getCables().size)
@@ -32,7 +32,7 @@ class BombeTest {
 
     @Test
     fun createBridge() {
-        val bombe = Bombe(3, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(3, 1, 1,  1, 3, 1, ReflectorType.B)
         val bridge = bombe.createBridge()
         assertNotNull(bridge)
         assertEquals(1, bombe.getBridges().size)
@@ -41,7 +41,7 @@ class BombeTest {
     @Test
     fun rotateDrums() {
         // prepare a bombe with scramblers
-        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(26, 1, 1, 1, 3, 1, ReflectorType.B)
         bombe.getScramblers().forEach {
             run {
                 it.placeDrums(listOf(DrumType.V, DrumType.I, DrumType.III))
@@ -63,9 +63,9 @@ class BombeTest {
         bombe.getScramblers().forEach { it ->
             run {
                 // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
-                assertEquals(fastDrumSteps, it.internalScrambler!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
-                assertEquals(middleDrumSteps, it.internalScrambler!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
-                assertEquals(slowDrumSteps, it.internalScrambler!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
+                assertEquals(fastDrumSteps, it.enigma!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
+                assertEquals(middleDrumSteps, it.enigma!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
+                assertEquals(slowDrumSteps, it.enigma!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
             }
         }
     }
@@ -76,8 +76,8 @@ class BombeTest {
 
         bombe.getScramblers().forEach { scrambler ->
             run {
-                assertNotNull(scrambler.internalScrambler,"expect an internal scrambler - without rotors - to be present")
-                assertEquals(bombe.noOfRotorsPerScrambler, scrambler.internalScrambler.rotorPositions)
+                assertNotNull(scrambler.enigma,"expect an internal scrambler - without rotors - to be present")
+                assertEquals(bombe.noOfRotorsPerScrambler, scrambler.enigma.rotorPositions)
             }
         }
 

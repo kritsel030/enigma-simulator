@@ -26,31 +26,4 @@ open class Jack (val externalLabel: String,
         return connectedTo as? Plug
     }
 
-    // verifies if this jack
-    // - is plugged up with a plug which is attached to a cable
-    // - if the other plug of that cable is plugged into a jack of a component whose type is mentioned in the given
-    //   list of component types
-    // returns a list of verification error messages (empty list when all is OK)
-    fun verifyCableTo(componentTypes: List<String>) : List<String> {
-        val errors = mutableListOf<String>()
-        val plugInsertedToJack = this.pluggedUpBy()
-        if (plugInsertedToJack == null) {
-            errors.add("${attachedTo.label}.${externalLabel} : jack is not plugged up")
-        } else {
-            if (plugInsertedToJack!!.attachedTo !is Cable) {
-                errors.add("${attachedTo.label}.${externalLabel} : jack is plugged up with a plug connected to a ${attachedTo.javaClass.simpleName}, expected Cable")
-            }
-            val jackOnOtherSideOfCable = (plugInsertedToJack as CablePlug).getOppositePlug().pluggedInto()
-            if (jackOnOtherSideOfCable == null) {
-                errors.add("${attachedTo.label}.${externalLabel} : other side of the plugged in cable is not plugged in")
-            } else if (!componentTypes.contains(jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName)) {
-                errors.add(
-                    "${attachedTo.label}.${externalLabel} : jack is connected to a ${jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName}, expected ${
-                        componentTypes.joinToString(" or ")
-                    }"
-                )
-            }
-        }
-        return errors
-    }
 }

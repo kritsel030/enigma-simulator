@@ -17,20 +17,14 @@ import bombe.connectors.Jack
  * - MediumBombeOperator
  * - ExpertBombeOperator
  */
-open class JuniorBombeOperator() {
+open class JuniorBombeOperator(private val bombe: Bombe) {
 
-    var _bombe: Bombe? = null
     fun getBombeInterface(): BombeInterface {
         return getBombe()
     }
 
     protected fun getBombe(): Bombe {
-        require(_bombe != null) { "Bombe has not been initialized" }
-        return _bombe!!
-    }
-
-    fun setBombe(bombe: Bombe) {
-        _bombe = bombe
+        return bombe
     }
 
     // *************************************************************************************************

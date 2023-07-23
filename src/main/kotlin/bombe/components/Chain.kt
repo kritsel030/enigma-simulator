@@ -72,7 +72,6 @@ class Chain (val id: Int, bombe: Bombe)
     fun checkStepResult() : Pair<Boolean, List<Char>?> {
         var potentialSteckerPartners : List<Char>? = null
         val activeContacts = readTestRegister().filter{entry -> entry.value }.map{it.key}.toList()
-//        val stop = activeContacts.size == 1 || activeContacts.size == bombe.alphabetSize - 1
         val stop = activeContacts.size < bombe.alphabetSize
         if (stop) {
             if (activeContacts.size == 1) {

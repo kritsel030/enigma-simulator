@@ -9,29 +9,29 @@ class ScramblerTest {
 
     @Test
     fun placeDrums_ok() {
-        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(26, 1, 1, 1, 3, 1, ReflectorType.B)
         val scrambler = bombe.getScrambler(1)!!
         scrambler.placeDrums(listOf(DrumType.II, DrumType.III, DrumType.I))
         scrambler.setDrumStartOrientations("DKX")
-        assertEquals(scrambler.internalScrambler.leftRotor!!.getRotorType(), DrumType.II.rotorType)
-        assertEquals(scrambler.internalScrambler.middleRotor!!.getRotorType(), DrumType.III.rotorType)
-        assertEquals(scrambler.internalScrambler.rightRotor!!.getRotorType(), DrumType.I.rotorType)
+        assertEquals(scrambler.enigma.leftRotor!!.getRotorType(), DrumType.II.rotorType)
+        assertEquals(scrambler.enigma.middleRotor!!.getRotorType(), DrumType.III.rotorType)
+        assertEquals(scrambler.enigma.rightRotor!!.getRotorType(), DrumType.I.rotorType)
     }
 
     @Test
     fun setDrumStartOrientations() {
-        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(26, 1, 1, 1, 3, 1, ReflectorType.B)
         val scrambler = bombe.getScrambler(1)!!
         scrambler.placeDrums(listOf(DrumType.II, DrumType.III, DrumType.I))
         scrambler.setDrumStartOrientations("DKX")
-        assertEquals('D', scrambler.internalScrambler.leftRotor!!.startRingOrientation())
-        assertEquals('K', scrambler.internalScrambler.middleRotor!!.startRingOrientation())
-        assertEquals('X', scrambler.internalScrambler.rightRotor!!.startRingOrientation())
+        assertEquals('D', scrambler.enigma.leftRotor!!.startRingOrientation())
+        assertEquals('K', scrambler.enigma.middleRotor!!.startRingOrientation())
+        assertEquals('X', scrambler.enigma.rightRotor!!.startRingOrientation())
     }
 
     @Test
     fun passCurrent_viaInputJack() {
-        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(26, 1, 1, 1, 3, 1, ReflectorType.B)
         val scrambler = bombe.getScrambler(1)!!
 
         scrambler.placeDrums(listOf(DrumType.II, DrumType.V, DrumType.III))
@@ -48,7 +48,7 @@ class ScramblerTest {
 
     @Test
     fun passCurrent_viaOutputJack() {
-        val bombe = Bombe(26, 1, 1, 3, 1, ReflectorType.B)
+        val bombe = Bombe(26, 1, 1, 1, 3, 1, ReflectorType.B)
         val scrambler = bombe.getScrambler(1)!!
 
         scrambler.placeDrums(listOf(DrumType.II, DrumType.V, DrumType.III))

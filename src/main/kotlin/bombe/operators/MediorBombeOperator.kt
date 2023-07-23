@@ -1,7 +1,10 @@
 package bombe.operators
 
+import bombe.Bombe
 import bombe.Stop
 import bombe.components.*
+import bombe.connectors.CablePlug
+import bombe.connectors.Jack
 import java.lang.IllegalStateException
 
 /**
@@ -17,7 +20,7 @@ import java.lang.IllegalStateException
  * If you need a more experience bombe operator, you check out her colleague:
  * - ExpertBombeOperator
  */
-open class MediorBombeOperator() : JuniorBombeOperator() {
+open class MediorBombeOperator(bombe: Bombe) : JuniorBombeOperator(bombe) {
 
 
     // ************************************************************************************************
@@ -43,7 +46,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         // each Bank has an input-jack, when plugged up it should be connected - via a cable - to a CommonsSet or DiagonalBoard
         getBombeInterface().getChainJackPanels().forEach { panel ->
             if (panel.getInputJack().pluggedUpBy() != null) {
-                errors.addAll(panel.getInputJack().verifyCableTo(listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
+                errors.addAll(verifyCableTo(panel.getInputJack(), listOf(CommonsSet::class.java.simpleName, DiagonalBoard::class.java.simpleName)))
             }
         }
 
@@ -54,7 +57,7 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
                 run {
                     if (jack.pluggedUpBy() != null) {
                         errors.addAll(
-                            jack.verifyCableTo(
+                            verifyCableTo(jack,
                                 listOf(
                                     CommonsSet::class.java.simpleName,
                                     Bridge::class.java.simpleName,
@@ -79,25 +82,26 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
                 if (bridge.outPlug.pluggedInto() == null) {
                     errors.add("${bridge.label}.${bridge.outPlug.label} is not plugged in")
                 }
+                // test menu 7 in US bombe report 1944:
+                // there can be unknown letters in the menu, resulting in a bridge's jack not being plugged up
                 errors.addAll(
-                    bridge.jack.verifyCableTo(
+                    verifyCableTo(bridge.jack,
                         listOf(
                             CommonsSet::class.java.simpleName,
                             DiagonalBoard::class.java.simpleName
-                        )
-                    )
+                        ),false)
                 )
-
             }
         }
 
         // all scramblers should have none or both jacks plugged up
         getBombeInterface().getScramblerJackPanels().forEach {
             run {
-                if (!((it.getInputJack().pluggedUpBy() == null && it.getOutputJack().pluggedUpBy() == null) ||
-                            (it.getInputJack().pluggedUpBy() != null && it.getOutputJack().pluggedUpBy() != null))
-                ) {
-                    errors.add("${it.getExternalLabel()} has only 1 jack plugged in, expected none or both")
+                if (it.getInputJack().pluggedUpBy() != null && it.getOutputJack().pluggedUpBy() == null) {
+                    errors.add("Scrambler ${it.getExternalLabel()} has its input jack plugged up, while its output jack is unconnected")
+                }
+                if (it.getInputJack().pluggedUpBy() == null && it.getOutputJack().pluggedUpBy() != null) {
+                    errors.add("Scrambler ${it.getExternalLabel()} has its output jack plugged in, while its input jack is unconnected")
                 }
             }
         }
@@ -113,5 +117,33 @@ open class MediorBombeOperator() : JuniorBombeOperator() {
         }
     }
 
-
+    // verifies if this jack
+    // - is plugged up with a plug which is attached to a cable
+    // - if the other plug of that cable is plugged into a jack of a component whose type is mentioned in the given
+    //   list of component types
+    // returns a list of verification error messages (empty list when all is OK)
+    fun verifyCableTo(jack: Jack, componentTypes: List<String>, jackMustBePluggedUp: Boolean = true) : List<String> {
+        val errors = mutableListOf<String>()
+        val plugInsertedToJack = jack.pluggedUpBy()
+        if (plugInsertedToJack == null) {
+            if (jackMustBePluggedUp) {
+                errors.add("${jack.attachedTo.label}.${jack.externalLabel} : jack is not plugged up")
+            }
+        } else {
+            if (plugInsertedToJack!!.attachedTo !is Cable) {
+                errors.add("${jack.attachedTo.label}.${jack.externalLabel} : jack is plugged up with a plug connected to a ${jack.attachedTo.javaClass.simpleName}, expected Cable")
+            }
+            val jackOnOtherSideOfCable = (plugInsertedToJack as CablePlug).getOppositePlug().pluggedInto()
+            if (jackOnOtherSideOfCable == null) {
+                errors.add("${jack.attachedTo.label}.${jack.externalLabel} : other side of the plugged in cable is not plugged in")
+            } else if (!componentTypes.contains(jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName)) {
+                errors.add(
+                    "${jack.attachedTo.label}.${jack.externalLabel} : jack is connected to a ${jackOnOtherSideOfCable!!.attachedTo.javaClass.simpleName}, expected ${
+                        componentTypes.joinToString(" or ")
+                    }"
+                )
+            }
+        }
+        return errors
+    }
 }

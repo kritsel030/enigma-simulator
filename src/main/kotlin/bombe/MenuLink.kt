@@ -6,6 +6,7 @@ class MenuLink (
     val positionInMenu : Int,
     val positionInMenuChain: Int,
     val inputLetter: Char,
-    val rotorOffset: Int,
+    val rotorOffset: Int?,
+    val drumStartOrientations: String?,
     val outputLetter: Char) {
 }

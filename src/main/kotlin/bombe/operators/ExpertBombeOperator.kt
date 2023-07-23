@@ -1,6 +1,7 @@
 package bombe.operators
 
 import bombe.*
+import bombe.Util.PluggingUpUtil
 import bombe.components.*
 import bombe.connectors.CablePlug
 import bombe.connectors.Jack
@@ -16,15 +17,14 @@ import bombe.connectors.Jack
  * without requiring any additional instructions from you.
  */
 
-class ExpertBombeOperator() : MediorBombeOperator() {
+class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
 
-    fun executeRun(
-        instructions: BombeRunInstructions,
+    fun executeJob(
+        instructions: BombeJobInstructions,
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
         printCurrentPath: Boolean = false
     ): List<Stop> {
-        createBombe(instructions)
         plugUpBackSide(instructions)
         verifyPluggedUpBackSide()
         verifyPluggedUpBackSide(instructions)
@@ -33,38 +33,23 @@ class ExpertBombeOperator() : MediorBombeOperator() {
         return getBombe().run(numberOfSteps, printStepResult, printCurrentPath)
     }
 
-    // Our expert bombe operator can actually conjure a new bombe machine out of thin air,
-    // specifically suited to support the given bombe run instructions (like a sufficient number
-    // of scrambler banks to test all rotor orders (which may be more than 3) specified in the instructions)
-    private fun createBombe(instructions: BombeRunInstructions) {
-        // we can create a bombe with dimensions (link number of banks) which are specifically targeted
-        // to suit the instructions
-        var constructionParams = BombeConstructionParameters(26, instructions.drumConfigurations.size, 12, 3, 5)
-        // but this can be overruled in the instructions by choosing a specific bombe template
-        // (e.g. 'ATLANTA' which will produce a bombe with the ATLANTA dimensions
-        if (instructions.bombeTemplate != BombeTemplate.MAGIC) {
-            constructionParams = BombeConstructionParameters.getBombeConstructionParameters(instructions.bombeTemplate)
-        }
-        _bombe = Bombe(constructionParams, instructions.reflectorType)
-    }
-
-    fun plugUpBackSide(instructions: BombeRunInstructions) {
+    fun plugUpBackSide(instructions: BombeJobInstructions) {
         when(instructions.bombeStrategy) {
             BombeRunStrategy.SINGLE_LINE_SCANNING -> plugUpBackSide_singleLineScanning(instructions)
             BombeRunStrategy.SIMULTANEOUS_SCANNING -> plugUpBackSide_simultaneousScanning(instructions)
             BombeRunStrategy.DIAGONAL_BOARD -> plugUpBackSide_diagonalBoard(instructions)
         }
     }
-    fun plugUpBackSide_diagonalBoard(instructions: BombeRunInstructions) {
-        // note: we use 1 bank for every rotor configuration
+    fun plugUpBackSide_diagonalBoard(instructions: BombeJobInstructions) {
+        // note: we use 1 bank of scramblers and 1 group of commonsSets for every rotor configuration
         for (configId in 1..instructions.drumConfigurations.size) {
             val bankId = configId
             val commonsSetGroupId = configId
             // 1. claim a scrambler for each link in a menu chain
             // and place bridges between each pair of consecutive scramblers/menulinks in a menu chain
-            for (chain in instructions.parsedMenu) {
+            for (menuSegment in instructions.parsedMenu) {
                 var previousScrambler: ScramblerJackPanel? = null
-                for ((index, link) in chain.withIndex()) {
+                for ((index, link) in menuSegment.withIndex()) {
                     val scramblerJackPanel = getBombeInterface().getScramblerJackPanel(bankId, link.positionInMenu)
                     if (index > 0) {
                         // only for non-first menu links/scramblers:
@@ -82,61 +67,86 @@ class ExpertBombeOperator() : MediorBombeOperator() {
             for (chain in instructions.parsedMenu) {
                 for (link in chain) {
                     val scramblerJackPanel = getBombeInterface().getScramblerJackPanel(bankId, link.positionInMenu)
-                    if (scramblerJackPanel!!.getInputJack().pluggedUpBy() == null) {
-                        // connect this link's scrambler's inputJack
-                        connectJackToALetterJack(commonsSetGroupId, scramblerJackPanel.getInputJack(), link.inputLetter)
-                    } else {
-                        // there should be a bridge connected to this link's scrambler input-jack,
-                        // connect that bridge's jack
-                        val bridgeJack = (scramblerJackPanel.getInputJack().pluggedUpBy()!!.attachedTo as Bridge).jack
-                        if (bridgeJack.pluggedUpBy() == null) {
-                            connectJackToALetterJack(commonsSetGroupId, bridgeJack, link.inputLetter)
+                    if (link.inputLetter != '?') {
+                        if (scramblerJackPanel!!.getInputJack().pluggedUpBy() == null) {
+                            // connect this link's scrambler's inputJack
+                            connectJackToDBLetterJack(
+                                scramblerJackPanel.getInputJack(),
+                                commonsSetGroupId,
+                                link.inputLetter
+                            )
+                        } else {
+                            // there should be a bridge connected to this link's scrambler input-jack,
+                            // connect that bridge's jack
+                            val bridgeJack =
+                                (scramblerJackPanel.getInputJack().pluggedUpBy()!!.attachedTo as Bridge).jack
+                            if (bridgeJack.pluggedUpBy() == null) {
+                                connectJackToDBLetterJack(bridgeJack, commonsSetGroupId, link.inputLetter)
+                            }
                         }
                     }
-                    if (scramblerJackPanel.getOutputJack().pluggedUpBy() == null) {
-                        // connect this link's scrambler's outputJack
-                        connectJackToALetterJack(commonsSetGroupId, scramblerJackPanel.getOutputJack(), link.outputLetter)
-                    } else {
-                        // there should be a bridge connected to this link's scrambler output-jack, connect that bridge's jack
-                        val bridgeJack = (scramblerJackPanel.getOutputJack().pluggedUpBy()!!.attachedTo as Bridge).jack
-                        if (bridgeJack.pluggedUpBy() == null) {
-                            connectJackToALetterJack(commonsSetGroupId, bridgeJack, link.outputLetter)
+                    if (link.outputLetter != '?') {
+                        if (scramblerJackPanel!!.getOutputJack().pluggedUpBy() == null) {
+                            // connect this link's scrambler's outputJack
+                            connectJackToDBLetterJack(
+                                scramblerJackPanel.getOutputJack(),
+                                commonsSetGroupId,
+                                link.outputLetter
+                            )
+                        } else {
+                            // there should be a bridge connected to this link's scrambler output-jack, connect that bridge's jack
+                            val bridgeJack =
+                                (scramblerJackPanel.getOutputJack().pluggedUpBy()!!.attachedTo as Bridge).jack
+                            if (bridgeJack.pluggedUpBy() == null) {
+                                connectJackToDBLetterJack(bridgeJack, commonsSetGroupId, link.outputLetter)
+                            }
                         }
                     }
                 }
             }
-            // 3. connect the bank's input jack
-            connectJackToALetterJack(commonsSetGroupId, getBombeInterface().getChainJackPanel(configId)!!.getInputJack(), instructions.centralLetter)
+            // 3. connect the chain input jack when SINGLE INPUT is used
+            // (See BombeJobInstructions for an explanation about single input and double input)
+            if (instructions.singleInput) {
+                // single input
+                connectJackToDBLetterJack(
+                    getBombeInterface().getChainJackPanel(configId)!!.getInputJack(),
+                    commonsSetGroupId,
+                    instructions.chain1SearchLetter!!
+                )
+            }
+        }
+
+        // 3. connect the chain input jacks when DOUBLE INPUT is used
+        // (See BombeJobInstructions for an explanation about single input and double input)
+        if (!instructions.singleInput) {
+            // double input
+            connectJackToDBLetterJack(
+                getBombeInterface().getChainJackPanel(1)!!.getInputJack(),
+                1,
+                instructions.chain1SearchLetter!!
+            )
+            connectJackToDBLetterJack(
+                getBombeInterface().getChainJackPanel(2)!!.getInputJack(),
+                1,
+                instructions.chain2SearchLetter!!
+            )
         }
     }
 
-
     // Doesn't use the diagonal board
     // Can only be used with menus with a singe loop
-    fun plugUpBackSide_singleLineScanning(instructions: BombeRunInstructions) {
+    fun plugUpBackSide_singleLineScanning(instructions: BombeJobInstructions) {
 
     }
 
     // Doesn't use the diagonal board
     // Can only be used with menus with a singe loop
     // Output of the loop is fed back into the loop
-    fun plugUpBackSide_simultaneousScanning(instructions: BombeRunInstructions) {
+    fun plugUpBackSide_simultaneousScanning(instructions: BombeJobInstructions) {
 
     }
 
-    fun verifyPluggedUpBackSide(instructions: BombeRunInstructions) : List<String> {
-        val errors = mutableListOf<String>()
-        for ( bankId in 1 .. instructions.drumConfigurations.size) {
-            errors.addAll(instructions.parsedMenu.map { chain ->
-                chain.map { menuLink ->
-                     getBombe().getScrambler(bankId, menuLink.positionInMenu)!!.checkConnections(menuLink)
-                }.toList().flatten()
-            }.toList().flatten())
-        }
-        return errors
-    }
-
-    fun prepareFrontSide(instructions: BombeRunInstructions) {
+    fun prepareFrontSide(instructions: BombeJobInstructions) {
         // install drums (in 'Z' position)
         // each rotorConfiguration in the instructions will get its own bank of scramblers
         // every scrambler in that bank will be set-up with the same set of drum/rotor types
@@ -153,29 +163,43 @@ class ExpertBombeOperator() : MediorBombeOperator() {
             for (chain in instructions.parsedMenu) {
                 for (link in chain) {
                     val scrambler = getBombe().getScrambler(bankId, link.positionInMenu)
-                    scrambler!!.setRelativePosition(link.rotorOffset)
+                    if (link.rotorOffset != null) {
+                        scrambler!!.setRelativePosition(link.rotorOffset)
+                    } else if (link.drumStartOrientations != null) {
+                        scrambler!!.setDrumStartOrientations(link.drumStartOrientations)
+                    }
                 }
             }
         }
     }
 
-    fun prepareRightSide(instructions: BombeRunInstructions) {
-        for (i in 1 .. instructions.drumConfigurations.size) {
-            getBombeInterface().getChainControlPanel(i)!!.switchOn()
-            getBombeInterface().getChainControlPanel(i)!!.setContactToActivate(instructions.activateContact)
+    fun prepareRightSide(instructions: BombeJobInstructions) {
+        // See BombeJobInstructions for an explanation about single input and double input
+        if (instructions.singleInput) {
+            for (i in 1..instructions.drumConfigurations.size) {
+                getBombeInterface().getChainControlPanel(i)!!.switchOn()
+                getBombeInterface().getChainControlPanel(i)!!.setContactToActivate(instructions.chain1ActivateContact!!)
+            }
+        } else {
+            // double input
+            getBombeInterface().getBombeControlpanel()!!.switchDoubleInputOn()
+            getBombeInterface().getChainControlPanel(1)!!.switchOn()
+            getBombeInterface().getChainControlPanel(1)!!.setContactToActivate(instructions.chain1ActivateContact!!)
+            getBombeInterface().getChainControlPanel(2)!!.switchOn()
+            getBombeInterface().getChainControlPanel(2)!!.setContactToActivate(instructions.chain2ActivateContact!!)
         }
     }
 
-    fun connectJackToALetterJack(bankId: Int, jack:Jack, letter: Char) {
+    fun connectJackToDBLetterJack(jack:Jack, commonsSetGroupId: Int, letter: Char) {
         // connect to the correct DiagonalBridge jack when that Jack is still free
-        val dbJack = getBombeInterface().getDiagonalBoardJackPanel(bankId)!!.getJack(letter)
+        val dbJack = getBombeInterface().getDiagonalBoardJackPanel(commonsSetGroupId)!!.getJack(letter)
         if (dbJack.pluggedUpBy() == null) {
             // connect a cable between this dbJack and the given jack
             drawCableBetween(jack, dbJack)
         } else {
             // find a commonsSet for this letter
             // (use a previously registered one for this letter, or claims a free commonsSet)
-            val registeredCommonsSet : CommonsSet? = commonsSetRegister.get(Pair(bankId, letter))
+            val registeredCommonsSet : CommonsSet? = commonsSetRegister.get(Pair(commonsSetGroupId, letter))
             if (registeredCommonsSet != null) {
                 // connect a cable between a free jack of this commons and the given jack
                 val commonsJack = registeredCommonsSet.getAvailableJack()
@@ -183,7 +207,7 @@ class ExpertBombeOperator() : MediorBombeOperator() {
             } else {
                 // claim an available commonsSet for this letter
                 val newCommons = findFreeCommonsSet()
-                commonsSetRegister.put(Pair(bankId, letter), newCommons)
+                commonsSetRegister.put(Pair(commonsSetGroupId, letter), newCommons)
                 // the cable going into the dbJack is currently going into a bridge or scrambler
                 // that cable needs to be unplugged from the bridge/scrambler and plugged into this commonsSet
                 val otherPlugOfDbCable = (dbJack.pluggedUpBy() as CablePlug).getOppositePlug()
@@ -191,9 +215,59 @@ class ExpertBombeOperator() : MediorBombeOperator() {
                 val replugJack = otherPlugOfDbCable.pluggedInto() as Jack
                 otherPlugOfDbCable.unplug()
                 otherPlugOfDbCable.plugInto(newCommons.getAvailableJack())
-                // and an additional cable between that bridge and this commons needs to be connected
+                // and an additional cable between that bridge/scrambler and this commons
                 drawCableBetween(replugJack, newCommons.getAvailableJack())
+                // connect a cable between a free jack of this commons and the given jack
+                drawCableBetween(jack, newCommons.getAvailableJack())
             }
         }
     }
+
+    fun verifyPluggedUpBackSide(instructions: BombeJobInstructions) : List<String> {
+        val errors = mutableListOf<String>()
+        for ( bankId in 1 .. instructions.drumConfigurations.size) {
+            errors.addAll(instructions.parsedMenu.map { chain ->
+                chain.map { menuLink ->
+                    checkScramblerConnections( getBombe().getScrambler(bankId, menuLink.positionInMenu)!!, menuLink)
+                }.toList().flatten()
+            }.toList().flatten())
+        }
+        return errors
+    }
+
+    // ****************************************************************************************************************
+    // Features required to check the correct set-up of the bombe
+
+    // each scrambler in use has an inputJack and an outputJack,
+    // both of these jacks represent a letter in the menu
+    // each jack should ultimately be connected to a DiagonalBoard jack which represents this same letter
+    // possible connection paths:
+    // - scrambler.in/outputJack --cable--> diagonalBoard
+    // - scrambler.in/outputJack --cable--> commonsSet --cable--> diagonalBoard
+    // - scrambler.in/outputJack --bridge--> diagonalBoard
+    // - scrambler.in/outputJack --bridge--> commonsSet --cable--> diagonalBoard
+    fun checkScramblerConnections(scrambler: ScramblerJackPanel, menuLink: MenuLink) : MutableList<String> {
+        val errors = mutableListOf<String>()
+        errors.addAll(checkScramblerJackConnections(scrambler, scrambler.getInputJack(), menuLink.inputLetter))
+        errors.addAll(checkScramblerJackConnections(scrambler, scrambler.getOutputJack(), menuLink.outputLetter))
+        return errors
+    }
+    fun checkScramblerJackConnections(scrambler: ScramblerJackPanel, scramblerJack: Jack, representsLetter: Char) : MutableList<String>{
+        val errors = mutableListOf<String>()
+        val diagonalBoardJackForScramblerJack = PluggingUpUtil.findConnectedDiagonalBoardJack(scramblerJack)
+        if (diagonalBoardJackForScramblerJack != null) {
+            if (representsLetter != diagonalBoardJackForScramblerJack.letter) {
+                errors.add(
+                    "${scrambler.getExternalLabel()}.${scramblerJack.externalLabel} is not correctly plugged up, " +
+                            "expected ${representsLetter} -> ${representsLetter}, " +
+                            "got ${representsLetter} -> ${diagonalBoardJackForScramblerJack.letter}"
+                )
+            }
+        } else {
+            errors.add("${scrambler.getExternalLabel()}.${scramblerJack.externalLabel} is not correctly plugged up, " +
+                    "it is not ultimately connected to the diagonal board")
+        }
+        return errors
+    }
+
 }

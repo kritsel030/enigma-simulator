@@ -11,6 +11,8 @@ class BombeConstructionParameters(
     // (e.g. 8 letters, from A to H)
     val alphabetSize : Int,
 
+    val noOfChains: Int,
+
     // number of banks of scrambler in the bombe
     val noOfBanks : Int,
 
@@ -25,7 +27,7 @@ class BombeConstructionParameters(
     companion object {
         fun getBombeConstructionParameters(bombeTemplate: BombeTemplate) : BombeConstructionParameters {
             when(bombeTemplate) {
-                BombeTemplate.ATLANTA -> return BombeConstructionParameters(26, 3, 12, 3, 4)
+                BombeTemplate.ATLANTA -> return BombeConstructionParameters(26, 3, 3, 12, 3, 4)
                 BombeTemplate.MAGIC -> throw IllegalStateException("BombeTemplate.MAGIC means that the bombe construction parameters are based on the instructions and cannot be hardcoded")
             }
         }
