@@ -1,4 +1,4 @@
-package bombe
+package bombe.components
 
 interface ChainControlPanel {
 

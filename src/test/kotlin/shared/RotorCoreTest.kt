@@ -8,23 +8,23 @@ class RotorCoreTest {
     @Test
     fun constructor_0() {
         val rotor = RotorCore(RotorType.I, 0)
-        assertEquals(0, rotor.startOffset)
-        assertEquals(rotor.currentOffset, rotor.startOffset)
+        assertEquals(0, rotor.startOrientation)
+        assertEquals(rotor.currentOrientation, rotor.startOrientation)
     }
 
     @Test
     fun constructor_5() {
         val rotor = RotorCore(RotorType.I, 5)
-        assertEquals(5, rotor.startOffset)
-        assertEquals(rotor.currentOffset, rotor.startOffset)
+        assertEquals(5, rotor.startOrientation)
+        assertEquals(rotor.currentOrientation, rotor.startOrientation)
     }
 
     @Test
     fun rotateToStartOffset() {
         val rotor = RotorCore(RotorType.I, 5)
         rotor.rotateToStartOffset(8)
-        assertEquals(8, rotor.startOffset)
-        assertEquals(rotor.currentOffset, rotor.startOffset)
+        assertEquals(8, rotor.startOrientation)
+        assertEquals(rotor.currentOrientation, rotor.startOrientation)
 
     }
 
@@ -48,8 +48,8 @@ class RotorCoreTest {
         for (i in 1 .. 3) {
             rotor.stepRotor()
         }
-        assertEquals(5, rotor.startOffset)
-        assertEquals(8, rotor.currentOffset)
+        assertEquals(5, rotor.startOrientation)
+        assertEquals(8, rotor.currentOrientation)
     }
 
     @Test
@@ -59,7 +59,7 @@ class RotorCoreTest {
             rotor.stepRotor()
         }
         rotor.reset()
-        assertEquals(5, rotor.startOffset)
-        assertEquals(rotor.startOffset, rotor.currentOffset)
+        assertEquals(5, rotor.startOrientation)
+        assertEquals(rotor.startOrientation, rotor.currentOrientation)
     }
 }

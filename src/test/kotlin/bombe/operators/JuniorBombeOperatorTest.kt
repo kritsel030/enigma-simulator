@@ -146,10 +146,7 @@ class JuniorBombeOperatorTest {
         // run the job
         val stops = bombe.run(1)
         assertTrue(stops.size > 0, "expected stops")
-        if (stops.size > 0) {
-            stops[0].print()
-        }
-        assertTrue(stops[0].possibleSteckerPartnersForChainInputLetter.size > 0, "expected multiple possible stecker partners")
+        assertTrue(stops[0].senseRelaySet.size > 0, "expected multiple possible stecker partners")
     }
 
     // US 6812 Bombe Report 1944 - chapter 3
@@ -247,13 +244,13 @@ class JuniorBombeOperatorTest {
 
         // run the job
         val stops = bombe.run()
-        println("test menu I stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu I stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(1, stops.size, "expected 1 stop")
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('U', stops.get(0).rotor2RingStellung)
         assertEquals('O', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('L'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("L", stops.get(0).getPotentialSteckerPartnersString())
     }
 }

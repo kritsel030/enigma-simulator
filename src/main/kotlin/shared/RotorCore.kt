@@ -27,10 +27,10 @@ open class RotorCore (
     // it is positioned in.
     // The startOffset indicates how many steps ahead this first contact is compared to the fixed machine reference point.
     // (value between 0 and alphabetSize-1)
-    var startOffset: Int,
+    var startOrientation: Int,
 ) {
     init {
-        check(startOffset < rotorType.encryptionTable.length) { "$startOffset should be between 0 and ${rotorType.encryptionTable.length - 1}, but it is set at $startOffset" }
+        check(startOrientation < rotorType.encryptionTable.length) { "$startOrientation should be between 0 and ${rotorType.encryptionTable.length - 1}, but it is set at $startOrientation" }
     }
 
     var steps = 0
@@ -39,24 +39,24 @@ open class RotorCore (
     // when a rotor for a 26-letter alphabet has stepped 28 times, the net number of steps is 2
     // (the rotor's position is 2 steps ahead of its original position
     fun getNetSteps() : Int {
-        return Util.Companion.normalize(currentOffset - startOffset, alphabetsize)
+        return Util.Companion.normalize(currentOrientation - startOrientation, alphabetsize)
     }
 
     val alphabetsize = rotorType.alphabetsize
 
     // the number of steps the 0-contact of this rotor is ahead of the fixed machine reference point
     // (value between 0 and alphabetsize-1)
-    var currentOffset = startOffset
+    var currentOrientation = startOrientation
         private set
 
     fun rotateToStartOffset(offset: Int) {
-        startOffset = offset
-        currentOffset = startOffset
+        startOrientation = offset
+        currentOrientation = startOrientation
     }
 
     fun increaseStartOffset() {
-        startOffset++
-        currentOffset = startOffset
+        startOrientation++
+        currentOrientation = startOrientation
     }
 
     companion object {
@@ -127,7 +127,7 @@ open class RotorCore (
             var recorder = RotorStepRecorder()
             recorders.add(recorder)
             recorder.rotorType = rotorType
-            recorder.rotorPosition = 'A'.plus(currentOffset)
+            recorder.rotorPosition = 'A'.plus(currentOrientation)
             recorder.rotorRingSetting = 0
             recorder.rightToLeft = true
             recorder.inputContactChannel = rightActiveContactOffset
@@ -156,7 +156,7 @@ open class RotorCore (
             var recorder = RotorStepRecorder()
             recorders.add(recorder)
             recorder.rotorType = rotorType
-            recorder.rotorPosition = 'A'.plus(currentOffset)
+            recorder.rotorPosition = 'A'.plus(currentOrientation)
             recorder.rotorRingSetting = 0
             recorder.rightToLeft = false
             recorder.inputContactChannel = leftActiveContactOffset
@@ -169,11 +169,11 @@ open class RotorCore (
     }
 
     open fun offsetToContact(offset:Int): Int {
-        return normalize(offset + currentOffset)
+        return normalize(offset + currentOrientation)
     }
 
     open fun contactToOffset(contact:Int) : Int {
-        return normalize(contact - currentOffset)
+        return normalize(contact - currentOrientation)
     }
 
     private fun encryptContactRightToLeft(right:Int): Int {
@@ -190,7 +190,7 @@ open class RotorCore (
      * Advance this rotor one step
      */
     open fun stepRotor() : Boolean{
-        currentOffset = normalize(currentOffset + 1)
+        currentOrientation = normalize(currentOrientation + 1)
         steps++
         return true
     }
@@ -199,7 +199,7 @@ open class RotorCore (
      * Reset this rotor to its starting position
      */
     fun reset () {
-        currentOffset = startOffset
+        currentOrientation = startOrientation
         steps = 0
     }
 

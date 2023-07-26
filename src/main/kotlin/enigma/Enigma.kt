@@ -2,9 +2,11 @@ package enigma
 
 import enigma.components.Plugboard
 import enigma.components.Reflector
+import enigma.components.Rotor
 import enigma.components.recorder.StepRecorder
 import shared.Util.Companion.validate
-import shared.AbstractRotor
+import shared.BasicScrambler
+import shared.Util
 import java.lang.IllegalArgumentException
 
 /**
@@ -14,36 +16,21 @@ import java.lang.IllegalArgumentException
 
 // Default constructor supports a 4-wheel enigma
 class Enigma (
-    val reflector: Reflector,
+    reflector: Reflector,
 
-    // optional 4th rotor
-    val leftLeftRotor : AbstractRotor?,
-
-    val leftRotor: AbstractRotor,
-
-    val middleRotor : AbstractRotor,
-
-    val rightRotor: AbstractRotor,
+    rotors: List<Rotor>,
 
     val plugboard: Plugboard
-    ){
+    ) : BasicScrambler("enigma", reflector, rotors){
 
     // constructor for a 3-wheel enigma
-    constructor(reflector: Reflector, leftRotor: AbstractRotor, middleRotor: AbstractRotor, rightRotor: AbstractRotor, plugboard: Plugboard) : this(reflector, null, leftRotor, middleRotor, rightRotor, plugboard)
+    constructor(reflector: Reflector, leftRotor: Rotor, middleRotor: Rotor, rightRotor: Rotor, plugboard: Plugboard) : this(reflector, listOf(leftRotor, middleRotor, rightRotor), plugboard)
 
-    // constructor with a list of rotors must accommodate for both 3 and 4 wheel enigmas
-    constructor(reflector: Reflector, rotors: List<AbstractRotor>, plugboard: Plugboard) : this(reflector, if (rotors.size == 4) rotors[0] else null, rotors[rotors.size-3], rotors[rotors.size-2], rotors[rotors.size-1], plugboard )
+    // constructor for a 4-wheel enigma
+    constructor(reflector: Reflector, leftLeftRotor: Rotor, leftRotor: Rotor, middleRotor: Rotor, rightRotor: Rotor, plugboard: Plugboard) : this(reflector, listOf(leftLeftRotor, leftRotor, middleRotor, rightRotor), plugboard)
 
-    // list of rotors, starting with the left-most rotor
-    val rotors = listOf(leftLeftRotor, leftRotor, middleRotor, rightRotor).filterNotNull()
 
-    // position is 1-based
-    // getRotor(1) returns the left-most rotor
-    fun getRotor(position: Int) : AbstractRotor {
-        return rotors[position-1]
-    }
-
-    fun encrypt(input:String) : String {
+    fun encryptMessage(input:String) : String {
         // validate input
         if (!validate(input)) {
             throw IllegalArgumentException("input may only contain characters between A and Z (capital!)")
@@ -56,13 +43,13 @@ class Enigma (
         var buf = StringBuffer()
         var pos = 0
         for (character in input) {
-            buf.append(encrypt(character, true))
+            buf.append(encryptSingleLetter(character, true))
             pos++
         }
         return buf.toString()
     }
 
-    fun encrypt(inputChar: Char, stepRotors: Boolean?=true, recorders:MutableList<StepRecorder>?=null) :Char {
+    fun encryptSingleLetter(inputChar: Char, stepRotors: Boolean?=true, recorders:MutableList<StepRecorder>?=null) :Char {
         // validate input
         if (!validate(inputChar)) {
             throw IllegalArgumentException("input must be character between A and Z (capital!)")
@@ -73,27 +60,14 @@ class Enigma (
             stepRotors()
         }
 
-        // Plugboard
+        // Plugboard on the way in
         var pbOut = plugboard.encrypt(inputChar, recorders)
 
-        // start with the right-most rotor (last one in the list)
-        var contactOffset = pbOut.code - 'A'.code
-        for (rotor in rotors.reversed()) {
-            contactOffset = rotor.encryptRightToLeft(contactOffset, recorders)
-        }
+        // rotors, reflector and rotors again
+        val pbContactIn = encrypt(Util.toInt(pbOut))
 
-        // Reflector
-        val reflectorInput = 'A'.plus(contactOffset)
-        val reflectorOutput = reflector.encrypt(reflectorInput, recorders)
-
-        // now start with the left-most rotor (first one in the list)
-        contactOffset = reflectorOutput.code - 'A'.code
-        for (rotor in rotors) {
-            contactOffset = rotor.encryptLeftToRight(contactOffset, recorders)
-        }
-
-        // Plugboard
-        val pbIn = 'A'.plus(contactOffset)
+        // Plugboard on the way out
+        val pbIn = 'A'.plus(pbContactIn)
         val output = plugboard.encrypt(pbIn, recorders)
 
         return output
@@ -115,22 +89,15 @@ class Enigma (
      * https://en.wikipedia.org/wiki/Enigma_machine#Stepping
      */
     internal fun stepRotors() {
-        val turnOverToMiddle = rightRotor.stepRotor()
+        val turnOverToMiddle = rightRotor!!.stepRotor()
         if (turnOverToMiddle) {
-            val turnOverToLeft = middleRotor.stepRotor()
+            val turnOverToLeft = middleRotor!!.stepRotor()
             if (turnOverToLeft) {
-                leftRotor.stepRotor()
+                leftRotor!!.stepRotor()
                 // Due to the mechanical design of the stepping mechanism, when a step of the middle rotor
                 // causes the left rotor to step, the left rotor causes the middle rotor to step an additional step.
-                middleRotor.stepRotor()
+                middleRotor!!.stepRotor()
             }
         }
-    }
-
-    /**
-     * Prepare for a new messsage to be encoded with the same enigma settings: return all rotors to their starting positions
-     */
-    internal fun resetRotors() {
-        rotors.forEach { it.reset() }
     }
 }

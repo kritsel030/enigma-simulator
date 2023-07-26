@@ -10,26 +10,44 @@ class EnigmaTest {
     @Test
     fun encrypt() {
         val reflector = Reflector(ReflectorType.B)
-        var leftRotor = Rotor(RotorType.III, 'B', 'Z')
-        var middleRotor = Rotor(RotorType.II, 'C', 'Y' )
-        var rightRotor = Rotor(RotorType.I, 'D', 'X')
+        val leftRotor = Rotor(RotorType.III, 'B', 'Z')
+        val middleRotor = Rotor(RotorType.II, 'C', 'Y' )
+        val rightRotor = Rotor(RotorType.I, 'D', 'X')
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         val input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        var output = enigma.encrypt(input)
+        val output = enigma.encryptMessage(input)
 
-        // tested with https://cryptii.com/pipes/enigma-machine
+        // output confirmed with a test via an on-line enigma simulator (https://cryptii.com/pipes/enigma-machine)
         assertEquals("UYUEXLJBMFIRTDJXMUYUPWOFMD", output)
+    }
+
+    /**
+     * Example from https://www.lysator.liu.se/~koma/turingbombe/TuringBombeTutorial.pdf
+     */
+    @Test
+    fun encrypt_linkopingBombeSimulatorExample() {
+        val leftRotor = Rotor(RotorType.II, 'Y', 'D')
+        val middleRotor = Rotor(RotorType.V, 'W', 'K')
+        val rightRotor = Rotor(RotorType.III, 'Y', 'X')
+        val reflector = Reflector(ReflectorType.B)
+        val plugboard = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
+        val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
+
+        val input = "WETTERVORHERSAGE"
+        val output = enigma.encryptMessage(input)
+
+        assertEquals("SNMKGGSTZZUGARLV", output)
     }
 
     @Test
     fun stepRightRotor() {
         val reflector = Reflector(ReflectorType.B)
         // not a single rotor in turnover position
-        var leftRotor = Rotor(RotorType.III, 'A', 'A')
-        var middleRotor = Rotor(RotorType.II, 'A', 'A')
-        var rightRotor = Rotor(RotorType.I, 'A', 'A')
+        val leftRotor = Rotor(RotorType.III, 'A', 'A')
+        val middleRotor = Rotor(RotorType.II, 'A', 'A')
+        val rightRotor = Rotor(RotorType.I, 'A', 'A')
         val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
@@ -42,7 +60,7 @@ class EnigmaTest {
     }
 
     @Test
-    fun stepRightAndMiddleRotor() {
+    fun stepRotors_rightOnly() {
         val reflector = Reflector(ReflectorType.B)
         var leftRotor = Rotor(RotorType.III, 'A', 'A')
         var middleRotor = Rotor(RotorType.II, 'A', 'A')
@@ -60,7 +78,7 @@ class EnigmaTest {
     }
 
     @Test
-    fun stepAllRotors() {
+    fun stepRotors_all() {
         val reflector = Reflector(ReflectorType.B)
         var leftRotor = Rotor(RotorType.III, 'A', 'A')
         // middle rotor in turnover position
@@ -92,7 +110,7 @@ class EnigmaTest {
         // encrypt something,
         // because of the used start position, all rotors will have stepped
         // (this is verified in another test method, so we do not need to assert this here)
-        enigma.encrypt("HELLO")
+        enigma.encryptMessage("HELLO")
 
         // the reset should cause all rotors to have returned to their start positions
         enigma.resetRotors()

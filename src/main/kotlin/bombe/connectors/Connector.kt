@@ -21,11 +21,12 @@ abstract class Connector (val label:String, val attachedTo: CircuitComponent) {
     }
 
     fun readContacts() : Map<Char, Boolean> {
-        return contacts
+        // return a copy
+        return contacts.toMap()
     }
 
     fun readActiveContacts() : List<Char>{
-        return contacts.filter { (letter, active) -> active == true }.map{(letter, active) -> letter}.toList()
+        return contacts.filterValues { it }.keys.toList()
     }
 
     protected var connectedTo : Connector? = null

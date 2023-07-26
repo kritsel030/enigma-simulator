@@ -1,10 +1,6 @@
 package bombe
 
 import bombe.components.*
-import bombe.recorder.CurrentPathElement
-import enigma.components.ReflectorType
-import java.lang.IllegalStateException
-import kotlin.math.pow
 
 interface BombeInterface {
 
@@ -19,7 +15,7 @@ interface BombeInterface {
 
     fun getChainJackPanels() : List<ChainJackPanel>
 
-    fun getChainDisplay(id: Int) : ChainDisplay?
+    fun getChainDisplay(id: Int) : ChainIndicator?
 
     fun getScramblerJackPanel(id: Int): ScramblerJackPanel?
 

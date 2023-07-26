@@ -63,9 +63,9 @@ class BombeTest {
         bombe.getScramblers().forEach { it ->
             run {
                 // in a bombe, the drum which represents the left (and slow moving) rotor in the enigma, is the drum which is rotating the fastest
-                assertEquals(fastDrumSteps, it.enigma!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
-                assertEquals(middleDrumSteps, it.enigma!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
-                assertEquals(slowDrumSteps, it.enigma!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
+                assertEquals(fastDrumSteps, it.letchworthEnigma!!.leftRotor!!.getNetSteps(), "fast drum should have a net advance of $fastDrumSteps")
+                assertEquals(middleDrumSteps, it.letchworthEnigma!!.middleRotor!!.getNetSteps(), "middle drum should have a net advance of $middleDrumSteps")
+                assertEquals(slowDrumSteps, it.letchworthEnigma!!.rightRotor!!.getNetSteps(), "slow drum should have a a net advance of $slowDrumSteps")
             }
         }
     }
@@ -76,8 +76,8 @@ class BombeTest {
 
         bombe.getScramblers().forEach { scrambler ->
             run {
-                assertNotNull(scrambler.enigma,"expect an internal scrambler - without rotors - to be present")
-                assertEquals(bombe.noOfRotorsPerScrambler, scrambler.enigma.rotorPositions)
+                assertNotNull(scrambler.letchworthEnigma,"expect an internal scrambler - without rotors - to be present")
+                assertEquals(bombe.noOfRotorsPerScrambler, scrambler.letchworthEnigma.rotorPositions)
             }
         }
 

@@ -142,7 +142,7 @@ class RotorTest {
     @Test
     fun rotateToRingPosition() {
         val rotor = Rotor(RotorType.I, 'D', 'X')
-        rotor.rotateToRingOrientation('K')
+        rotor.rotateToStartOrientation('K')
         assertEquals('K', rotor.currentRingOrientation())
     }
 }

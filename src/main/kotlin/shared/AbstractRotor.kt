@@ -2,6 +2,29 @@ package shared
 
 import enigma.components.recorder.StepRecorder
 
+/**
+ * Example with a 5 letter rotor
+ *
+ *                              ---> rotor core contacts, the one marked with * is contact 0
+ *                              |    (on an Enigma rotor this would usually be a red dot)
+ *     outer letter ring <---   |   ---> rotor core contact IDs
+ *                          |   |   |    (not actually printer on a rotor core, but used in the code)
+ *
+ *                          A   o  (3)
+ *                         ---
+ *                          E   o  (2)
+ *  orientation/           ---
+ *  reference point <---  | D | o  (1)
+ *                         ---
+ *                          C   o* (0)
+ *                         ---
+ *                          B   o  (4)
+ *
+ *  In this situation:
+ *  - rotor.ringSetting     = C -> contact 0 of the inner rotor core is aligned with 'C' on the outer letter ring
+ *  - rotorCore.orientation = 1 -> contact 1 is facing the orientation/reference point
+ */
+
 open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLetterRing, val ringSetting: Char) {
 
     private val _ringSetting : Int = Util.toInt(ringSetting)
@@ -11,18 +34,18 @@ open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLet
     }
 
     fun startRingOrientation() : Char {
-        return 'A'.plus(Util.normalize(rotorCore.startOffset + _ringSetting))
+        return 'A'.plus(Util.normalize(rotorCore.startOrientation + _ringSetting))
     }
 
     fun currentRingOrientation() : Char {
-        return 'A'.plus(Util.normalize(rotorCore.currentOffset + _ringSetting))
+        return 'A'.plus(Util.normalize(rotorCore.currentOrientation + _ringSetting))
     }
 
-    fun rotateToRingOrientation(newStartRingOrientation: Char) {
+    fun rotateToStartOrientation(newStartRingOrientation: Char) {
         rotorCore.rotateToStartOffset(Util.normalize(Util.toInt(newStartRingOrientation) - _ringSetting))
     }
 
-    fun advanceRingOrientation() {
+    fun advanceStartOrientation() {
         rotorCore.increaseStartOffset()
     }
 

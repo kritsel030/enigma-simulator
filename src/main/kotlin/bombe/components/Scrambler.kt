@@ -1,7 +1,6 @@
 package bombe.components
 
 import bombe.Bombe
-import bombe.MenuLink
 import bombe.connectors.*
 import bombe.recorder.CurrentPathElement
 import enigma.components.*
@@ -25,7 +24,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflec
         return _outputJack
     }
 
-    val enigma: BasicScrambler = BasicScrambler(id.toString(), noOfRotorsPerScrambler, reflector)
+    val letchworthEnigma: BasicScrambler = BasicScrambler(id.toString(), noOfRotorsPerScrambler, reflector)
 
     // ******************************************************************************************************
     // Features needed to support setting up the front-side of a bombe
@@ -34,16 +33,16 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflec
         check (drumTypes.size == noOfRotorsPerScrambler)
         {"expected $noOfRotorsPerScrambler rotor types to be placed on this scrambler, but received only ${drumTypes.size}"}
 
-        val drums = drumTypes.map{Drum(it)}.toList()
+        val drumsOrRotors = drumTypes.map{Drum(it, 'Z')}.toList()
 
-        enigma.placeDrums(drums)
+        letchworthEnigma.placeRotors(drumsOrRotors)
     }
 
-    fun setRelativePosition(steps:Int) {
-        enigma.checkRotorsAndReflector()
-        for (p in 1..steps) {
+    fun setRelativeStartOrientation(steps:Int) {
+        letchworthEnigma.checkRotorsAndReflector()
+        for (s in 1..steps) {
             // step the drum representing the right-rotor in the enigma
-            enigma.rightRotor!!.advanceRingOrientation()
+            letchworthEnigma.rightRotor!!.advanceStartOrientation()
         }
     }
 
@@ -51,17 +50,17 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflec
      * startOrientations: String where each character specifies the start orientation of a rotor in this scrambler
      */
     fun setDrumStartOrientations(startOrientations:String) {
-        enigma.checkRotorsAndReflector()
-        check(enigma.rotors.size == startOrientations.length) {"this scrambler has ${enigma.rotors.size} scramblers, got ${startOrientations.length} rotor start positions"}
+        letchworthEnigma.checkRotorsAndReflector()
+        check(letchworthEnigma.rotors.size == startOrientations.length) {"this scrambler has ${letchworthEnigma.rotors.size} scramblers, got ${startOrientations.length} rotor start positions"}
         for ( (index, startPos) in startOrientations.withIndex() ) {
-            enigma.getRotor(index+1)!!.rotateToRingOrientation(startPos)
+            letchworthEnigma.getRotor(index+1)!!.rotateToStartOrientation(startPos)
         }
     }
 
     // ******************************************************************************************************
     // Features needed to support changing/removing/placing of reflector boards on the left side of the bombe
     fun setReflector(reflector: Reflector?) {
-        enigma.reflector = reflector
+        letchworthEnigma.reflector = reflector
     }
 
 
@@ -70,7 +69,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflec
 
     override fun passCurrent(contact: Char, activatedVia : Connector, previousPathElement: CurrentPathElement?) {
         // check to see if the reflector and rotors are set-up on the internal scrambler
-        enigma.checkRotorsAndReflector()
+        letchworthEnigma.checkRotorsAndReflector()
 
         // println("pass current from ${activatedVia.connectedTo?.component?.label}-${activatedVia.connectedTo?.label} to ${this.label} at contact $contact")
         val resultContact = scramble(contact)
@@ -88,7 +87,7 @@ class Scrambler (val id: Int, val noOfRotorsPerScrambler: Int, reflector: Reflec
 
     fun scramble(input: Char) : Char {
 //        println("scrambler input: $input (${input.code})")
-        val output = Util.toChar(enigma!!.encrypt(Util.toInt(input)))
+        val output = Util.toChar(letchworthEnigma!!.encrypt(Util.toInt(input)))
 //        println("scrambler output: $output")
         return output
     }

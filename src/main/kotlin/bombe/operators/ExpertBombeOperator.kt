@@ -164,7 +164,7 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
                 for (link in chain) {
                     val scrambler = getBombe().getScrambler(bankId, link.positionInMenu)
                     if (link.rotorOffset != null) {
-                        scrambler!!.setRelativePosition(link.rotorOffset)
+                        scrambler!!.setRelativeStartOrientation(link.rotorOffset)
                     } else if (link.drumStartOrientations != null) {
                         scrambler!!.setDrumStartOrientations(link.drumStartOrientations)
                     }

@@ -48,7 +48,7 @@ class ExpertBombeOperatorTest {
         val stops = operator.executeJob(instructions)
 
         assertTrue(stops.size > 1)
-        assertEquals("D", stops[0].possibleSteckerPartnersForChainInputLetter.joinToString(""))
+        assertEquals("D", stops[0].getPotentialSteckerPartnersString())
         assertEquals(
             "SNY",
             listOf(
@@ -58,7 +58,7 @@ class ExpertBombeOperatorTest {
             ).joinToString("")
         )
 
-        assertEquals("Q", stops[1].possibleSteckerPartnersForChainInputLetter.joinToString(""))
+        assertEquals("Q", stops[1].getPotentialSteckerPartnersString())
         assertEquals(
             "DKX",
             listOf(
@@ -101,14 +101,14 @@ class ExpertBombeOperatorTest {
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
 
-        println("test menu I stops (${stops.size}):")
+//        println("test menu I stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
         assertEquals(1, stops.size, "expected 1 stop")
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('U', stops.get(0).rotor2RingStellung)
         assertEquals('O', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('L'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("L", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /** US 6812 Bombe Report 1944 - chapter 3
@@ -144,14 +144,14 @@ class ExpertBombeOperatorTest {
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
 
-        println("test menu II stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu II stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(4, stops.size, "expected 4 stops")
         assertEquals('F', stops.get(0).rotor1RingStellung)
         assertEquals('J', stops.get(0).rotor2RingStellung)
         assertEquals('W', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('F'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("F", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -188,14 +188,14 @@ class ExpertBombeOperatorTest {
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
-        println("test menu III stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu III stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(6, stops.size, "expected 6 stops")
         assertEquals('A', stops.get(0).rotor1RingStellung)
         assertEquals('F', stops.get(0).rotor2RingStellung)
         assertEquals('Y', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('K'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("K", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -241,14 +241,14 @@ class ExpertBombeOperatorTest {
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
-        println("test menu IV stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu IV stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(2, stops.size, "expected 2 stops")
         assertEquals('D', stops.get(0).rotor1RingStellung)
         assertEquals('G', stops.get(0).rotor2RingStellung)
         assertEquals('T', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('I'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("I", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -297,14 +297,14 @@ class ExpertBombeOperatorTest {
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
-        println("test menu IVa stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu IVa stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(6, stops.size, "expected 6 stops")
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('S', stops.get(0).rotor2RingStellung)
         assertEquals('T', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('W'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("W", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -351,14 +351,14 @@ class ExpertBombeOperatorTest {
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
 
-        println("test menu V_1 stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu V_1 stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(20, stops.size, "expected 20 stops")
         assertEquals('D', stops.get(0).rotor1RingStellung)
         assertEquals('E', stops.get(0).rotor2RingStellung)
         assertEquals('Z', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('M'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("M", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -405,14 +405,14 @@ class ExpertBombeOperatorTest {
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
 
-        println("test menu V-2 stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu V-2 stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(18, stops.size, "expected 18 stops")
         assertEquals('V', stops.get(0).rotor1RingStellung)
         assertEquals('C', stops.get(0).rotor2RingStellung)
         assertEquals('U', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('Y'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("Y", stops.get(0).getPotentialSteckerPartnersString())
     }
 
     /**
@@ -463,14 +463,14 @@ class ExpertBombeOperatorTest {
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
 
-        println("test menu VI stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu VI stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(44, stops.size, "expected 44 stops")
         assertEquals('E', stops.get(0).rotor1RingStellung)
         assertEquals('V', stops.get(0).rotor2RingStellung)
         assertEquals('Z', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('E'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("E", stops.get(0).getPotentialSteckerPartnersString())
     }
 
         /**
@@ -532,13 +532,13 @@ class ExpertBombeOperatorTest {
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
         val stops = operator.executeJob(instructions)
-        println("test menu VII stops (${stops.size}):")
-        stops.forEach { it.print() }
+//        println("test menu VII stops (${stops.size}):")
+//        stops.forEach { it.print() }
 
         assertEquals(14, stops.size, "expected 14 stops")
         assertEquals('C', stops.get(0).rotor1RingStellung)
         assertEquals('K', stops.get(0).rotor2RingStellung)
         assertEquals('Y', stops.get(0).rotor3RingStellung)
-        assertEquals(listOf('H'), stops.get(0).possibleSteckerPartnersForChainInputLetter)
+        assertEquals("H", stops.get(0).getPotentialSteckerPartnersString())
     }
 }

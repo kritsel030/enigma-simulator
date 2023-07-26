@@ -44,7 +44,7 @@ open class BasicScrambler private constructor (
     // list of rotors, starting with the left-most rotor
     var rotors = listOf(leftLeftRotor, leftRotor, middleRotor, rightRotor).filterNotNull()
 
-    fun placeDrums(rotors:List<AbstractRotor>) {
+    fun placeRotors(rotors:List<AbstractRotor>) {
         leftLeftRotor = if (rotors.size == 4) rotors[0] else null
         leftRotor = rotors[rotors.size-3]
         middleRotor = rotors[rotors.size-2]
@@ -95,37 +95,6 @@ open class BasicScrambler private constructor (
         // TODO remove
         check(Util.Companion.validate(contactOffset, 26)) { "$contactOffset should be between 0 and 25"}
         return contactOffset
-    }
-
-
-    /**
-     * Every key pressed causes one or more rotors to step by one twenty-sixth of a full rotation,
-     * before the electrical connection is made to encrypt the pressed key.
-     *
-     * Procedure
-     * - the right rotor steps with every key press.
-     * - the middle rotor steps when the rotor to its right reaches its turnover position.
-     * - the lef rotor steps when the rotor to its right reaches its turnover position;
-     *   due to the mechanical design of the stepping mechanism, when a step of the middle-rotor
-     *    causes the left-most rotor to step, the left-most rotor causes the middle rotor to step an additional step.
-     * - the leftLeft rotor (4th rotor in a 4-wheel enigma) is stationary, it never steps
-     *
-     * https://en.wikipedia.org/wiki/Enigma_machine#Stepping
-     */
-    internal fun stepRotors() {
-        // first check if we're ready to go
-        checkRotorsAndReflector()
-
-        val turnOverToMiddle = rightRotor!!.stepRotor()
-        if (turnOverToMiddle) {
-            val turnOverToLeft = middleRotor!!.stepRotor()
-            if (turnOverToLeft) {
-                leftRotor!!.stepRotor()
-                // Due to the mechanical design of the stepping mechanism, when a step of the middle rotor
-                // causes the left rotor to step, the left rotor causes the middle rotor to step an additional step.
-                middleRotor!!.stepRotor()
-            }
-        }
     }
 
     /**

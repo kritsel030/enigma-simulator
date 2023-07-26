@@ -13,9 +13,9 @@ class ScramblerTest {
         val scrambler = bombe.getScrambler(1)!!
         scrambler.placeDrums(listOf(DrumType.II, DrumType.III, DrumType.I))
         scrambler.setDrumStartOrientations("DKX")
-        assertEquals(scrambler.enigma.leftRotor!!.getRotorType(), DrumType.II.rotorType)
-        assertEquals(scrambler.enigma.middleRotor!!.getRotorType(), DrumType.III.rotorType)
-        assertEquals(scrambler.enigma.rightRotor!!.getRotorType(), DrumType.I.rotorType)
+        assertEquals(scrambler.letchworthEnigma.leftRotor!!.getRotorType(), DrumType.II.rotorType)
+        assertEquals(scrambler.letchworthEnigma.middleRotor!!.getRotorType(), DrumType.III.rotorType)
+        assertEquals(scrambler.letchworthEnigma.rightRotor!!.getRotorType(), DrumType.I.rotorType)
     }
 
     @Test
@@ -24,9 +24,9 @@ class ScramblerTest {
         val scrambler = bombe.getScrambler(1)!!
         scrambler.placeDrums(listOf(DrumType.II, DrumType.III, DrumType.I))
         scrambler.setDrumStartOrientations("DKX")
-        assertEquals('D', scrambler.enigma.leftRotor!!.startRingOrientation())
-        assertEquals('K', scrambler.enigma.middleRotor!!.startRingOrientation())
-        assertEquals('X', scrambler.enigma.rightRotor!!.startRingOrientation())
+        assertEquals('D', scrambler.letchworthEnigma.leftRotor!!.startRingOrientation())
+        assertEquals('K', scrambler.letchworthEnigma.middleRotor!!.startRingOrientation())
+        assertEquals('X', scrambler.letchworthEnigma.rightRotor!!.startRingOrientation())
     }
 
     @Test

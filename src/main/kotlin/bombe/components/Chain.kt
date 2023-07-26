@@ -1,14 +1,12 @@
 package bombe.components
 
-import bombe.ChainControlPanel
-import bombe.ChainDisplay
 import bombe.Bombe
 import bombe.connectors.Connector
 import bombe.connectors.Jack
 import bombe.recorder.CurrentPathElement
 
 class Chain (val id: Int, bombe: Bombe)
-    : CircuitComponent("Chain-$id", bombe), ChainJackPanel, ChainControlPanel, ChainDisplay {
+    : CircuitComponent("Chain-$id", bombe), ChainJackPanel, ChainControlPanel, ChainIndicator {
 
     // create a Jack for the chain which will be present at the back of the bombe
     // (on a real bombe these Jacks are named CH1, CH2 and CH3, one for each Bank)
@@ -16,6 +14,12 @@ class Chain (val id: Int, bombe: Bombe)
 
     override fun getInputJack() : Jack {
         return _inputJack
+    }
+
+    // ***********************************************************************************************************
+    // sense relays are connected to the chain input
+    fun readSenseRelays () : Map<Char, Boolean> {
+        return _inputJack.readContacts()
     }
 
     // ***********************************************************************************************************
@@ -42,27 +46,27 @@ class Chain (val id: Int, bombe: Bombe)
     }
 
     // ***********************************************************************************************************
-    // BankDisplay support
+    // Chain Indicator panel support
 
-    private var testRegister : Map<Char, Boolean> = mapOf<Char, Boolean>()
+    private var indicatorRelays : Map<Char, Boolean> = mapOf<Char, Boolean>()
     init {
-        resetTestRegister()
+        resetIndicatorRelays()
     }
-    fun fillTestRegister(contactsOfInputJack:Map<Char, Boolean>) {
-        testRegister = contactsOfInputJack
+    fun transferSenseRelaysStateToIndicatorRelays() {
+        indicatorRelays = readSenseRelays()
     }
 
-    fun resetTestRegister() {
+    fun resetIndicatorRelays() {
         val freshRegister = mutableMapOf<Char, Boolean>()
         var char = 'A'
         for (i in 0..bombe.alphabetSize-1) {
             freshRegister[char.plus(i)] = false;
         }
-        testRegister = freshRegister
+        indicatorRelays = freshRegister
     }
 
-    override fun readTestRegister() : Map<Char, Boolean> {
-        return testRegister
+    override fun readIndicatorRelays() : Map<Char, Boolean> {
+        return indicatorRelays
     }
 
     // ***********************************************************************************************************
@@ -76,21 +80,14 @@ class Chain (val id: Int, bombe: Bombe)
         // nothing to do
     }
 
-    fun checkStepResult() : Pair<Boolean, List<Char>?> {
-        var potentialSteckerPartners : List<Char>? = null
-        val activeContacts = _inputJack.readContacts().filter{entry -> entry.value }.map{it.key}.toList()
-        val stop = activeContacts.size < bombe.alphabetSize
-        if (stop) {
-            if (activeContacts.size == 1) {
-                // pick the single active contact
-                potentialSteckerPartners = activeContacts
-            } else {
-                // pick all inactive entries in the test register
-                potentialSteckerPartners =
-                    _inputJack.readContacts().filter { entry -> !entry.value }.map { it.key }.toList()
-            }
-        }
-        return Pair(stop, potentialSteckerPartners)
+    /**
+     * Indicates whether the current status of the active contacts of the chain's input jack
+     * represents a valid stop
+     * A valid stop is whenever less than 26 (for a 26 alphabetsize bombe) contacts are live
+     */
+    fun checkStepResult() : Boolean {
+        val activeContactCount = _inputJack.readContacts().filter{entry -> entry.value }.size
+        return activeContactCount < bombe.alphabetSize
     }
 
 }

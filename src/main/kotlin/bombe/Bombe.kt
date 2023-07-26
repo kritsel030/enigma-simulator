@@ -122,7 +122,7 @@ class Bombe (
         return chains.values.toList()
     }
 
-    override fun getChainDisplay(id:Int) : ChainDisplay? {
+    override fun getChainDisplay(id:Int) : ChainIndicator? {
         return getChain(id)
     }
 
@@ -224,8 +224,10 @@ class Bombe (
         private set
     fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false) : List<Stop> {
         for (step in 1.. if (numberOfSteps != null) numberOfSteps!! else pow(alphabetSize,3) ) {
-            // reset the test registers for all active chains first
-            chains.values.filter{it.isOn()}.forEach { it.resetTestRegister() }
+            // first reset the indicator relays for all chains
+            chains.values.filter{it.isOn()}.forEach { it.resetIndicatorRelays() }
+            // and reset the current in the entire system
+            resetCurrent()
             // now run all active chains
             val doubleInputStops = mutableListOf<Stop>()
             for ((index, chain) in chains.values.withIndex()) {
@@ -238,26 +240,27 @@ class Bombe (
                     }
                     val stop = checkResult(chain)
                     if (stop != null) {
-                        if (!isDoubleInputOn()) {
+                        if (!doubleInputOn) {
                             stops.add(stop)
-                            // fill test register with a copy of the input jack contacts
-                            chain.fillTestRegister(chain.getInputJack().readContacts().toMap())
+                            // transfer state from the chain's sense relays to its indicator relays
+                            chain.transferSenseRelaysStateToIndicatorRelays()
                         } else {
                             doubleInputStops.add(stop)
                         }
                     }
                 }
             }
-            if (isDoubleInputOn()) {
-                // when 'double input' is switch on, all active chains must have produced a stop
-                if (doubleInputStops.size == chains.values.filter { it.isOn() }.count()) {
+            if (doubleInputOn) {
+                // when 'double input' is switched on, there must be 2 stops in order for the stops to count
+                // as valid stops
+                if (doubleInputStops.size == 2) {
                     stops.addAll(doubleInputStops)
-                    // fill test registers with a copy of the chain input jack contacts
-                    getChain(1)!!.fillTestRegister(getChain(1)!!.getInputJack().readContacts().toMap())
-                    getChain(2)!!.fillTestRegister(getChain(2)!!.getInputJack().readContacts().toMap())
+                    // transfer state from each the chain' sense relays to its indicator relays
+                    // (chain IDs are 1-based)
+                    getChain(1)!!.transferSenseRelaysStateToIndicatorRelays()
+                    getChain(2)!!.transferSenseRelaysStateToIndicatorRelays()
                 }
             }
-            resetCurrent()
             stepDrums()
         }
         return stops
@@ -272,30 +275,38 @@ class Bombe (
         drumRotations++
         // every drum rotation, all drums representing the left rotor (position 1) in an enigma machine take a step
         // and the corresponding indicator drum takes a step
-        scramblers.values.forEach { it.enigma?.getRotor(1)?.stepRotor() }
+        scramblers.values.forEach { it.letchworthEnigma?.getRotor(1)?.stepRotor() }
         indicatorDrums[0].rotate()
 
         // every 26th rotation, all drums representing the middle rotor in an enigma machine (position 2) take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % alphabetSize == 0) {
-            scramblers.values.forEach { it.enigma?.getRotor(2)?.stepRotor() }
+            scramblers.values.forEach { it.letchworthEnigma?.getRotor(2)?.stepRotor() }
             indicatorDrums[1].rotate()
         }
 
         // every 26*26th rotation, all drums representing the right rotor (position 3) in an enigma machine take a step as well
         // and the corresponding indicator drum takes a step
         if (drumRotations % (alphabetSize * alphabetSize) == 0) {
-            scramblers.values.forEach { it.enigma?.getRotor(3)?.stepRotor() }
+            scramblers.values.forEach { it.letchworthEnigma?.getRotor(3)?.stepRotor() }
             indicatorDrums[2].rotate()
         }
     }
 
+//    private fun checkResult(chain: Chain) : Stop?{
+//        val stepResult = chain.checkStepResult()
+//        // stepResult.first indicates whether the result of this step is a valid stop
+//        if (stepResult.first) {
+//            return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+//                determineChainInputLetter(chain), stepResult.second!!)
+//        }
+//        return null
+//    }
+
     private fun checkResult(chain: Chain) : Stop?{
-        val stepResult = chain.checkStepResult()
-        // stepResult.first indicates whether the result of this step is a valid stop
-        if (stepResult.first) {
+        if (chain.checkStepResult()) {
             return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-                determineChainInputLetter(chain), stepResult.second!!)
+                determineChainInputLetter(chain), chain.getInputJack().readContacts().toMap())
         }
         return null
     }
