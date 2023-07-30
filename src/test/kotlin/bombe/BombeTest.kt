@@ -102,7 +102,7 @@ class BombeTest {
         assertEquals(0, bombe.getCables().size, "expected an empty list of cables")
 
         // indicator drums
-        bombe.indicatorDrums.forEach { drum ->
+        bombe.getIndicatorDrums().forEach { drum ->
             assertEquals('A'.plus(bombe.alphabetSize-1), drum.position, "expect each drum to be in the 'last letter of alphabet' position")
         }
 

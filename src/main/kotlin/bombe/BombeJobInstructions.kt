@@ -3,7 +3,6 @@ package bombe
 import bombe.components.DrumType
 import enigma.components.ReflectorType
 import java.lang.IllegalArgumentException
-import kotlin.math.sin
 
 class BombeJobInstructions private constructor (
     val menu: List<String>,
@@ -16,8 +15,8 @@ class BombeJobInstructions private constructor (
     // * drumConfigurations has a single value
     // this behaviour is guaranteed by the public constructors
     val singleInput: Boolean,
+    inputLetter: Char?,
     searchLetter: Char?,
-    activateContact: Char?,
     doubleInputCrossSearchLetters: List<Char>?,
 
     // in the order as they would appear from left to right on an Enigma machine
@@ -41,21 +40,21 @@ class BombeJobInstructions private constructor (
     // This practise has been adopted to give the best distribution of current due to the association
     // of the two search points through the diagonal board.
     // double input
+    var chain1InputLetter : Char? = null
     var chain1SearchLetter : Char? = null
-    var chain1ActivateContact : Char? = null
-    var chain2SearchLetter : Char? = null
-    var chain2ActivateContact : Char? = null
+    var chain2InputLetter : Char? = null
+    var chain2SearchLetterContact : Char? = null
     init {
         if (singleInput) {
             // single input
+            chain1InputLetter = inputLetter
             chain1SearchLetter = searchLetter
-            chain1ActivateContact = activateContact
         } else {
             // double input
-            chain1SearchLetter = doubleInputCrossSearchLetters!![0]
-            chain1ActivateContact = doubleInputCrossSearchLetters[1]
-            chain2SearchLetter = chain1ActivateContact
-            chain2ActivateContact = chain1SearchLetter
+            chain1InputLetter = doubleInputCrossSearchLetters!![0]
+            chain1SearchLetter = doubleInputCrossSearchLetters[1]
+            chain2InputLetter = chain1SearchLetter
+            chain2SearchLetterContact = chain1InputLetter
         }
     }
 

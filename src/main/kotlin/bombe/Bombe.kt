@@ -35,8 +35,21 @@ class Bombe (
 
     val initialReflectorType: ReflectorType
 ) : BombeControlPanel, BombeInterface {
-    constructor(params: BombeConstructionParameters, reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(params.alphabetSize, params.noOfChains, params.noOfBanks, params.noOfScramblersPerBank, params.noOfRotorsPerScrambler, params.noOfCommonsSetsPerBank, reflectorType)
-    constructor(reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(BombeConstructionParameters.getBombeConstructionParameters(BombeTemplate.ATLANTA), reflectorType)
+    constructor(params: BombeConstructionParameters, reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(
+        params.alphabetSize,
+        params.noOfChains,
+        params.noOfBanks,
+        params.noOfScramblersPerBank,
+        params.noOfRotorsPerScrambler,
+        params.noOfCommonsSetsPerBank,
+        reflectorType
+    )
+
+    constructor(reflectorType: ReflectorType = DEFAULT_REFLECTOR_TYPE) : this(
+        BombeConstructionParameters.getBombeConstructionParameters(
+            BombeTemplate.ATLANTA
+        ), reflectorType
+    )
 
     // ******************************************************************************************************
     // Features needed to represent and access the components of a bombe
@@ -49,10 +62,12 @@ class Bombe (
     private var _commonsSets = mutableMapOf<Int, CommonsSet>()
     private var _cables = mutableListOf<Cable>()
     private var _bridges = mutableListOf<Bridge>()
-    var indicatorDrums = mutableListOf<IndicatorDrum>()
+    private var indicatorDrums = mutableListOf<IndicatorDrum>()
+
     init {
         reset()
     }
+
     fun reset() {
         chains = mutableMapOf<Int, Chain>()
         for (c in 1..noOfChains) {
@@ -62,7 +77,7 @@ class Bombe (
         scramblers = mutableMapOf()
         for (b in 1..noOfBanks) {
             for (s in 1..noOfScramblersPerBank) {
-                val scramblerId = ((b-1) * noOfScramblersPerBank) + s
+                val scramblerId = ((b - 1) * noOfScramblersPerBank) + s
                 scramblers.put(scramblerId, Scrambler(scramblerId, noOfRotorsPerScrambler, null, this))
             }
         }
@@ -74,7 +89,7 @@ class Bombe (
             reflectorBoardBays.put(b, reflectorBoardBay)
         }
 
-        diagonalBoards = mutableMapOf<Int,DiagonalBoard>()
+        diagonalBoards = mutableMapOf<Int, DiagonalBoard>()
         for (b in 1..noOfBanks) {
             diagonalBoards.put(b, DiagonalBoard(b, this))
         }
@@ -82,7 +97,7 @@ class Bombe (
         _commonsSets = mutableMapOf()
         for (b in 1..noOfBanks) {
             for (cs in 1..noOfCommonsSetsPerBank) {
-                val id = ((b-1) * noOfCommonsSetsPerBank) + cs
+                val id = ((b - 1) * noOfCommonsSetsPerBank) + cs
                 _commonsSets.put(id, CommonsSet(id, this))
             }
         }
@@ -103,41 +118,54 @@ class Bombe (
         drumRotations = 0
     }
 
+    override fun getIndicatorDrums() : List<IndicatorDrum> {
+        return indicatorDrums
+    }
+
     override fun getBombeControlpanel(): BombeControlPanel? {
         return this
     }
 
-    fun getChain(id:Int) : Chain? {
+    fun getChain(id: Int): Chain? {
         return chains.get(id)
     }
-    override fun getChainControlPanel(id:Int) : ChainControlPanel? {
+
+    override fun getChainControlPanel(id: Int): ChainControlPanel? {
         return getChain(id)
     }
 
-    override fun getChainJackPanel(id:Int) : ChainJackPanel? {
-        return getChain(id)
-    }
-
-    override fun getChainJackPanels() : List<ChainJackPanel> {
+    override fun getChainControlPanels() : List<ChainControlPanel> {
         return chains.values.toList()
     }
 
-    override fun getChainDisplay(id:Int) : ChainIndicator? {
+    override fun getChainJackPanel(id: Int): ChainJackPanel? {
         return getChain(id)
+    }
+
+    override fun getChainJackPanels(): List<ChainJackPanel> {
+        return chains.values.toList()
+    }
+
+    override fun getChainDisplay(id: Int): ChainIndicator? {
+        return getChain(id)
+    }
+
+    override fun getChainDisplays(): List<ChainIndicator> {
+        return chains.values.toList()
     }
 
     fun getScrambler(id: Int): Scrambler? {
         return scramblers.get(id)
     }
 
-    fun getScramblers() : List<Scrambler> {
+    fun getScramblers(): List<Scrambler> {
         return scramblers.values.toList()
     }
 
     // both bankId and scramblerIndexId are 1-based
     // scramblerIndexId is the sequence number of a scrambler *within a scrambler*
     fun getScrambler(bankId: Int, scramblerIndexId: Int): Scrambler? {
-        return scramblers.get( ((bankId-1) * noOfScramblersPerBank) + scramblerIndexId)
+        return scramblers.get(((bankId - 1) * noOfScramblersPerBank) + scramblerIndexId)
     }
 
     override fun getScramblerJackPanel(id: Int): ScramblerJackPanel? {
@@ -152,15 +180,15 @@ class Bombe (
         return scramblers.values.toList()
     }
 
-    override fun getReflectorBoardBay(id:Int) : ReflectorBoardBay? {
+    override fun getReflectorBoardBay(id: Int): ReflectorBoardBay? {
         return reflectorBoardBays.get(id)
     }
 
-    override fun getDiagonalBoardJackPanel(id:Int) : DiagonalBoardJackPanel? {
+    override fun getDiagonalBoardJackPanel(id: Int): DiagonalBoardJackPanel? {
         return diagonalBoards.get(id)
     }
 
-    override fun getDiagonalBoardJackPanels() : List<DiagonalBoardJackPanel> {
+    override fun getDiagonalBoardJackPanels(): List<DiagonalBoardJackPanel> {
         return diagonalBoards.values.toList()
     }
 
@@ -177,14 +205,14 @@ class Bombe (
         return _commonsSets.get(id)
     }
 
-    fun getCommonsSets() : List<CommonsSet> {
+    fun getCommonsSets(): List<CommonsSet> {
         return _commonsSets.values.toList()
     }
 
     // both columnId and commonsSetIndexInColumn are 1-based
     // commonsSetIndexInColumn is the sequence number of a scrambler *within a scrambler*
     fun getCommonsSet(columnId: Int, commonsSetIndexInColumn: Int): CommonsSet? {
-        return _commonsSets.get( ((columnId-1) * noOfCommonsSetsPerBank) + commonsSetIndexInColumn)
+        return _commonsSets.get(((columnId - 1) * noOfCommonsSetsPerBank) + commonsSetIndexInColumn)
     }
 
     // ***********************************************************************************************************
@@ -195,79 +223,102 @@ class Bombe (
     override fun switchDoubleInputOn() {
         doubleInputOn = true
     }
+
     override fun switchDoubleInputOff() {
         doubleInputOn = false
     }
-    override fun isDoubleInputOn() : Boolean {
+
+    override fun isDoubleInputOn(): Boolean {
         return doubleInputOn
     }
 
     // ******************************************************************************************************
     // Features needed to support setting up a menu on the back-side of a bombe
 
-    fun createCable() : Cable {
-        val cable = Cable("cable-${_cables.size+1}", this)
+    fun createCable(): Cable {
+        val cable = Cable("cable-${_cables.size + 1}", this)
         _cables.add(cable)
         return cable
     }
 
-    fun createBridge() : Bridge {
-        val bridge = Bridge("bridge-${_bridges.size+1}", this)
+    fun createBridge(): Bridge {
+        val bridge = Bridge("bridge-${_bridges.size + 1}", this)
         _bridges.add(bridge)
         return bridge
     }
 
     // ******************************************************************************************************
     // Features needed to support executing a run on a bombe
-
-    var stops : MutableList<Stop> = mutableListOf()
-        private set
-    fun run (numberOfSteps: Int? = null, printStepResult: Boolean = false, printCurrentPath: Boolean = false) : List<Stop> {
-        for (step in 1.. if (numberOfSteps != null) numberOfSteps!! else pow(alphabetSize,3) ) {
-            // first reset the indicator relays for all chains
-            chains.values.filter{it.isOn()}.forEach { it.resetIndicatorRelays() }
-            // and reset the current in the entire system
+    fun start(
+        numberOfSteps: Int? = null,
+        printStepResult: Boolean = false,
+        printCurrentPath: Boolean = false
+    ): Boolean {
+        // reset the indicator relays for all chains
+        chains.values.filter { it.isOn() }.forEach { it.resetSearchLetterIndicatorRelays() }
+        while (true) {
+            // A.reset the current in the entire system
             resetCurrent()
-            // now run all active chains
-            val doubleInputStops = mutableListOf<Stop>()
+
+            // B. step the drum(s)
+            stepDrums()
+
+            // C. inject current into the active chains
             for ((index, chain) in chains.values.withIndex()) {
                 if (chain.isOn()) {
                     var root = CurrentPathElement.createRoot(chain.getContactToActivate()!!)
-                    chain.run(root)
+                    chain.injectCurrent(root)
                     if (printCurrentPath) {
-                        println("chain ${chain.id} current path")
+                        println("chain ${chain.getId()} current path")
                         root.print()
                     }
-                    val stop = checkResult(chain)
-                    if (stop != null) {
-                        if (!doubleInputOn) {
-                            stops.add(stop)
-                            // transfer state from the chain's sense relays to its indicator relays
-                            chain.transferSenseRelaysStateToIndicatorRelays()
-                        } else {
-                            doubleInputStops.add(stop)
-                        }
-                    }
                 }
             }
-            if (doubleInputOn) {
-                // when 'double input' is switched on, there must be 2 stops in order for the stops to count
-                // as valid stops
-                if (doubleInputStops.size == 2) {
-                    stops.addAll(doubleInputStops)
-                    // transfer state from each the chain' sense relays to its indicator relays
-                    // (chain IDs are 1-based)
-                    getChain(1)!!.transferSenseRelaysStateToIndicatorRelays()
-                    getChain(2)!!.transferSenseRelaysStateToIndicatorRelays()
-                }
+
+            // D. has the sensing circuit indicated stops?
+            var sensingResult = sensing(printCurrentPath)
+            if (sensingResult) {
+                return true
             }
-            stepDrums()
+
+            if (allRotationsDone() || (numberOfSteps != null && drumRotations < numberOfSteps)) {
+                return false
+            }
         }
-        return stops
+        return true
+    }
+
+    private fun sensing(printCurrentPath: Boolean) : Boolean {
+        val chainsWithOpenCircuits = chains.values.filter { chain ->
+            chain.isOn() && chain.getInputJack().readContacts().filter { it.value }.count() < chain.getInputJack().readContacts().size
+        }.toList()
+
+        // when 'double input' is switched on, both chains must have produced a stop
+        // 'double input' as described in the US bombe report 1944, chapter I, paragraph TYPES OF MENUS, page 25
+        // https://www.codesandciphers.org.uk/documents/bmbrpt/bmbpg029.htm
+        // "In the newer type machines the "double input" switch operated. [...]
+        // This changes the association of wiring and the contacts of the sensing relays so that the bombe
+        // will not stop unless there is an open circuit on both parts of the menu."
+        if ( (doubleInputOn && chainsWithOpenCircuits.size == 2) || (!doubleInputOn && chainsWithOpenCircuits.size > 0)) {
+            chainsWithOpenCircuits.forEach { run {
+                transferSenseRelaysStateToIndicatorRelays(it)
+            } }
+            return true
+        }
+        return false
+    }
+
+    private fun transferSenseRelaysStateToIndicatorRelays(chain: Chain) {
+        if (chain.getInputJack().readContacts().filter { it.value }.count() == 1) {
+            chain.searchLetterIndicatorRelays = chain.getInputJack().readContacts().toMap()
+        } else {
+            chain.searchLetterIndicatorRelays = chain.getInputJack().readContacts().map { it.key to !it.value }.toMap()
+        }
     }
 
     var drumRotations = 0
         private set
+
     // https://www.codesandciphers.org.uk/virtualbp/tbombe/thebmb.htm
     // "the top, fast, drum on the Bombe corresponds to the slow left hand drum on the Enigma machine"
     // meaning: the (top) fast-moving drum on a bombe corresponds with the (left) slow-moving rotor
@@ -293,27 +344,18 @@ class Bombe (
         }
     }
 
-//    private fun checkResult(chain: Chain) : Stop?{
-//        val stepResult = chain.checkStepResult()
-//        // stepResult.first indicates whether the result of this step is a valid stop
-//        if (stepResult.first) {
-//            return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-//                determineChainInputLetter(chain), stepResult.second!!)
-//        }
-//        return null
+    fun allRotationsDone(): Boolean {
+        return drumRotations >= pow(alphabetSize, noOfRotorsPerScrambler)
+    }
+
+//    private fun createStop(chain: Chain) : Stop {
+//        return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
+//        determineChainInputLetter(chain), chain.searchLetterIndicatorRelays.filter { it.value }.keys.toList())
 //    }
 
-    private fun checkResult(chain: Chain) : Stop?{
-        if (chain.checkStepResult()) {
-            return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-                determineChainInputLetter(chain), chain.getInputJack().readContacts().toMap())
-        }
-        return null
-    }
-
-    private fun determineChainInputLetter(chain: Chain) : Char {
-        return PluggingUpUtil.findConnectedDiagonalBoardJack(chain.getInputJack())!!.letter
-    }
+//    private fun determineChainInputLetter(chain: Chain) : Char {
+//        return PluggingUpUtil.findConnectedDiagonalBoardJack(chain.getInputJack())!!.letter
+//    }
 
     // ***************************************************************************************************************
     // Reset methods

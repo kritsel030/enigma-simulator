@@ -143,10 +143,10 @@ class JuniorBombeOperatorTest {
         // TODO: add a unittest for a bank without an active contact
         bombe.getChainControlPanel(1)!!.setContactToActivate('X')
 
-        // run the job
-        val stops = bombe.run(1)
+        // run the bombe only once
+        val stops = operator.runJob(1)
         assertTrue(stops.size > 0, "expected stops")
-        assertTrue(stops[0].senseRelaySet.size > 0, "expected multiple possible stecker partners")
+        assertTrue(stops[0].possibleSearchLetters.size > 0, "expected multiple possible stecker partners")
     }
 
     // US 6812 Bombe Report 1944 - chapter 3
@@ -243,7 +243,7 @@ class JuniorBombeOperatorTest {
         bombe.getChainControlPanel(1)!!.setContactToActivate('A')
 
         // run the job
-        val stops = bombe.run()
+        val stops = operator.runJob()
 //        println("test menu I stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
@@ -251,6 +251,6 @@ class JuniorBombeOperatorTest {
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('U', stops.get(0).rotor2RingStellung)
         assertEquals('O', stops.get(0).rotor3RingStellung)
-        assertEquals("L", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("L", stops.get(0).getPossibleSearchLettersString())
     }
 }

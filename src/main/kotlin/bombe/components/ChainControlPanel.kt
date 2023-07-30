@@ -2,6 +2,8 @@ package bombe.components
 
 interface ChainControlPanel {
 
+    fun getId() : Int
+
     fun switchOn()
     fun switchOff()
     fun isOn() : Boolean

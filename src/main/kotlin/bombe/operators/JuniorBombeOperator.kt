@@ -2,6 +2,8 @@ package bombe.operators
 
 import bombe.Bombe
 import bombe.BombeInterface
+import bombe.Stop
+import bombe.Util.PluggingUpUtil
 import bombe.components.*
 import bombe.connectors.Jack
 
@@ -83,6 +85,67 @@ open class JuniorBombeOperator(private val bombe: Bombe) {
     fun setStartRingOrientations(scramblerId: Int, startOrientations: String) {
         getBombe().getScrambler(scramblerId)!!.setDrumStartOrientations(startOrientations)
     }
+
+    // *************************************************************************************************
+    // Features needed to run a bombe job
+//    fun runJob(
+//        numberOfSteps: Int? = null,
+//        printStepResult: Boolean = false,
+//        printCurrentPath: Boolean = false
+//    ): MutableList<Stop> {
+//        val stops = mutableListOf<Stop>()
+//        var doContinue = true
+//        while (doContinue) {
+//            val stopsInLeg = getBombe().start(numberOfSteps, printStepResult, printCurrentPath)
+//            if (!stopsInLeg.isEmpty()) {
+//                if (stops.contains(stopsInLeg.first())) {
+//                    doContinue = false
+//                } else {
+//                    stops.addAll(stopsInLeg)
+//                }
+//            } else {
+//                // when you start the bombe and it doesn't return any stops this is because
+//                // - it has stepped 'numberOfSteps' times
+//                // - it has tried all drum positions
+//                doContinue = false
+//            }
+//        }
+//        return stops
+//    }
+
+    fun runJob(
+        numberOfSteps: Int? = null,
+        printStepResult: Boolean = false,
+        printCurrentPath: Boolean = false
+    ): MutableList<Stop> {
+        val stops = mutableListOf<Stop>()
+        var doContinue = true
+        while (doContinue) {
+            // when you start the bombe and it doesn't return any stops this is because
+            // - it has stepped 'numberOfSteps' times
+            // - it has tried all drum positions
+            doContinue = getBombe().start(numberOfSteps, printStepResult, printCurrentPath)
+            stops.addAll(lookAtChainIndicatorPanelAndCreateJobSlips())
+        }
+        return stops
+    }
+
+    private fun lookAtChainIndicatorPanelAndCreateJobSlips():List<Stop> {
+        return bombe.getChainDisplays()
+            .filter{ it.readSearchLetters().isNotEmpty() }
+            .map { createStop(bombe.getChain(it.getId())!!) }
+            .toList()
+    }
+
+    private fun createStop(chain: Chain) : Stop {
+        return Stop(bombe.getIndicatorDrums()[0].position, bombe.getIndicatorDrums()[1].position, bombe.getIndicatorDrums()[2].position,
+            determineChainInputLetter(chain), chain.readSearchLetters())
+    }
+
+    private fun determineChainInputLetter(chain: Chain) : Char {
+        return PluggingUpUtil.findConnectedDiagonalBoardJack(chain.getInputJack())!!.letter
+    }
+
 
 //    fun setUpMenu_example1 (){
 //        setUpMenuOld(RotorType.III, RotorType.V, RotorType.II,

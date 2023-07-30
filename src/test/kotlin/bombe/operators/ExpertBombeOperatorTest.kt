@@ -45,10 +45,10 @@ class ExpertBombeOperatorTest {
         )
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
         assertTrue(stops.size > 1)
-        assertEquals("D", stops[0].getPotentialSteckerPartnersString())
+        assertEquals("D", stops[0].getPossibleSearchLettersString())
         assertEquals(
             "SNY",
             listOf(
@@ -58,7 +58,7 @@ class ExpertBombeOperatorTest {
             ).joinToString("")
         )
 
-        assertEquals("Q", stops[1].getPotentialSteckerPartnersString())
+        assertEquals("Q", stops[1].getPossibleSearchLettersString())
         assertEquals(
             "DKX",
             listOf(
@@ -99,7 +99,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
 //        println("test menu I stops (${stops.size}):")
 //        stops.forEach { it.print() }
@@ -108,7 +108,7 @@ class ExpertBombeOperatorTest {
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('U', stops.get(0).rotor2RingStellung)
         assertEquals('O', stops.get(0).rotor3RingStellung)
-        assertEquals("L", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("L", stops.get(0).getPossibleSearchLettersString())
     }
 
     /** US 6812 Bombe Report 1944 - chapter 3
@@ -142,7 +142,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
 //        println("test menu II stops (${stops.size}):")
 //        stops.forEach { it.print() }
@@ -151,7 +151,7 @@ class ExpertBombeOperatorTest {
         assertEquals('F', stops.get(0).rotor1RingStellung)
         assertEquals('J', stops.get(0).rotor2RingStellung)
         assertEquals('W', stops.get(0).rotor3RingStellung)
-        assertEquals("F", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("F", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -187,7 +187,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 //        println("test menu III stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
@@ -195,7 +195,7 @@ class ExpertBombeOperatorTest {
         assertEquals('A', stops.get(0).rotor1RingStellung)
         assertEquals('F', stops.get(0).rotor2RingStellung)
         assertEquals('Y', stops.get(0).rotor3RingStellung)
-        assertEquals("K", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("K", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -240,7 +240,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 //        println("test menu IV stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
@@ -248,7 +248,7 @@ class ExpertBombeOperatorTest {
         assertEquals('D', stops.get(0).rotor1RingStellung)
         assertEquals('G', stops.get(0).rotor2RingStellung)
         assertEquals('T', stops.get(0).rotor3RingStellung)
-        assertEquals("I", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("I", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -296,7 +296,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 //        println("test menu IVa stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
@@ -304,7 +304,7 @@ class ExpertBombeOperatorTest {
         assertEquals('B', stops.get(0).rotor1RingStellung)
         assertEquals('S', stops.get(0).rotor2RingStellung)
         assertEquals('T', stops.get(0).rotor3RingStellung)
-        assertEquals("W", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("W", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -349,7 +349,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
 //        println("test menu V_1 stops (${stops.size}):")
 //        stops.forEach { it.print() }
@@ -358,7 +358,7 @@ class ExpertBombeOperatorTest {
         assertEquals('D', stops.get(0).rotor1RingStellung)
         assertEquals('E', stops.get(0).rotor2RingStellung)
         assertEquals('Z', stops.get(0).rotor3RingStellung)
-        assertEquals("M", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("M", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -403,7 +403,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
 //        println("test menu V-2 stops (${stops.size}):")
 //        stops.forEach { it.print() }
@@ -412,7 +412,7 @@ class ExpertBombeOperatorTest {
         assertEquals('V', stops.get(0).rotor1RingStellung)
         assertEquals('C', stops.get(0).rotor2RingStellung)
         assertEquals('U', stops.get(0).rotor3RingStellung)
-        assertEquals("Y", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("Y", stops.get(0).getPossibleSearchLettersString())
     }
 
     /**
@@ -461,7 +461,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 
 //        println("test menu VI stops (${stops.size}):")
 //        stops.forEach { it.print() }
@@ -470,7 +470,7 @@ class ExpertBombeOperatorTest {
         assertEquals('E', stops.get(0).rotor1RingStellung)
         assertEquals('V', stops.get(0).rotor2RingStellung)
         assertEquals('Z', stops.get(0).rotor3RingStellung)
-        assertEquals("E", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("E", stops.get(0).getPossibleSearchLettersString())
     }
 
         /**
@@ -531,7 +531,7 @@ class ExpertBombeOperatorTest {
 
         val bombe = Bombe(instructions.deriveBombeConstructionParameters())
         val operator = ExpertBombeOperator(bombe)
-        val stops = operator.executeJob(instructions)
+        val stops = operator.runExpertJob(instructions)
 //        println("test menu VII stops (${stops.size}):")
 //        stops.forEach { it.print() }
 
@@ -539,6 +539,6 @@ class ExpertBombeOperatorTest {
         assertEquals('C', stops.get(0).rotor1RingStellung)
         assertEquals('K', stops.get(0).rotor2RingStellung)
         assertEquals('Y', stops.get(0).rotor3RingStellung)
-        assertEquals("H", stops.get(0).getPotentialSteckerPartnersString())
+        assertEquals("H", stops.get(0).getPossibleSearchLettersString())
     }
 }

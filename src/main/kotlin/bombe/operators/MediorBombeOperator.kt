@@ -32,7 +32,7 @@ open class MediorBombeOperator(bombe: Bombe) : JuniorBombeOperator(bombe) {
         printCurrentPath: Boolean = false,
     ): List<Stop> {
         verifyPluggedUpBackSide()
-        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath)
+        return executeRun(numberOfSteps, printStepResult, printCurrentPath)
     }
 
     /**

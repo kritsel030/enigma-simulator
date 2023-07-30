@@ -5,7 +5,7 @@ import bombe.connectors.Connector
 import bombe.connectors.Jack
 import bombe.recorder.CurrentPathElement
 
-class Chain (val id: Int, bombe: Bombe)
+class Chain (private val id: Int, bombe: Bombe)
     : CircuitComponent("Chain-$id", bombe), ChainJackPanel, ChainControlPanel, ChainIndicator {
 
     // create a Jack for the chain which will be present at the back of the bombe
@@ -16,10 +16,8 @@ class Chain (val id: Int, bombe: Bombe)
         return _inputJack
     }
 
-    // ***********************************************************************************************************
-    // sense relays are connected to the chain input
-    fun readSenseRelays () : Map<Char, Boolean> {
-        return _inputJack.readContacts()
+    override fun getId() :Int {
+        return id
     }
 
     // ***********************************************************************************************************
@@ -48,46 +46,37 @@ class Chain (val id: Int, bombe: Bombe)
     // ***********************************************************************************************************
     // Chain Indicator panel support
 
-    private var indicatorRelays : Map<Char, Boolean> = mapOf<Char, Boolean>()
+    var searchLetterIndicatorRelays : Map<Char, Boolean> = mapOf<Char, Boolean>()
     init {
-        resetIndicatorRelays()
-    }
-    fun transferSenseRelaysStateToIndicatorRelays() {
-        indicatorRelays = readSenseRelays()
+        resetSearchLetterIndicatorRelays()
     }
 
-    fun resetIndicatorRelays() {
+    fun resetSearchLetterIndicatorRelays() {
         val freshRegister = mutableMapOf<Char, Boolean>()
         var char = 'A'
         for (i in 0..bombe.alphabetSize-1) {
             freshRegister[char.plus(i)] = false;
         }
-        indicatorRelays = freshRegister
+        searchLetterIndicatorRelays = freshRegister
     }
 
-    override fun readIndicatorRelays() : Map<Char, Boolean> {
-        return indicatorRelays
+    override fun readSearchLetterIndicators() : Map<Char, Boolean> {
+        return searchLetterIndicatorRelays
+    }
+
+    override fun readSearchLetters() : List<Char> {
+        return searchLetterIndicatorRelays.filter { it.value }.map{it.key}.toList()
     }
 
     // ***********************************************************************************************************
     // Features to support the running of a bombe
-    fun run(previousPathElement: CurrentPathElement) {
+    fun injectCurrent(previousPathElement: CurrentPathElement) {
         if (on) {
             _inputJack.passCurrentOutbound(this.contactToActivate!!, previousPathElement)
         }
     }
     override fun passCurrent(contact: Char, activatedVia: Connector, previousPathElement: CurrentPathElement?) {
         // nothing to do
-    }
-
-    /**
-     * Indicates whether the current status of the active contacts of the chain's input jack
-     * represents a valid stop
-     * A valid stop is whenever less than 26 (for a 26 alphabetsize bombe) contacts are live
-     */
-    fun checkStepResult() : Boolean {
-        val activeContactCount = _inputJack.readContacts().filter{entry -> entry.value }.size
-        return activeContactCount < bombe.alphabetSize
     }
 
 }

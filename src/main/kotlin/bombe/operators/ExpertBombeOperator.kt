@@ -19,7 +19,7 @@ import bombe.connectors.Jack
 
 class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
 
-    fun executeJob(
+    fun runExpertJob(
         instructions: BombeJobInstructions,
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
@@ -29,9 +29,11 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
         verifyPluggedUpBackSide()
         verifyPluggedUpBackSide(instructions)
         prepareFrontSide(instructions)
-        prepareRightSide(instructions)
-        return getBombe().run(numberOfSteps, printStepResult, printCurrentPath)
+        throwSwitchesRightSide(instructions)
+
+        return runJob(numberOfSteps, printStepResult, printCurrentPath)
     }
+
 
     fun plugUpBackSide(instructions: BombeJobInstructions) {
         when(instructions.bombeStrategy) {
@@ -111,7 +113,7 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
                 connectJackToDBLetterJack(
                     getBombeInterface().getChainJackPanel(configId)!!.getInputJack(),
                     commonsSetGroupId,
-                    instructions.chain1SearchLetter!!
+                    instructions.chain1InputLetter!!
                 )
             }
         }
@@ -123,12 +125,12 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
             connectJackToDBLetterJack(
                 getBombeInterface().getChainJackPanel(1)!!.getInputJack(),
                 1,
-                instructions.chain1SearchLetter!!
+                instructions.chain1InputLetter!!
             )
             connectJackToDBLetterJack(
                 getBombeInterface().getChainJackPanel(2)!!.getInputJack(),
                 1,
-                instructions.chain2SearchLetter!!
+                instructions.chain2InputLetter!!
             )
         }
     }
@@ -173,20 +175,20 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
         }
     }
 
-    fun prepareRightSide(instructions: BombeJobInstructions) {
+    fun throwSwitchesRightSide(instructions: BombeJobInstructions) {
         // See BombeJobInstructions for an explanation about single input and double input
         if (instructions.singleInput) {
             for (i in 1..instructions.drumConfigurations.size) {
                 getBombeInterface().getChainControlPanel(i)!!.switchOn()
-                getBombeInterface().getChainControlPanel(i)!!.setContactToActivate(instructions.chain1ActivateContact!!)
+                getBombeInterface().getChainControlPanel(i)!!.setContactToActivate(instructions.chain1SearchLetter!!)
             }
         } else {
             // double input
             getBombeInterface().getBombeControlpanel()!!.switchDoubleInputOn()
             getBombeInterface().getChainControlPanel(1)!!.switchOn()
-            getBombeInterface().getChainControlPanel(1)!!.setContactToActivate(instructions.chain1ActivateContact!!)
+            getBombeInterface().getChainControlPanel(1)!!.setContactToActivate(instructions.chain1SearchLetter!!)
             getBombeInterface().getChainControlPanel(2)!!.switchOn()
-            getBombeInterface().getChainControlPanel(2)!!.setContactToActivate(instructions.chain2ActivateContact!!)
+            getBombeInterface().getChainControlPanel(2)!!.setContactToActivate(instructions.chain2SearchLetterContact!!)
         }
     }
 
