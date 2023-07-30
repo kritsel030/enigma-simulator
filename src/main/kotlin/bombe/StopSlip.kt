@@ -1,6 +1,6 @@
 package bombe
 
-class Stop (
+class StopSlip (
     val rotor1RingStellung: Char,
     val rotor2RingStellung: Char,
     val rotor3RingStellung: Char,

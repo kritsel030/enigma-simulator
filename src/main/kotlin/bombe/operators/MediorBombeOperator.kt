@@ -1,7 +1,7 @@
 package bombe.operators
 
 import bombe.Bombe
-import bombe.Stop
+import bombe.StopSlip
 import bombe.components.*
 import bombe.connectors.CablePlug
 import bombe.connectors.Jack
@@ -30,7 +30,7 @@ open class MediorBombeOperator(bombe: Bombe) : JuniorBombeOperator(bombe) {
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
         printCurrentPath: Boolean = false,
-    ): List<Stop> {
+    ): List<StopSlip> {
         verifyPluggedUpBackSide()
         return executeRun(numberOfSteps, printStepResult, printCurrentPath)
     }

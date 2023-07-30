@@ -348,15 +348,6 @@ class Bombe (
         return drumRotations >= pow(alphabetSize, noOfRotorsPerScrambler)
     }
 
-//    private fun createStop(chain: Chain) : Stop {
-//        return Stop(indicatorDrums[0].position, indicatorDrums[1].position, indicatorDrums[2].position,
-//        determineChainInputLetter(chain), chain.searchLetterIndicatorRelays.filter { it.value }.keys.toList())
-//    }
-
-//    private fun determineChainInputLetter(chain: Chain) : Char {
-//        return PluggingUpUtil.findConnectedDiagonalBoardJack(chain.getInputJack())!!.letter
-//    }
-
     // ***************************************************************************************************************
     // Reset methods
 

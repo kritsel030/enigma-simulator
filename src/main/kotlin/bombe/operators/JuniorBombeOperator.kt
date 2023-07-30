@@ -2,7 +2,7 @@ package bombe.operators
 
 import bombe.Bombe
 import bombe.BombeInterface
-import bombe.Stop
+import bombe.StopSlip
 import bombe.Util.PluggingUpUtil
 import bombe.components.*
 import bombe.connectors.Jack
@@ -88,57 +88,32 @@ open class JuniorBombeOperator(private val bombe: Bombe) {
 
     // *************************************************************************************************
     // Features needed to run a bombe job
-//    fun runJob(
-//        numberOfSteps: Int? = null,
-//        printStepResult: Boolean = false,
-//        printCurrentPath: Boolean = false
-//    ): MutableList<Stop> {
-//        val stops = mutableListOf<Stop>()
-//        var doContinue = true
-//        while (doContinue) {
-//            val stopsInLeg = getBombe().start(numberOfSteps, printStepResult, printCurrentPath)
-//            if (!stopsInLeg.isEmpty()) {
-//                if (stops.contains(stopsInLeg.first())) {
-//                    doContinue = false
-//                } else {
-//                    stops.addAll(stopsInLeg)
-//                }
-//            } else {
-//                // when you start the bombe and it doesn't return any stops this is because
-//                // - it has stepped 'numberOfSteps' times
-//                // - it has tried all drum positions
-//                doContinue = false
-//            }
-//        }
-//        return stops
-//    }
-
     fun runJob(
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
         printCurrentPath: Boolean = false
-    ): MutableList<Stop> {
-        val stops = mutableListOf<Stop>()
+    ): MutableList<StopSlip> {
+        val stopSlips = mutableListOf<StopSlip>()
         var doContinue = true
         while (doContinue) {
             // when you start the bombe and it doesn't return any stops this is because
             // - it has stepped 'numberOfSteps' times
             // - it has tried all drum positions
             doContinue = getBombe().start(numberOfSteps, printStepResult, printCurrentPath)
-            stops.addAll(lookAtChainIndicatorPanelAndCreateJobSlips())
+            stopSlips.addAll(lookAtChainIndicatorPanelAndCreateStopSlips())
         }
-        return stops
+        return stopSlips
     }
 
-    private fun lookAtChainIndicatorPanelAndCreateJobSlips():List<Stop> {
+    private fun lookAtChainIndicatorPanelAndCreateStopSlips():List<StopSlip> {
         return bombe.getChainDisplays()
             .filter{ it.readSearchLetters().isNotEmpty() }
             .map { createStop(bombe.getChain(it.getId())!!) }
             .toList()
     }
 
-    private fun createStop(chain: Chain) : Stop {
-        return Stop(bombe.getIndicatorDrums()[0].position, bombe.getIndicatorDrums()[1].position, bombe.getIndicatorDrums()[2].position,
+    private fun createStop(chain: Chain) : StopSlip {
+        return StopSlip(bombe.getIndicatorDrums()[0].position, bombe.getIndicatorDrums()[1].position, bombe.getIndicatorDrums()[2].position,
             determineChainInputLetter(chain), chain.readSearchLetters())
     }
 

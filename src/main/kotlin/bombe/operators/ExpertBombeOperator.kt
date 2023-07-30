@@ -24,7 +24,7 @@ class ExpertBombeOperator(bombe: Bombe) : MediorBombeOperator(bombe) {
         numberOfSteps: Int? = null,
         printStepResult: Boolean = false,
         printCurrentPath: Boolean = false
-    ): List<Stop> {
+    ): List<StopSlip> {
         plugUpBackSide(instructions)
         verifyPluggedUpBackSide()
         verifyPluggedUpBackSide(instructions)
