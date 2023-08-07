@@ -10,4 +10,9 @@ interface ChainControlPanel {
 
     fun setContactToActivate(contact: Char)
     fun getContactToActivate() : Char?
+
+
+    fun swichOnSearchLetter(letter:Char)
+
+    fun swichOffSearchLetter(letter:Char)
 }

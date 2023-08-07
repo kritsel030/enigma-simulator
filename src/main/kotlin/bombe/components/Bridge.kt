@@ -20,7 +20,7 @@ class Bridge (label: String, bombe : Bombe) : PassThroughComponent(label, bombe)
     // plug that goes into the in-jack of a subsequent scrambler
     val inPlug = Plug("in", this)
 
-    // jack to plug a cable into, whose other plug either connects to a common
+    // jack to plug a cable into, whose other plug either connects to a commons
     // or to the diagonal board
     val jack = Jack("jack", "jack", this)
 }

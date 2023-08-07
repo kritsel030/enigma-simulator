@@ -13,7 +13,7 @@ class DiagonalBoard(id: Int, bombe: Bombe) : CircuitComponent ("DB-$id", bombe),
         return _jacks.values.toList()
     }
     init {
-        for (i in 0 .. bombe.alphabetSize) {
+        for (i in 0 .. bombe.alphabetSize-1) {
             var letter = 'A'.plus(i)
             _jacks.put(letter, DiagonalBoardJack(letter, this))
         }

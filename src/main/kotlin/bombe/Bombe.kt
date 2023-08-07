@@ -1,8 +1,7 @@
 package bombe
 
-import bombe.Util.PluggingUpUtil
 import bombe.components.*
-import bombe.recorder.CurrentPathElement
+import bombe.sensingcircuit.BombeSensingCircuit
 import enigma.components.ReflectorType
 import kotlin.math.pow
 
@@ -63,15 +62,26 @@ class Bombe (
     private var _cables = mutableListOf<Cable>()
     private var _bridges = mutableListOf<Bridge>()
     private var indicatorDrums = mutableListOf<IndicatorDrum>()
+    var sensingCircuit = BombeSensingCircuit(this, emptyMap())
+    var mainCircuit = MainCircuit(this)
+
+//    // represents all connectors (jacks and plugs) attached to any component of the bombe
+//    // this includes 'mobile components' like cables and bridges
+//    private var allConnectors = mutableListOf<Connector>()
 
     init {
         reset()
     }
 
     fun reset() {
-        chains = mutableMapOf<Int, Chain>()
+        for (c in chains.keys) {
+            chains.remove(c)
+            sensingCircuit.removeCircuitForChainId(c.toString())
+        }
         for (c in 1..noOfChains) {
-            chains.put(c, Chain(c, this))
+            val chain = Chain(c, this)
+            chains.put(c, chain)
+            sensingCircuit.addOrReplaceCircuitForChainId(chain)
         }
 
         scramblers = mutableMapOf()
@@ -116,6 +126,12 @@ class Bombe (
         }
 
         drumRotations = 0
+
+//        sensingCircuit = BombeSensingCircuit(this, chains)
+
+//        // needed to initialize the sensing circuit (bombe.sensingCircuit must have been set before executing this part)
+//        chains.values.forEach { chain -> chain.chainInputContacts.keys.forEach { chain.swichOffSearchLetter(it) }}
+
     }
 
     override fun getIndicatorDrums() : List<IndicatorDrum> {
@@ -258,29 +274,24 @@ class Bombe (
         chains.values.filter { it.isOn() }.forEach { it.resetSearchLetterIndicatorRelays() }
         while (true) {
             // A.reset the current in the entire system
-            resetCurrent()
+            mainCircuit.powerDown()
 
             // B. step the drum(s)
             stepDrums()
 
-            // C. inject current into the active chains
-            for ((index, chain) in chains.values.withIndex()) {
-                if (chain.isOn()) {
-                    var root = CurrentPathElement.createRoot(chain.getContactToActivate()!!)
-                    chain.injectCurrent(root)
-                    if (printCurrentPath) {
-                        println("chain ${chain.getId()} current path")
-                        root.print()
-                    }
-                }
-            }
+            // C. power up the main circuit
+            mainCircuit.powerUp()
 
-            // D. has the sensing circuit indicated stops?
-            var sensingResult = sensing(printCurrentPath)
-            if (sensingResult) {
+            // D. has the sensing circuit detected a stop?
+            var stop = sensingCircuit.shouldBombeStop(printCurrentPath)
+            if (stop) {
                 return true
             }
 
+            // E. extra stop conditions
+            // these are not features of an actual bombe, they are only present in this bombe simulator to
+            // a) prevent a bombe from forever running when no stop is determined
+            // b) instruct a bombe to only set a single step, for test-purposes only
             if (allRotationsDone() || (numberOfSteps != null && drumRotations < numberOfSteps)) {
                 return false
             }
@@ -288,33 +299,6 @@ class Bombe (
         return true
     }
 
-    private fun sensing(printCurrentPath: Boolean) : Boolean {
-        val chainsWithOpenCircuits = chains.values.filter { chain ->
-            chain.isOn() && chain.getInputJack().readContacts().filter { it.value }.count() < chain.getInputJack().readContacts().size
-        }.toList()
-
-        // when 'double input' is switched on, both chains must have produced a stop
-        // 'double input' as described in the US bombe report 1944, chapter I, paragraph TYPES OF MENUS, page 25
-        // https://www.codesandciphers.org.uk/documents/bmbrpt/bmbpg029.htm
-        // "In the newer type machines the "double input" switch operated. [...]
-        // This changes the association of wiring and the contacts of the sensing relays so that the bombe
-        // will not stop unless there is an open circuit on both parts of the menu."
-        if ( (doubleInputOn && chainsWithOpenCircuits.size == 2) || (!doubleInputOn && chainsWithOpenCircuits.size > 0)) {
-            chainsWithOpenCircuits.forEach { run {
-                transferSenseRelaysStateToIndicatorRelays(it)
-            } }
-            return true
-        }
-        return false
-    }
-
-    private fun transferSenseRelaysStateToIndicatorRelays(chain: Chain) {
-        if (chain.getInputJack().readContacts().filter { it.value }.count() == 1) {
-            chain.searchLetterIndicatorRelays = chain.getInputJack().readContacts().toMap()
-        } else {
-            chain.searchLetterIndicatorRelays = chain.getInputJack().readContacts().map { it.key to !it.value }.toMap()
-        }
-    }
 
     var drumRotations = 0
         private set
@@ -346,24 +330,6 @@ class Bombe (
 
     fun allRotationsDone(): Boolean {
         return drumRotations >= pow(alphabetSize, noOfRotorsPerScrambler)
-    }
-
-    // ***************************************************************************************************************
-    // Reset methods
-
-    /**
-     * Remove voltage/current throughout the system, so we're prepared for the next step/drum-rotation
-     * As our bombe-in-code only represents voltage/current as active contacts in connectors (Jacks and Plugs),
-     * we only need to reset the current in these connectors.
-     */
-    fun resetCurrent() {
-        // reset all connectors of all components
-        scramblers.values.forEach{it.resetCurrent() }
-        chains.values.forEach{it.resetCurrent()}
-        diagonalBoards.values.forEach { it.resetCurrent() }
-        _commonsSets.values.forEach{it.resetCurrent()}
-        _bridges.forEach {it.resetCurrent()}
-        _cables.forEach { it.resetCurrent() }
     }
 
     // ******************************************************************************************************

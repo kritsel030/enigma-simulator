@@ -2,6 +2,13 @@ package bombe
 
 import bombe.components.*
 
+/**
+ * Represents bombe features, controls, switches etc. which in reality are accessible to a bombe operator.
+ * It basically provides access to everything needed to
+ * - set-up a bombe for a particular menu
+ * - run the bombbe
+ * - when the bombe stops, read the output
+ */
 interface BombeInterface {
 
     // front side
@@ -30,6 +37,7 @@ interface BombeInterface {
     fun getScramblerJackPanel(bankId: Int, scramblerIndexId: Int) : ScramblerJackPanel?
 
     // reflector board bays on the left side of the bombe
+    // id starts with 1
     fun getReflectorBoardBay(id:Int) : ReflectorBoardBay?
 
     // diagonal board jack panels on the back side of the bombe

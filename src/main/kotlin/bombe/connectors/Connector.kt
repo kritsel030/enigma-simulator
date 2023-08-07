@@ -1,23 +1,25 @@
 package bombe.connectors
 
+import bombe.EnergySource
 import bombe.components.CircuitComponent
 import bombe.recorder.CurrentPathElement
 
-abstract class Connector (val label:String, val attachedTo: CircuitComponent) {
+abstract class Connector (val label:String, val attachedTo: CircuitComponent) : EnergySource() {
     // each contact is indicated by an uppercase letter (e.g. 'B')
     // the boolean value indicates whether the contact is live or not
     private val contacts : MutableMap<Char, Boolean> = mutableMapOf<Char, Boolean>()
 
     init {
-        resetContacts()
-        attachedTo.addConnector(this)
-    }
-
-    fun resetContacts() {
         var char = 'A'
         for (i in 0..attachedTo.bombe.alphabetSize-1) {
             contacts[char.plus(i)] = false;
         }
+        attachedTo.addConnector(this)
+        attachedTo.bombe.mainCircuit.allConnectors.add(this)
+    }
+
+    fun removeCurrent() {
+        contacts.replaceAll{_, value -> false}
     }
 
     fun readContacts() : Map<Char, Boolean> {
@@ -27,6 +29,10 @@ abstract class Connector (val label:String, val attachedTo: CircuitComponent) {
 
     fun readActiveContacts() : List<Char>{
         return contacts.filterValues { it }.keys.toList()
+    }
+
+    fun countActiveContacts() : Int {
+        return readActiveContacts().count()
     }
 
     protected var connectedTo : Connector? = null
