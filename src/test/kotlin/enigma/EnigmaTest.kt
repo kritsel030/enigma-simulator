@@ -13,7 +13,7 @@ class EnigmaTest {
         val leftRotor = Rotor(RotorType.III, 'B', 'Z')
         val middleRotor = Rotor(RotorType.II, 'C', 'Y' )
         val rightRotor = Rotor(RotorType.I, 'D', 'X')
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         val input = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -32,7 +32,7 @@ class EnigmaTest {
         val middleRotor = Rotor(RotorType.V, 'W', 'K')
         val rightRotor = Rotor(RotorType.III, 'Y', 'X')
         val reflector = Reflector(ReflectorType.B)
-        val plugboard = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO")
+        val plugboard = Plugboard("UF-ET-GQ-AD-VN-HM-ZP-LJ-IK-XO", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         val input = "WETTERVORHERSAGE"
@@ -48,7 +48,7 @@ class EnigmaTest {
         val leftRotor = Rotor(RotorType.III, 'A', 'A')
         val middleRotor = Rotor(RotorType.II, 'A', 'A')
         val rightRotor = Rotor(RotorType.I, 'A', 'A')
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         enigma.stepRotors()
@@ -66,7 +66,7 @@ class EnigmaTest {
         var middleRotor = Rotor(RotorType.II, 'A', 'A')
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 'A')
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         enigma.stepRotors()
@@ -85,7 +85,7 @@ class EnigmaTest {
         var middleRotor = Rotor(RotorType.II, 'E', 'A')
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 'A')
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         enigma.stepRotors()
@@ -104,7 +104,7 @@ class EnigmaTest {
         var middleRotor = Rotor(RotorType.II, 'E', 'A')
         // right rotor in turnover position
         var rightRotor = Rotor(RotorType.I, 'Q', 'A')
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val enigma = Enigma(reflector, leftRotor, middleRotor, rightRotor, plugboard)
 
         // encrypt something,

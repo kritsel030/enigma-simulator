@@ -44,7 +44,7 @@ import shared.RotorCore
 class Drum internal constructor (drumType: DrumType, startOrientation: Char, correctedRingSetting: Char) :
 
     AbstractRotor(
-        RotorCore(drumType.rotorType, Util.normalize(Util.toInt(startOrientation) - Util.toInt(correctedRingSetting))),
+        RotorCore(drumType.rotorType, Util.normalize(Util.toInt(startOrientation) - Util.toInt(correctedRingSetting), drumType.rotorType.alphabetsize)),
         PlainLetterRing(),
         correctedRingSetting) {
 

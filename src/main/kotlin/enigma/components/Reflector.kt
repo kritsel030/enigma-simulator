@@ -14,14 +14,14 @@ class Reflector (
     private val _encryptionTable = optimize(reflectorType.encryptionTable)
 
     fun encrypt(inputChannel:Char, recorders:MutableList<StepRecorder>? = null) : Char {
-        if (!validate(inputChannel)) {
+        if (!validate(inputChannel, reflectorType.alphabetsize)) {
             throw IllegalArgumentException("input must be a character between A and Z (capital!)")
         }
         return toChar(encrypt(toInt(inputChannel), recorders))
     }
 
     fun encrypt(contactChannel:Int, recorders:MutableList<StepRecorder>? = null) : Int {
-        val result = normalize(contactChannel + _encryptionTable[contactChannel])
+        val result = normalize(contactChannel + _encryptionTable[contactChannel], reflectorType.alphabetsize)
 
         if (recorders != null) {
             var recorder = ReflectorStepRecorder()

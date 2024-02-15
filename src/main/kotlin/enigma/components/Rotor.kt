@@ -15,7 +15,7 @@ import shared.RotorType
  */
 open class Rotor private constructor (rotorType: RotorType, override val letterRing: LetterRingWithNotches, startRingOrientation: Char, ringSetting: Char) :
     AbstractRotor(
-        RotorCore(rotorType, Util.normalize(Util.toInt(startRingOrientation) - Util.toInt(ringSetting))),
+        RotorCore(rotorType, Util.normalize(Util.toInt(startRingOrientation) - Util.toInt(ringSetting), rotorType.alphabetsize)),
         letterRing,
         ringSetting) {
 

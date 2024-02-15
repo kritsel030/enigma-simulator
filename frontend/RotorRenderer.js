@@ -35,10 +35,10 @@ class RotorRenderer {
         // p = display position index (each rotor has 26 vertical positions)
         // 0 = position at the top of the rotor
         // 25 = position at the bottom of the rotor
-        for(let p = 0; p<26; p++) {
+        for(let p = 0; p<this.rotor.alphabetSize; p++) {
             ctx.moveTo(xOffset + COMPONENT_WIDTH, yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT)
             let rightRotorContactId = displayIndexToId2(p, this.rotor)
-            let leftRotorContactId = (rightRotorContactId + wiring[rightRotorContactId] + 26) % 26
+            let leftRotorContactId = (rightRotorContactId + wiring[rightRotorContactId] + this.rotor.alphabetSize) % this.rotor.alphabetSize
             let leftRotorContactPos = idToDisplayIndex2(leftRotorContactId, this.rotor)
             let y = yOffset + LEADING_HEIGHT + leftRotorContactPos * SINGLE_HEIGHT
             ctx.lineTo(xOffset, y)
@@ -54,9 +54,9 @@ class RotorRenderer {
         ctx.beginPath();
 
         // left border
-        borderPath(ctx, xOffset, yOffset)
+        borderPath(ctx, xOffset, yOffset, this.rotor.alphabetSize)
         // right border
-        borderPath(ctx, xOffset + COMPONENT_WIDTH, yOffset)
+        borderPath(ctx, xOffset + COMPONENT_WIDTH, yOffset, this.rotor.alphabetSize)
 
         ctx.stroke()
     }
@@ -69,11 +69,17 @@ class RotorRenderer {
         // p = display position index (each rotor has 26 vertical positions)
         // 0 = position at the top of the rotor
         // 25 = position at the bottom of the rotor
-        for (let p=0; p<26; p++) {
+        for (let p=0; p<this.rotor.alphabetSize; p++) {
             // left column
-            ctx.fillText(idToNumberToken(displayIndexToId2(p, this.rotor)), xOffset - 2*CONNECTOR_RADIUS, yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
+            ctx.fillText(
+                idToNumberToken(displayIndexToId2(p, this.rotor)),
+                xOffset - 2*CONNECTOR_RADIUS,
+                yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
             // right column
-            ctx.fillText(idToNumberToken(displayIndexToId2(p, this.rotor)), xOffset + COMPONENT_WIDTH - 2*CONNECTOR_RADIUS, yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
+            ctx.fillText(
+                idToNumberToken(displayIndexToId2(p, this.rotor)),
+                xOffset + COMPONENT_WIDTH - 2*CONNECTOR_RADIUS,
+                yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
         }
     }
 
@@ -92,8 +98,11 @@ class RotorRenderer {
         // p = display position index (each rotor has 26 vertical positions)
         // 0 = position at the top of the rotor
         // 25 = position at the bottom of the rotor
-        for (let p=0; p<26; p++) {
-            ctx.fillText(idToCharToken((displayIndexToId(p) + this.rotor.getNormalizedPosition()) % 26), xOffset + 15, yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
+        for (let p=0; p<this.rotor.alphabetSize; p++) {
+            ctx.fillText(
+                idToCharToken((displayIndexToId(p, this.rotor.alphabetSize) + this.rotor.getNormalizedPosition()) % this.rotor.alphabetSize),
+                xOffset + 15,
+                yOffset + LEADING_HEIGHT + p*SINGLE_HEIGHT + 3)
         }
 
         // outer ring position 'window'
@@ -102,7 +111,7 @@ class RotorRenderer {
 
         // outer ring notch
         ctx.fillStyle = 'rgb(0, 0, 0)';
-        let displayIndex = (A_POSITION + this.rotor.getNormalizedPosition() - this.rotor.getNormalizedTurnoverPosition() + 26) % 26
+        let displayIndex = (A_POSITION + this.rotor.getNormalizedPosition() - this.rotor.getNormalizedTurnoverPosition() + this.rotor.alphabetSize) % this.rotor.alphabetSize
         ctx.beginPath()
         ctx.moveTo(xOffset + 10, yOffset + LEADING_HEIGHT + displayIndex*SINGLE_HEIGHT - 10)
         ctx.lineTo(xOffset + 14, yOffset + LEADING_HEIGHT + displayIndex*SINGLE_HEIGHT - 10 + 0.5*SINGLE_HEIGHT)

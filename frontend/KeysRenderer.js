@@ -1,5 +1,9 @@
 class KeysRenderer {
 
+    constructor(alphabetSize = 26) {
+        this.alphabetSize = alphabetSize
+    }
+
     buttonCenters = [];
 
     draw(ctx, xOffset, yOffset, pressedKeyId=null, lightedKeyId=null) {
@@ -8,10 +12,10 @@ class KeysRenderer {
         // p = display position index (each rotor has 26 vertical positions)
         // 0 = position at the top of the rotor
         // 25 = position at the bottom of the rotor
-        for (let p=0; p<26; p++) {
+        for (let p=0; p<alphabetSize; p++) {
 
             let layers = 6
-            if ( (pressedKeyId && (p === idToDisplayIndex(pressedKeyId))) || (lightedKeyId && (p === idToDisplayIndex(lightedKeyId))) ) {
+            if ( (pressedKeyId && (p === idToDisplayIndex(pressedKeyId, alphabetSize))) || (lightedKeyId && (p === idToDisplayIndex(lightedKeyId, alphabetSize))) ) {
                 layers = 1
             }
             for (let l = 0; l < layers; l++) {
@@ -24,10 +28,10 @@ class KeysRenderer {
                 } else {
                     // dark grey layer to represent button top
                     ctx.fillStyle = 'rgb(80,80,80)';
-                    if ( pressedKeyId && (p === idToDisplayIndex(pressedKeyId)) ) {
+                    if ( pressedKeyId && (p === idToDisplayIndex(pressedKeyId, alphabetSize)) ) {
                         // or black for a pressed key
                         ctx.fillStyle = 'rgb(0,0,0)'
-                    } else if ( lightedKeyId && (p === idToDisplayIndex(lightedKeyId)) ) {
+                    } else if ( lightedKeyId && (p === idToDisplayIndex(lightedKeyId, alphabetSize)) ) {
                         // or gold/orange/yellow for a lighted key
                         ctx.fillStyle = 'rgb(255,215,0)'
                     }
@@ -46,7 +50,10 @@ class KeysRenderer {
             // write letter
             ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.font = 'bold 12px arial'
-            ctx.fillText(idToCharToken(displayIndexToId(p)), xOffset + KEY_RADIUS - 4 + (p%2)*KEY_SHIFT + (layers-1), yOffset + LEADING_HEIGHT + 6 + p*SINGLE_HEIGHT - (layers-1))
+            ctx.fillText(
+                idToCharToken(displayIndexToId(p,alphabetSize)),
+                xOffset + KEY_RADIUS - 4 + (p%2)*KEY_SHIFT + (layers-1),
+                yOffset + LEADING_HEIGHT + 6 + p*SINGLE_HEIGHT - (layers-1))
         }
     }
 }

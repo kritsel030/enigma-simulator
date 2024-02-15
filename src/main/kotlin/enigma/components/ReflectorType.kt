@@ -5,5 +5,9 @@ enum class ReflectorType(val encryptionTable: String) {
 
     B ("YRUHQSLDPXNGOKMIEBFZCWVJAT"),
 
-    C ("FVPJIAOYEDRZXWGCTKUQSBNMHL");
+    C ("FVPJIAOYEDRZXWGCTKUQSBNMHL"),
+
+    SHOWCASE_REF ("FEDCBA");
+
+    val alphabetsize = encryptionTable.length
 }

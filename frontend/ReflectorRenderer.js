@@ -21,19 +21,19 @@ class ReflectorRenderer {
         setWiringState(ctx)
 
         let contactsProcessed = []
-        for (let i=0; i < 26; i++) {
+        for (let i=0; i < this.reflector.alphabetSize; i++) {
             contactsProcessed.push(0)
         }
 
         ctx.beginPath()
         let connection = 0
-        for (let i = 0; i < 26; i++) {
+        for (let i = 0; i < this.reflector.alphabetSize; i++) {
             let inputContactId = i
             if (contactsProcessed[inputContactId] === 0) {
-                let inputContactPos = idToDisplayIndex(inputContactId)
+                let inputContactPos = idToDisplayIndex(inputContactId, this.reflector.alphabetSize)
                 let wiringStep = wiring[inputContactId]
-                let outputContactId = (inputContactId + wiringStep + 26) % 26
-                let outputContactPos = idToDisplayIndex(outputContactId)
+                let outputContactId = (inputContactId + wiringStep + this.reflector.alphabetSize) % this.reflector.alphabetSize
+                let outputContactPos = idToDisplayIndex(outputContactId, this.reflector.alphabetSize)
 
                 contactsProcessed[inputContactId] = 1
                 contactsProcessed[outputContactId] = 1
@@ -48,7 +48,7 @@ class ReflectorRenderer {
                 ctx.lineTo(xOffset + COMPONENT_WIDTH, yOffset + LEADING_HEIGHT + outputContactPos * SINGLE_HEIGHT)
 
                 connection++
-            }
+           }
         }
         ctx.stroke()
     }
@@ -64,16 +64,19 @@ class ReflectorRenderer {
         ctx.lineTo(xOffset, yOffset + BORDER_HEIGHT);
 
         // define right border
-        borderPath(ctx, xOffset + COMPONENT_WIDTH, yOffset)
+        borderPath(ctx, xOffset + COMPONENT_WIDTH, yOffset, this.reflector.alphabetSize)
 
         ctx.stroke()
     }
 
     drawLabels(ctx, xOffset, yOffset) {
         setLabelState(ctx)
-        for (let i=0; i<26; i++) {
+        for (let i=0; i<this.reflector.alphabetSize; i++) {
             // write tokens
-            ctx.fillText(idToCharToken(displayIndexToId(i)), xOffset + COMPONENT_WIDTH - 2*CONNECTOR_RADIUS + 2, yOffset + LEADING_HEIGHT + i*SINGLE_HEIGHT + 3)
+            ctx.fillText(
+                idToCharToken(displayIndexToId(i, this.reflector.alphabetSize)),
+                xOffset + COMPONENT_WIDTH - 2*CONNECTOR_RADIUS + 2,
+                yOffset + LEADING_HEIGHT + i*SINGLE_HEIGHT + 3)
         }
     }
 

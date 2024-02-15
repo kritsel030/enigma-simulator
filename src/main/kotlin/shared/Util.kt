@@ -10,16 +10,12 @@ class Util {
             return character.code - 'A'.code
         }
 
-        fun validate(input:String) : Boolean {
+        fun validate(input:String, alphabetsize: Int) : Boolean {
             var result = true
             for (character in input) {
-                result = result && validate(character)
+                result = result && validate(character, alphabetsize)
             }
             return result
-        }
-
-        fun validate(input:Char) :Boolean {
-            return validate(input, 26)
         }
 
         fun validate(input:Char, alphabetsize: Int) :Boolean {
@@ -28,10 +24,6 @@ class Util {
 
         fun validate(input:Int, alphabetsize:Int) :Boolean {
             return input in 0..alphabetsize
-        }
-
-        fun normalize(input: Int) : Int {
-            return normalize(input, 26)
         }
 
         fun normalize(input: Int, alphabetsize: Int) : Int {

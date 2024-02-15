@@ -56,6 +56,13 @@ open class BasicScrambler private constructor (
     fun checkRotorsAndReflector() {
         check(rotorPositions == rotors.size) {"[$label] expected $rotorPositions rotors to be placed, but there are only ${rotors.size}"}
         check (reflector != null) {"[$label] scrambler has no reflector"}
+        check( reflector!!.reflectorType.alphabetsize == leftRotor!!.getRotorType().alphabetsize) {"left rotor's alphabet size (${leftRotor!!.getRotorType().alphabetsize}) does not match the reflector's alphabbet size (${reflector!!.reflectorType.alphabetsize})"}
+        check( reflector!!.reflectorType.alphabetsize == middleRotor!!.getRotorType().alphabetsize) {"middle rotor's alphabet size (${middleRotor!!.getRotorType().alphabetsize}) does not match the reflector's alphabbet size (${reflector!!.reflectorType.alphabetsize})"}
+        check( reflector!!.reflectorType.alphabetsize == rightRotor!!.getRotorType().alphabetsize) {"right rotor's alphabet size (${rightRotor!!.getRotorType().alphabetsize}) does not match the reflector's alphabbet size (${reflector!!.reflectorType.alphabetsize})"}
+    }
+
+    fun getAlphabetSize () : Int{
+        return leftRotor?.getRotorType()?.alphabetsize!!
     }
 
     // position is 1-based
@@ -73,7 +80,8 @@ open class BasicScrambler private constructor (
 
         // validate input
         //TODO("we need alphabetsize here")
-        check(validate(inputContactId, 26)) {"input must number bebe a tween 0 and 25"}
+        //check(validate(inputContactId, 26)) {"input must number between 0 and 25"}
+        check(validate(inputContactId, getAlphabetSize()!!)) {"input must number between 0 and ${getAlphabetSize()!!}-1"}
 
         var contactOffset = inputContactId
 

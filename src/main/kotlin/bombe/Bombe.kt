@@ -62,7 +62,7 @@ class Bombe (
     private var _cables = mutableListOf<Cable>()
     private var _bridges = mutableListOf<Bridge>()
     private var indicatorDrums = mutableListOf<IndicatorDrum>()
-    var sensingCircuit = BombeSensingCircuit(this, emptyMap())
+    var sensingCircuit = BombeSensingCircuit(this)
     var mainCircuit = MainCircuit(this)
 
 //    // represents all connectors (jacks and plugs) attached to any component of the bombe

@@ -169,28 +169,28 @@ open class RotorCore (
     }
 
     open fun offsetToContact(offset:Int): Int {
-        return normalize(offset + currentOrientation)
+        return normalize(offset + currentOrientation, rotorType.alphabetsize)
     }
 
     open fun contactToOffset(contact:Int) : Int {
-        return normalize(contact - currentOrientation)
+        return normalize(contact - currentOrientation, rotorType.alphabetsize)
     }
 
     private fun encryptContactRightToLeft(right:Int): Int {
 //        println("encryptContactRightToLeft($right)")
-        return normalize(right + wiringMapsRtoL[rotorType]!![right])
+        return normalize(right + wiringMapsRtoL[rotorType]!![right], rotorType.alphabetsize)
     }
 
     private fun encryptContactLeftToRight(left:Int): Int {
 //        println("encryptContactLeftToRight($left)")
-        return normalize(left + wiringMapsLtoR[rotorType]!![left])
+        return normalize(left + wiringMapsLtoR[rotorType]!![left], rotorType.alphabetsize)
     }
 
     /**
      * Advance this rotor one step
      */
     open fun stepRotor() : Boolean{
-        currentOrientation = normalize(currentOrientation + 1)
+        currentOrientation = normalize(currentOrientation + 1, rotorType.alphabetsize)
         steps++
         return true
     }

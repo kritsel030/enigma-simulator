@@ -3,24 +3,203 @@
     <title>Enigma</title>
     <script src="Rotor.js"></script>
     <script src="RotorRenderer.js"></script>
+    <script src="RotorSVGRenderer.js"></script>
     <script src="Reflector.js"></script>
     <script src="ReflectorRenderer.js"></script>
+    <script src="ReflectorSVGRenderer.js"></script>
     <script src="Plugboard.js"></script>
     <script src="PlugboardRenderer.js"></script>
+    <script src="PlugboardSVGRenderer.js"></script>
     <script src="KeysRenderer.js"></script>
+    <script src="KeyboardSVGRenderer.js"></script>
     <script src="Enigma.js"></script>
     <script src="EnigmaRenderer.js"></script>
+    <script src="EnigmaSVGRenderer.js"></script>
+    <script src="EncipherPathSVGRenderer.js"></script>
     <script src="enigma-ui.js"></script>
+    <script src="svgUtil.js"></script>
+    <style>
+
+        text.componentLabel {
+          font: bold 14px arial;
+        }
+
+        path.reflectorBG {
+          fill: rgb(255, 255, 204)
+        }
+
+        path.rotorBG {
+          fill: rgb(255, 255, 204)
+        }
+
+        path.border {
+          fill: none;
+          stroke: #000;
+          stroke-width: 1.5px;
+        }
+
+        path.wire {
+          fill: none;
+          stroke: rgb(169,169,169);
+          stroke-width: 1px;
+        }
+
+        path.outerRing {
+          fill: rgb(169,169,169,0.75)
+        }
+
+        path.rotorWindow {
+          fill: none;
+          stroke: #000;
+          stroke-width: 1.5px;
+        }
+
+        path.plugboardBG {
+          fill: rgb(255, 255, 204)
+        }
+
+        circle.key {
+          fill: rgb(80,80,80);
+          cursor: pointer
+        }
+
+        text.key {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 12px arial;
+            cursor: pointer
+        }
+
+        circle.pressedKeyBG1 {
+            fill: white
+        }
+
+        circle.pressedKeyBG2 {
+            fill: black
+        }
+
+        circle.pressedKey {
+          fill: rgb(80,80,80)
+        }
+
+        text.pressedKeyLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 12px arial;
+        }
+
+        circle.lightedKey {
+          fill: rgb(255,215,0)
+        }
+
+        text.lightedKeyLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: black;
+            font: 800 12px arial;
+        }
+
+        text.connectorLabel {
+          font: bold 6px arial;
+        }
+
+        text.rotorLabel {
+          font: bold 12px arial;
+        }
+
+        path.ringSettingMarker {
+            fill: none;
+            stroke: red;
+            stroke-width: 2.5px
+        }
+
+        path.notch {
+            fill: black;
+        }
+
+        path.encipherPath {
+          fill: none;
+          stroke: rgb(144, 12, 63 );
+          stroke-width: 3px;
+        }
+    </style>
 </head>
-<body onload="init();">
+<body onload="initFormFields(); initSVG('enigmaDiv');">
 
-<h1>Enigma</h1>
+<!--<h1>Enigma</h1>-->
 
-Example URL to initialize: <pre>enigma.html?reflector=B&rotor1=I-A-6&rotor2=II-D-5&rotor3=III-U-3&plugboard=AC-DK-GI-JX-OE-XZ</pre>
+<!--Example URLs to initialize:-->
+<!--<ul>-->
+<!--    <li>Military enigma: <pre>enigma.html?reflector=B&rotor1=I-A-6&rotor2=II-D-5&rotor3=III-U-3&plugboard=AC-DK-GI-JX-OE-XZ</pre></li>-->
+<!--    <li>Showcase (6 letter alphabet): <pre>enigma.html?reflector=SC&rotor1=SCI-A-6&rotor2=SCII-D-5&rotor3=SCIII-B-3&plugboard=AD-BF&alphabetSize=6</pre></li>-->
+<!--</ul>-->
 
-<canvas id="enigma" width="1000" height="600">
-    your browser does not support drawings
-</canvas>
+<!--<canvas id="enigmaCanvas" width="1000" height="600">-->
+<!--    your browser does not support drawings-->
+<!--</canvas>-->
 
+<h1>Enigma (SVG version)</h1>
+
+<form>
+    <table>
+        <tr>
+            <th></th>
+            <th>rotor 1</th>
+            <th>rotor 2</th>
+            <th>rotor 3</th>
+        </tr>
+        <tr>
+            <td><b>type</b></td>
+            <td> <select name="rotor1Type" id="rotor1Type" onchange="handleRotor1Type(event);">
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+            </select></td>
+
+            <td> <select name="rotor2Type" id="rotor2Type" onchange="handleRotor2Type(event);">
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+            </select></td>
+
+            <td> <select name="rotor3Type" id="rotor3Type" onchange="handleRotor3Type(event);">
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+            </select></td>
+        </tr>
+
+        <tr>
+            <td><b>ring setting</b></td>
+            <td> <input name="rotor1RingSetting" id="rotor1RingSetting" onchange="handleRotor1RingSetting(event);" size="1"></td>
+            <td> <input name="rotor2RingSetting" id="rotor2RingSetting" onchange="handleRotor2RingSetting(event);" size="2"></td>
+            <td> <input name="rotor3RingSetting" id="rotor3RingSetting" onchange="handleRotor3RingSetting(event);" size="1"></td>
+        </tr>
+
+        <tr>
+            <td><b>start position</b></td>
+            <td> <input name="rotor1StartPosition" id="rotor1StartPosition" onchange="handleRotor1StartPosition(event);" size="1"></td>
+            <td> <input name="rotor2StartPosition" id="rotor2StartPosition" onchange="handleRotor2StartPosition(event);" size="1"></td>
+            <td> <input name="rotor3StartPosition" id="rotor3StartPosition" onchange="handleRotor3StartPosition(event);" size="1"></td>
+        </tr>
+    </table>
+    <p/>
+    <label><input type='checkbox' onchange='handleDisableRotorStepping(event);'>Disable rotor stepping</label>
+</form>
+
+<div id="enigmaDiv">
+</div>
+
+<!--<script>-->
+<!--    initFormFields()-->
+<!--</script>-->
 </body>
 </html>

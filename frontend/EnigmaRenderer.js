@@ -46,8 +46,8 @@ class EnigmaRenderer {
         this.rotor1Renderer = new RotorRenderer(this.enigma.rotor1)
         this.rotor2Renderer = new RotorRenderer(this.enigma.rotor2)
         this.rotor3Renderer = new RotorRenderer(this.enigma.rotor3)
-        this.plugboardRenderer = new PlugboardRenderer(this.enigma.plugboard)
-        this.keysRenderer = new KeysRenderer()
+        this.plugboardRenderer = new PlugboardRenderer(this.enigma.plugboard, enigma.getAlphabetSize())
+        this.keysRenderer = new KeysRenderer(enigma.getAlphabetSize())
     }
 
     setEncipherPath(encipherPath, xOffset, yOffset) {
@@ -72,9 +72,9 @@ class EnigmaRenderer {
 
         // layer 2: connections (same layer as wiring)
         for (let i = 0; i < 4; i++) {
-            drawConnectionColumn(ctx, LEFT_MARGIN + i * (COMPONENT_WIDTH + SPACING) + COMPONENT_WIDTH, LEFT_MARGIN + (i + 1) * (COMPONENT_WIDTH + SPACING), TOP_MARGIN)
+            drawConnectionColumn(ctx, LEFT_MARGIN + i * (COMPONENT_WIDTH + SPACING) + COMPONENT_WIDTH, LEFT_MARGIN + (i + 1) * (COMPONENT_WIDTH + SPACING), TOP_MARGIN, enigma.getAlphabetSize())
         }
-        drawKeyConnectionColumn(ctx, LEFT_MARGIN + 4 * (COMPONENT_WIDTH + SPACING) + COMPONENT_WIDTH, LEFT_MARGIN + (4 + 1) * (COMPONENT_WIDTH + SPACING), TOP_MARGIN)
+        drawKeyConnectionColumn(ctx, LEFT_MARGIN + 4 * (COMPONENT_WIDTH + SPACING) + COMPONENT_WIDTH, LEFT_MARGIN + (4 + 1) * (COMPONENT_WIDTH + SPACING), TOP_MARGIN, enigma.getAlphabetSize())
 
         // layer 3: encipher path (when there is an active path to be drawn path
         this.drawPath(ctx, frameTime)
@@ -147,8 +147,8 @@ class EnigmaRenderer {
         // console.log(encipherPath)
         // inbound: key
         let pbXRight = xOffset + 4 * (COMPONENT_WIDTH + SPACING) + COMPONENT_WIDTH
-        let keyXLeft_inbound = pbXRight + SPACING + (idToDisplayIndex(encipherPath[0]) % 2) * KEY_SHIFT
-        let pbY_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[0]) * SINGLE_HEIGHT
+        let keyXLeft_inbound = pbXRight + SPACING + (idToDisplayIndex(encipherPath[0], this.enigma.getAlphabetSize()) % 2) * KEY_SHIFT
+        let pbY_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[0], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments,"key (inbound)", keyXLeft_inbound, pbY_inbound)
 
         // inbound: plugboard input
@@ -156,7 +156,7 @@ class EnigmaRenderer {
 
         // inbound: plugboard output
         let pbXLeft = xOffset + 4 * (COMPONENT_WIDTH + SPACING)
-        let pbYLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[1]) * SINGLE_HEIGHT
+        let pbYLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[1], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "plugboard out (inbound)", pbXLeft, pbYLeft_inbound)
 
         // inbound: rotor 3 input
@@ -165,7 +165,7 @@ class EnigmaRenderer {
 
         // inbound: rotor 3 output
         let rotor3XLeft = xOffset + 3 * (COMPONENT_WIDTH + SPACING)
-        let rotor3YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[2]) * SINGLE_HEIGHT
+        let rotor3YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[2], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 3 output (inbound)", rotor3XLeft, rotor3YLeft_inbound)
 
         // inbound: rotor 2 input
@@ -174,7 +174,7 @@ class EnigmaRenderer {
 
         // inbound: rotor 2 output
         let rotor2XLeft = xOffset + 2 * (COMPONENT_WIDTH + SPACING)
-        let rotor2YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[3]) * SINGLE_HEIGHT
+        let rotor2YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[3], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 2 output (inbound)", rotor2XLeft, rotor2YLeft_inbound)
 
         // inbound: rotor 2 input
@@ -183,7 +183,7 @@ class EnigmaRenderer {
 
         // wiring in rotor 1 (inbound)
         let rotor1XLeft = xOffset + 1 * (COMPONENT_WIDTH + SPACING)
-        let rotor1YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[4]) * SINGLE_HEIGHT
+        let rotor1YLeft_inbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[4], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 1 output (inbound)", rotor1XLeft, rotor1YLeft_inbound)
 
         // inbound: reflector input
@@ -192,10 +192,10 @@ class EnigmaRenderer {
 
         // wiring in reflector
         // 1. right-to-left
-        let reflectorX_internal = reflectorX - 25
+        let reflectorX_internal = reflectorX - enigma.getAlphabetSize()
         this.addPathSegment(pathSegments, "reflector internal A", reflectorX_internal, rotor1YLeft_inbound)
         // 2. vertical
-        let reflectorY_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[5]) * SINGLE_HEIGHT
+        let reflectorY_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[5], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "reflector internal B", reflectorX_internal, reflectorY_outbound)
         // 3. left-to-right
         this.addPathSegment(pathSegments, "reflector output (outbound)", reflectorX, reflectorY_outbound)
@@ -204,32 +204,32 @@ class EnigmaRenderer {
         this.addPathSegment(pathSegments, "rotor 1 input (outbound)", rotor1XLeft, reflectorY_outbound)
 
         // wiring in rotor 1 (outbound)
-        let rotor1YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[6]) * SINGLE_HEIGHT
+        let rotor1YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[6], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 1 output (outbound)", rotor1XRight, rotor1YRight_outbound)
 
         // rotor 1 to rotor 2 (outbound, always a horizontal line)
         this.addPathSegment(pathSegments, "rotor 2 input (outbound)", rotor2XLeft, rotor1YRight_outbound)
 
         // wiring in rotor 2 (outbound)
-        let rotor2YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[7]) * SINGLE_HEIGHT
+        let rotor2YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[7], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 2 output (outbound)", rotor2XRight, rotor2YRight_outbound)
 
         // rotor 2 to rotor 3 (outbound, always a horizontal line)
         this.addPathSegment(pathSegments, "rotor 3 input (outbound)", rotor3XLeft, rotor2YRight_outbound)
 
         // wiring in rotor 3 (outbound)
-        let rotor3YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[8]) * SINGLE_HEIGHT
+        let rotor3YRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[8], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "rotor 3 output (outbound)", rotor3XRight, rotor3YRight_outbound)
 
         // rotor 3 to plugboard (outbound, always a horizontal line)
         this.addPathSegment(pathSegments, "plugboard input (outbound)", pbXLeft, rotor3YRight_outbound)
 
         // wiring in plugboard (outbound)
-        let pbYRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[9]) * SINGLE_HEIGHT
+        let pbYRight_outbound = yOffset + LEADING_HEIGHT + idToDisplayIndex(encipherPath[9], this.enigma.getAlphabetSize()) * SINGLE_HEIGHT
         this.addPathSegment(pathSegments, "plugboard output (outbound)", pbXRight, pbYRight_outbound)
 
         // plugboard to key/light (outbound, always a horizontal line)
-        let keyXLeft_outbound = pbXRight + SPACING + (idToDisplayIndex(encipherPath[9]) % 2) * KEY_SHIFT
+        let keyXLeft_outbound = pbXRight + SPACING + (idToDisplayIndex(encipherPath[9], this.enigma.getAlphabetSize()) % 2) * KEY_SHIFT
         this.addPathSegment(pathSegments, "key (outbound)", keyXLeft_outbound, pbYRight_outbound)
 
         return pathSegments

@@ -2,14 +2,16 @@ class Reflector {
 
     _wiringTable
 
-    constructor(type) {
+    constructor(type, alphabetSize = 26) {
         this.type = type
-        this.initType()
+        this.initType(alphabetSize)
     }
 
-    initType() {
+    initType(alphabetSize) {
         let result = [];
         let wiringTable = this.getWiringTable()
+        if (wiringTable.length != alphabetSize)
+            throw "Reflector " + this.type + " has alphabet size " + wiringTable.length + ", expected " + alphabetSize
         for (let i=0; i < wiringTable.length; i++) {
             // 65 = A
             if (this.type === 'I' && i === 1) {
@@ -19,16 +21,23 @@ class Reflector {
         }
 
         this._wiringTable = result
+        this.alphabetSize = wiringTable.length
     }
 
     // based on https://en.wikipedia.org/wiki/Enigma_rotor_details
     getWiringTable() {
         switch (this.type) {
+            // military enigma reflector types
             case 'B':
                 return 'YRUHQSLDPXNGOKMIEBFZCWVJAT'
                 break;
             case 'C':
                 return 'FVPJIAOYEDRZXWGCTKUQSBNMHL'
+                break
+
+            // 6 letter alphabet show case reflector
+            case 'SC':
+                return 'FEDCBA'
                 break
         }
     }
@@ -44,6 +53,6 @@ class Reflector {
     }
 
     normalize(input)  {
-        return (input + 26) % 26
+        return (input + this.alphabetSize) % this.alphabetSize
     }
 }

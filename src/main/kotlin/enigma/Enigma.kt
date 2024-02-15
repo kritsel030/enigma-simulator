@@ -32,7 +32,7 @@ class Enigma (
 
     fun encryptMessage(input:String) : String {
         // validate input
-        if (!validate(input)) {
+        if (!validate(input, getAlphabetSize())) {
             throw IllegalArgumentException("input may only contain characters between A and Z (capital!)")
         }
 
@@ -51,7 +51,7 @@ class Enigma (
 
     fun encryptSingleLetter(inputChar: Char, stepRotors: Boolean?=true, recorders:MutableList<StepRecorder>?=null) :Char {
         // validate input
-        if (!validate(inputChar)) {
+        if (!validate(inputChar, getAlphabetSize())) {
             throw IllegalArgumentException("input must be character between A and Z (capital!)")
         }
 

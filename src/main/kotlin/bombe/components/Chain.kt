@@ -67,7 +67,7 @@ class Chain (private val id: Int, bombe: Bombe)
         // register that this letter's switch is off
         searchLetterSwitches[letter] = false
         // change the connections of the differential sensing relays accordingly
-        // (see ChainSensingCircuit for an explanation)
+        // (see ChainSensingCircuit for a more detailed explanation)
         val sensingRelay = bombe.sensingCircuit.chainSensingCircuits[id.toString()]!!.sensingRelays[letter]!!
         sensingRelay.primaryCoil.connectTo(bombe.mainCircuit)
         sensingRelay.secondaryCoil.connectTo(chainInputContacts[letter]!!)
@@ -88,7 +88,7 @@ class Chain (private val id: Int, bombe: Bombe)
         // register that this letter's switch is on
         searchLetterSwitches[letter] = true
         // change the connections of the differential sensing relays accordingly
-        // (see ChainSensingCircuit for an explanation)
+        // (see ChainSensingCircuit for a more detailed explanation)
         val sensingRelay = bombe.sensingCircuit.chainSensingCircuits[id.toString()]!!.sensingRelays[letter]!!
         sensingRelay.primaryCoil.disconnect()
         sensingRelay.secondaryCoil.disconnect()

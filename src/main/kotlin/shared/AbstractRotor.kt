@@ -34,15 +34,15 @@ open class AbstractRotor(val rotorCore: RotorCore, open val letterRing: PlainLet
     }
 
     fun startRingOrientation() : Char {
-        return 'A'.plus(Util.normalize(rotorCore.startOrientation + _ringSetting))
+        return 'A'.plus(Util.normalize(rotorCore.startOrientation + _ringSetting, rotorCore.alphabetsize))
     }
 
     fun currentRingOrientation() : Char {
-        return 'A'.plus(Util.normalize(rotorCore.currentOrientation + _ringSetting))
+        return 'A'.plus(Util.normalize(rotorCore.currentOrientation + _ringSetting, rotorCore.alphabetsize))
     }
 
     fun rotateToStartOrientation(newStartRingOrientation: Char) {
-        rotorCore.rotateToStartOffset(Util.normalize(Util.toInt(newStartRingOrientation) - _ringSetting))
+        rotorCore.rotateToStartOffset(Util.normalize(Util.toInt(newStartRingOrientation) - _ringSetting,rotorCore.alphabetsize))
     }
 
     fun advanceStartOrientation() {

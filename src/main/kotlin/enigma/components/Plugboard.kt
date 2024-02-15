@@ -6,19 +6,20 @@ import shared.Util
 
 class Plugboard(
     // e.g. AC-DK-GI-JX-OE-XZ
-    val connectedLetters:String
+    val connectedLetters:String,
+    val alphabetSize:Int
 ) {
     private val _encryptionTable = optimize(connectedLetters)
 
     fun encrypt(inputChannel:Char, recorders:MutableList<StepRecorder>? = null) : Char {
-        if (!Util.validate(inputChannel)) {
-            throw IllegalArgumentException("input must be a character between A and Z (capital!)")
+        if (!Util.validate(inputChannel, alphabetSize)) {
+            throw IllegalArgumentException("input must be a character between A and ${Char('A'.code + alphabetSize -1)} (capital!)")
         }
         return Util.toChar(encrypt(Util.toInt(inputChannel), recorders))
     }
 
     fun encrypt(contactChannel:Int, recorders:MutableList<StepRecorder>? = null) : Int {
-        val result = Util.normalize(contactChannel + _encryptionTable[contactChannel])
+        val result = Util.normalize(contactChannel + _encryptionTable[contactChannel], alphabetSize)
 
         if (recorders != null) {
             var recorder = PlugboardStepRecorder()

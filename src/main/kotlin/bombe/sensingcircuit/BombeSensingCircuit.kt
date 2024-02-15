@@ -3,7 +3,7 @@ package bombe.sensingcircuit
 import bombe.Bombe
 import bombe.components.Chain
 
-class BombeSensingCircuit(val bombe: Bombe, private val chains:Map<Int, Chain>) {
+class BombeSensingCircuit(val bombe: Bombe) {
 
     var chainSensingCircuits = mutableMapOf<String, ChainSensingCircuit>()
 
@@ -17,10 +17,9 @@ class BombeSensingCircuit(val bombe: Bombe, private val chains:Map<Int, Chain>) 
         chainSensingCircuits.remove(id)
     }
 
-
     fun shouldBombeStop(printCurrentPath: Boolean) : Boolean {
         var stop = false
-        val openChainSensingCircuits = chainSensingCircuits.values.filter { it.chain.isOn() && it.isOpen()}
+        val activeAndOpenChainSensingCircuits = chainSensingCircuits.values.filter { it.chain.isOn() && it.isOpen()}
 
         // when 'double input' is switched on, both chains must indicate a stop for the bombe to actually stop
         // 'double input' as described in the US bombe report 1944, chapter I, paragraph TYPES OF MENUS, page 25:
@@ -28,8 +27,8 @@ class BombeSensingCircuit(val bombe: Bombe, private val chains:Map<Int, Chain>) 
         // "In the newer type machines the "double input" switch operated. [...]
         // This changes the association of wiring and the contacts of the sensing relays so that the bombe
         // will not stop unless there is an open circuit on both parts of the menu."
-        if ( (bombe.isDoubleInputOn() && openChainSensingCircuits.size == 2) || (!bombe.isDoubleInputOn() && openChainSensingCircuits.size > 0)) {
-            openChainSensingCircuits.forEach { run {
+        if ( (bombe.isDoubleInputOn() && activeAndOpenChainSensingCircuits.size == 2) || (!bombe.isDoubleInputOn() && activeAndOpenChainSensingCircuits.size > 0)) {
+            activeAndOpenChainSensingCircuits.forEach { run {
                 transferSenseRelaysStateToIndicatorRelays(it.chain)
             } }
             stop = true

@@ -7,8 +7,11 @@ import bombe.MainCircuit
 *
 * Turing mentions the term 'differential relay' when explaining the Bombe's
 * "mechanism for "distinguishes correct from incorrect positions".
-* Turing's Treatise on the Enigma, Chapter 6, page 110.
-* https://www.ugr.es/~aquiran/cripto/museo/turing/turchap6.pdf
+* Turing's Treatise on the Enigma | "Prof's book" | Dr Alan M. Turing | Chapter 6
+* Crown copyright is reproduced with the permission of the Controller of Her Majesty's Stationery Office.
+* (edited by Ralph Erskine, Philip Marks and Frode Weierud in 1999)
+* https://cryptocellar.org/turing/turchap6.pdf
+* On page 110:
 * "Normally current will flow through all the differential relays and they will not move.
 * When one reaches a position that might be correct the current fails to reach one of those relays,
 * and the current permanently flowing in the other coil of the relay causes it to close,

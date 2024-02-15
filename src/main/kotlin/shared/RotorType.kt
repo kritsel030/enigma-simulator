@@ -16,7 +16,19 @@ enum class RotorType(
 
     IV ("ESOVPZJAYQUIRHXLNFTGKDCMWB", 'K'),
 
-    V ("VZBRGITYUPSDNHLXAWMJQOFECK", 'A');
+    V ("VZBRGITYUPSDNHLXAWMJQOFECK", 'A'),
+
+//    SHOWCASE_I ("BCDEFA",'B'),
+//
+//    SHOWCASE_II ("BDFACE", 'D'),
+//
+//    SHOWCASE_III ("CDEFBE", 'E');
+
+    SHOWCASE_I ("CAFBDE",'B'),
+
+    SHOWCASE_II ("CABEFD", 'D'),
+
+    SHOWCASE_III ("EADFBA", 'E');
 
     val alphabetsize = encryptionTable.length
 
