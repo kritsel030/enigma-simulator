@@ -240,4 +240,9 @@ class EnigmaSVGRenderer {
         }
     }
 
+    resetKeyboard() {
+        this.pressedKeyId = null
+        this.lightedKeyId = null
+    }
+
 }

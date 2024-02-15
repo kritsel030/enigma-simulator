@@ -5,7 +5,7 @@ class KeyboardSVGRenderer {
     }
 
     draw(parent, x, y, pressedKeyId=null, lightedKeyId=null) {
-        // console.log(`KeyboardSVGRenderer.draw(x = ${x}, y= ${y}, pressedKeyId = ${pressedKeyId}, lightedKeyId = ${lightedKeyId})`)
+        // gconsole.log(`KeyboardSVGRenderer.draw(x = ${x}, y= ${y}, pressedKeyId = ${pressedKeyId}, lightedKeyId = ${lightedKeyId})`)
         // remove if the keyboard already exists
         let previousGroup = document.getElementById("keyboard")
         if (previousGroup) {

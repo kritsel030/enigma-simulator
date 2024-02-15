@@ -186,8 +186,8 @@ function handleRotor3Type(event) {
 
 function handleRotorType(event, rotorNo, trigger) {
     enigma.setRotor(rotorNo, new Rotor(event.target.value, 'A', 1, 26))
+    enigmaSVGRenderer.resetKeyboard()
     enigmaSVGRenderer.redrawEnigma(trigger)
-    // reset the startPosition and ringSetting form field values
     initFormFields()
 }
 
@@ -226,6 +226,7 @@ function handleRotorRingSetting(event, rotorNo, trigger) {
         enigma.rotors[rotorNo].ringSetting = 1
         document.getElementById(event.target.id).value = "A"
     }
+    enigmaSVGRenderer.resetKeyboard()
     enigmaSVGRenderer.redrawEnigma(trigger)
     initFormFields()
 }
@@ -263,6 +264,7 @@ function handleRotorStartPosition(event, rotorNo, trigger) {
         enigma.rotors[rotorNo].startPosition = "A"
         document.getElementById(event.target.id).value = "A"
     }
+    enigmaSVGRenderer.resetKeyboard()
     enigmaSVGRenderer.redrawEnigma(trigger)
     initFormFields()
 }
