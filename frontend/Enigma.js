@@ -6,7 +6,7 @@ class Enigma {
 //        this.rotor2 = rotor2;
 //        this.rotor3 = rotor3;
         this.plugboard = plugboard;
-        this.rotorSteppingEnabled = true
+        this.rotorSteppingDisabled = false
         this.rotors = {}
         this.rotors[1] = rotor1
         this.rotors[2] = rotor2
@@ -21,8 +21,8 @@ class Enigma {
         return this.reflector.alphabetSize
     }
 
-    setRotorSteppingEnabled(steppingEnabled) {
-        this.rotorSteppingEnabled = steppingEnabled
+    setRotorSteppingDisabled(steppingDisabled) {
+        this.rotorSteppingDisabled = steppingDisabled
     }
 
     // encipher the given character
@@ -78,14 +78,18 @@ class Enigma {
         ]]
     }
 
-    encipherWireId(inputWireId, stepRotors=true) {
+    encipherWireId(inputWireId, stepRotors=true, skipPlugboard=false) {
         if (stepRotors === true) {
             this.stepRotors()
         }
 
         let wireMap = {}
-        wireMap.inbound_KBtoPBWireId = inputWireId
-        wireMap.inbound_PBtoR3WireId = this.plugboard.encipherConnection(wireMap.inbound_KBtoPBWireId)
+        if (!skipPlugboard) {
+            wireMap.inbound_KBtoPBWireId = inputWireId
+            wireMap.inbound_PBtoR3WireId = this.plugboard.encipherConnection(wireMap.inbound_KBtoPBWireId)
+        } else {
+            wireMap.inbound_PBtoR3WireId = inputWireId
+        }
         wireMap.inbound_R3toR2WireId = this.rotors[3].encipherRightToLeftContactChannel(wireMap.inbound_PBtoR3WireId)
         wireMap.inbound_R2toR1WireId = this.rotors[2].encipherRightToLeftContactChannel(wireMap.inbound_R3toR2WireId)
         wireMap.inbound_R1toReflWireId = this.rotors[1].encipherRightToLeftContactChannel(wireMap.inbound_R2toR1WireId)
@@ -93,9 +97,15 @@ class Enigma {
         wireMap.outbound_R1ToR2WireId = this.rotors[1].encipherLeftToRightContactChannel(wireMap.outbound_ReflToR1WireId)
         wireMap.outbound_R2toR3WireId = this.rotors[2].encipherLeftToRightContactChannel(wireMap.outbound_R1ToR2WireId)
         wireMap.outbound_R3toPBWireId = this.rotors[3].encipherLeftToRightContactChannel(wireMap.outbound_R2toR3WireId)
-        wireMap.outbound_PBtoKBWireId = this.plugboard.encipherConnection(wireMap.outbound_R3toPBWireId)
+        if (!skipPlugboard) {
+            wireMap.outbound_PBtoKBWireId = this.plugboard.encipherConnection(wireMap.outbound_R3toPBWireId)
+        }
 
-        return [wireMap.outbound_PBtoKBWireId, wireMap]
+        if (!skipPlugboard) {
+            return [wireMap.outbound_PBtoKBWireId, wireMap]
+        } else {
+            return [wireMap.outbound_R3toPBWireId, wireMap]
+        }
     }
 
 
@@ -103,7 +113,7 @@ class Enigma {
     // step the rotor(s)
     stepRotors() {
         // console.log("Enigma.stepRotors()")
-        if (this.rotorSteppingEnabled) {
+        if (! this.rotorSteppingDisabled) {
             let steppingRotors = this.determineSteppingRotors()
             if (steppingRotors[0]) {
                 this.rotors[1].step()
@@ -139,5 +149,12 @@ class Enigma {
 
     normalize(input)  {
         return (input + this.getAlphabetSize()) % this.getAlphabetSize()
+    }
+
+    reset() {
+        this.plugboardInputId = null
+        this.plugboardOutputId = null
+        this.scramblerInputId = null
+        this.scramblerOutputId = null
     }
 }

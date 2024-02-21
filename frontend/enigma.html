@@ -80,7 +80,8 @@
         }
 
         circle.pressedKey {
-          fill: rgb(80,80,80)
+          fill: rgb(80,80,80);
+          cursor: pointer
         }
 
         text.pressedKeyLetter {
@@ -88,17 +89,20 @@
             text-anchor: middle;
             fill: white;
             font: bold 12px arial;
+            cursor: pointer
         }
 
         circle.lightedKey {
-          fill: rgb(255,215,0)
+          fill: rgb(255,215,0);
+          cursor: pointer
         }
 
         text.lightedKeyLetter {
             alignment-baseline: middle;
             text-anchor: middle;
             fill: black;
-            font: 800 12px arial;
+            font: 800 14px arial;
+            cursor: pointer
         }
 
         text.connectorLabel {
@@ -124,6 +128,7 @@
           stroke: rgb(144, 12, 63 );
           stroke-width: 3px;
         }
+
     </style>
 </head>
 <body onload="initFormFields(); initSVG('enigmaDiv');">
@@ -142,13 +147,13 @@
 
 <h1>Enigma (SVG version)</h1>
 
-<form>
     <table>
         <tr>
             <th></th>
             <th>rotor 1</th>
             <th>rotor 2</th>
             <th>rotor 3</th>
+            <th></th>
         </tr>
         <tr>
             <td><b>type</b></td>
@@ -175,6 +180,7 @@
                 <option value="IV">IV</option>
                 <option value="V">V</option>
             </select></td>
+            <td></td>
         </tr>
 
         <tr>
@@ -182,6 +188,7 @@
             <td> <input name="rotor1RingSetting" id="rotor1RingSetting" onchange="handleRotor1RingSetting(event);" size="1"></td>
             <td> <input name="rotor2RingSetting" id="rotor2RingSetting" onchange="handleRotor2RingSetting(event);" size="2"></td>
             <td> <input name="rotor3RingSetting" id="rotor3RingSetting" onchange="handleRotor3RingSetting(event);" size="1"></td>
+            <td></td>
         </tr>
 
         <tr>
@@ -189,11 +196,13 @@
             <td> <input name="rotor1StartPosition" id="rotor1StartPosition" onchange="handleRotor1StartPosition(event);" size="1"></td>
             <td> <input name="rotor2StartPosition" id="rotor2StartPosition" onchange="handleRotor2StartPosition(event);" size="1"></td>
             <td> <input name="rotor3StartPosition" id="rotor3StartPosition" onchange="handleRotor3StartPosition(event);" size="1"></td>
+            <td> <button name="resetToStartPosition"></button></td>
         </tr>
     </table>
     <p/>
     <label><input type='checkbox' onchange='handleDisableRotorStepping(event);'>Disable rotor stepping</label>
-</form>
+    <p/>
+    <label><input type='checkbox' onchange='handleSkipAnimation(event);'>Skip animation</label>
 
 <div id="enigmaDiv">
 </div>

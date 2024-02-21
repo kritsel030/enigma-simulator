@@ -5,8 +5,8 @@ class ReflectorSVGRenderer {
         this.internalWireLengths = {}
     }
 
-    draw(svg, x, y) {
-        let group = addGroupNode(svg, "reflector", x, y)
+    draw(parent, variant, x, y) {
+        let group = addGroupNode(parent, "reflector", x, y)
         this.drawBackground(group)
         this.drawWiring(group)
         this.drawBorder(group)
@@ -85,7 +85,7 @@ class ReflectorSVGRenderer {
         // 25 = position at the bottom of the rotor
         for (let p=0; p<this.reflector.alphabetSize; p++) {
             var label = idToCharToken(displayIndexToId(p, this.reflector.alphabetSize))
-            var x = COMPONENT_WIDTH-CONNECTOR_RADIUS
+            var x = COMPONENT_WIDTH - CONNECTOR_RADIUS + 0.5*UNIT
             var y = LEADING_STRAIGHT + p*SINGLE + 1.5*CONNECTOR_RADIUS
             addTextNode (parent, label, `${parent.id}_${label}`, "connectorLabel", x, y)
         }

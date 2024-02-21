@@ -1,44 +1,5 @@
+// renders an Enigma as a SVG image
 class EnigmaSVGRenderer {
-
-    // id 0..25 represents A..Z
-    pressedKeyId
-
-    // id 0..25 represents A..Z
-    lightedKeyId
-
-    // array of indices which represent the path from pressed key to lighted key (all 0-based)
-    //    0: plugboard inbound input connection = pressedKeyId
-    //    1: plugboard inbound output connection
-    //    2: rotor3 inbound output connection
-    //    3: rotor2 inbound output connection
-    //    4: rotor1 inbound output connection
-    //    5: reflector outbound output connection
-    //    6: rotor1 outbound output connection
-    //    7: rotor2 outbound output connection
-    //    8: rotor3 outbound output connection
-    //    9: plugboard outbound output connection = lightedKeyId
-    encipherPath
-
-    // animation durations in ms
-    buttonDownDuration = 0
-    rotorSteppingDuration = 1000
-    pathDuration = 1000
-
-//    rotorFrameTotal = 20
-//    rotorPrevFrameIndex = -1
-//    rotorFramePeriodInMs = this.rotorSteppingDuration / this.rotorFrameTotal
-
-    animationStartTime;
-    buttonDownStartTime;
-    rotorSteppingStartTime;
-    pathStartTime;
-
-    // 0: no active animation
-    // 1: animate button down
-    // 2: animate rotor stepping
-    // 3: animate encipherPath
-    // 4: light up key
-    animationPhase
 
     constructor(enigma) {
         this.enigma = enigma
@@ -49,8 +10,10 @@ class EnigmaSVGRenderer {
         this.plugboardRenderer = new PlugboardSVGRenderer(this.enigma.plugboard, enigma.getAlphabetSize())
         this.keyboardRenderer = new KeyboardSVGRenderer(enigma.getAlphabetSize())
         this.encipherPathRenderer = new EncipherPathSVGRenderer(this.reflectorRenderer)
+        this.animationDisabled = false
     }
 
+    // parentId: the id of the HTML element which acts as the container for the SVG node
     init(parentId) {
         this.svgParentId = parentId
         this.redrawEnigma("init")
@@ -167,7 +130,7 @@ class EnigmaSVGRenderer {
         this.redrawEnigma("key press")
 
         // invoke animation step 2: step the rotor(s)
-        if (this.enigma.rotorSteppingEnabled) {
+        if (! this.enigma.rotorSteppingDisabled && ! this.animationDisabled) {
             this.animateRotorStepping()
         } else {
             // immediately proceed to the steps after the rotor stepping animation
@@ -194,7 +157,7 @@ class EnigmaSVGRenderer {
     // animation steps 3 (complete redraw with stepped rotors) and 4 (animate the enciphered path)
     rotorSteppingAnimationDone() {
         // console.log("rotorSteppingAnimationDone")
-        if (this.enigma.rotorSteppingEnabled) {
+        if (! this.enigma.rotorSteppingDisabled) {
             // step the rotors of the internal enigma so we're ready to redraw the enigma in the new rotor state
             enigma.stepRotors()
             // animation step 3: redraw the stepped rotors in their new position
@@ -210,7 +173,10 @@ class EnigmaSVGRenderer {
         // animation step 4: animate the encipher path
         // (the end of this animation step triggers animation step 5)
         let svg = document.getElementById("enigma")
-        this.encipherPathRenderer.drawEncipherPath(encipherResult[1], this.encipherPathAnimationDone.bind(this), this.enigma.getAlphabetSize())
+        this.encipherPathRenderer.drawEncipherPath(encipherResult[1], this.encipherPathAnimationDone.bind(this), this.enigma.getAlphabetSize(), !this.animationDisabled)
+        if (this.animationDisabled) {
+            this.encipherPathAnimationDone()
+        }
     }
 
     // animation step 5: light up the key representing the encipher result

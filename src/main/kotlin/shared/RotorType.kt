@@ -24,11 +24,11 @@ enum class RotorType(
 //
 //    SHOWCASE_III ("CDEFBE", 'E');
 
-    SHOWCASE_I ("CAFBDE",'B'),
+    SHOWCASE_I ("CAFBDE",'A'),
 
     SHOWCASE_II ("CABEFD", 'D'),
 
-    SHOWCASE_III ("EADFBA", 'E');
+    SHOWCASE_III ("EADFBC", 'E');
 
     val alphabetsize = encryptionTable.length
 

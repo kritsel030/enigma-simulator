@@ -1,0 +1,369 @@
+<html>
+<head>
+    <title>Turing - Welchman bombe</title>
+        
+    <script src="Enigma.js"></script>
+    <script src="Plugboard.js"></script>
+    <script src="Rotor.js"></script>
+    <script src="Reflector.js"></script>
+    <script src="svgUtil.js"></script>
+
+    <script src="BombeSVGRenderer.js"></script>
+    <script src="LWEnigmaSVGRenderer.js"></script>
+    <script src="LWReflectorSVGRenderer.js"></script>
+    <script src="LWDrumSVGRenderer.js"></script>
+    <script src="LWPlugboardSVGRenderer.js"></script>
+    <script src="LWKeyAndLightboardSVGRenderer.js"></script>
+    <script src="BombePathSVGRenderer.js"></script>
+    <script src="bombe-ui.js"></script>
+    <script src="bombe-display-logic.js"></script>
+    <style>
+
+        /* LW reflector */
+        path.reflectorBG {
+          fill: rgb(237,237,237)
+        }
+
+        /* LW enigma drum */
+        circle.drumOuter {
+            fill: black
+        }
+        circle.drumOuter_SCI {
+            fill: red
+        }
+        circle.drumOuter_SCII {
+            fill: maroon
+        }
+        circle.drumOuter_SCIII {
+            fill: green
+        }
+        circle.drumOuter_I {
+            fill: red
+        }
+        circle.drumOuter_II {
+            fill: maroon
+        }
+        circle.drumOuter_III {
+            fill: green
+        }
+        circle.drumOuter_IV {
+            fill: yellow
+        }
+        circle.drumOuter_V {
+            fill: brown
+        }
+        circle.drumOuter_VI {
+            fill: blue
+        }
+        circle.drumOuter_VII {
+            fill: black
+        }
+        circle.drumOuter_VIII {
+            fill: silver
+        }
+
+        circle.drumLetterring {
+            fill: gray
+        }
+
+        circle.drumInner {
+            fill: rgb(92, 64, 51)
+        }
+
+        text.drumLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 8px arial
+        }
+        circle.A_dot {
+            fill: white
+        }
+
+        text.drumType {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 12px courier
+        }
+
+        /* indicator drum */
+        circle.drumOuter_indicator {
+            fill: rgb(240, 230, 140)
+        }
+        circle.drumLetterring_indicator {
+            fill: black
+        }
+        circle.drumInner_indicator {
+            fill: black
+        }
+
+        /* bombe connector */
+        path.connector {
+          fill: rgb(47,79,79);
+          stroke: black
+        }
+
+        path.cable {
+          fill: none;
+          stroke: rgb(105,105,105);
+          stroke-width: 10px;
+        }
+
+        /* LW enigma plugboard */
+        path.plugboardBG {
+          fill: rgb(237,237,237)
+        }
+
+        /* LW key- and lightboard */
+        circle.key {
+          fill: rgb(80,80,80);
+          cursor: pointer
+        }
+
+        text.key {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 10px arial;
+            cursor: pointer
+        }
+
+        circle.lightbulb {
+          fill: rgb(255, 255, 240);
+          stroke: black
+        }
+
+        text.lightbulb {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: black;
+            font: bold 10px arial;
+            cursor: default
+        }
+
+        circle.pressedKeyBG1 {
+            fill: white
+        }
+
+        circle.pressedKeyBG2 {
+            fill: black
+        }
+
+        circle.pressedKey {
+          fill: rgb(80,80,80)
+        }
+
+        text.pressedKeyLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: white;
+            font: bold 10px arial;
+        }
+
+        circle.lightedKey {
+          fill: rgb(255,215,0)
+        }
+
+        text.lightedKeyLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: black;
+            font: 800 10px arial;
+        }
+
+        /* generic */
+        path.border {
+          fill: none;
+          stroke: #000;
+          stroke-width: 1px;
+        }
+
+        path.wire {
+          fill: none;
+          stroke: rgb(169,169,169);
+          stroke-width: 1px;
+        }
+
+
+        path.wire-dashed {
+          fill: none;
+          stroke: rgb(169,169,169);
+          stroke-width: 1px;
+          stroke-dasharray: 10 5
+        }
+        
+
+        /* electrical path */
+        path.electricalPath {
+          fill: none;
+          stroke: rgb(144, 12, 63 );
+          stroke-width: 3px;
+        }
+        path.electricalPath_pre_post {
+          fill: none;
+          stroke: black;
+          stroke-width: 3px;
+        }
+
+        
+    </style>
+</head>
+<body onload="initFormFields(); initSVG('bombeDiv');">
+
+<h1>Turing-Welchman bombe</h1>
+
+We received this <u>encoded</u> message: <span style="font-family:courier">C E C A A E</span>
+<p/>
+We expect the <u>original</u> message to contain <span style="font-family:courier">C A F E</span>
+<p/>
+<hr/>
+
+<table>
+    <tr>
+        <th>C</th>
+        <th>E</th>
+        <th>C</th>
+        <th>A</th>
+        <th>A</th>
+        <th>E</th>
+        <th></th>
+    </tr>
+
+    <tr>
+        <td style="color: red">C</td>
+        <td>A</td>
+        <td>F</td>
+        <td>E</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td></td>
+        <td>C</td>
+        <td>A</td>
+        <td>F</td>
+        <td>E</td>
+        <td></td>
+        <td>&larr; this one works!</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td></td>
+        <td style="color: red">C</td>
+        <td style="color: red">A</td>
+        <td>F</td>
+        <td style="color: red">E</td>
+        <td></td>
+    </tr>
+</table>
+<p/>
+<hr/>
+<table>
+    <tr>
+        <th></th>
+        <th>1</th>
+        <th>2</th>
+        <th>3</th>
+        <th>4</th>
+        <th></th>
+        <th></th>
+    </tr>
+    <tr>
+        <td><span style="text-decoration: line-through;">C</span></td>
+        <th>E</th>
+        <th>C</th>
+        <th>A</th>
+        <th>A</th>
+        <td><span style="text-decoration: line-through;">E</span></td>
+        <th></th>
+    </tr>
+    <tr>
+        <td></td>
+        <td>C</td>
+        <td>A</td>
+        <td>F</td>
+        <td>E</td>
+        <td></td>
+        <td>&larr; this one works!</td>
+    </tr>
+
+</table>
+
+<hr/>
+This results in the cycle A - 3 - C - 2 - E - 5 - A
+<p/>
+You should read this as:
+<ul>
+    <li>an enigma in start position + 3 rotor steps will encode
+        <span style="font-family:courier">A</span> into <span style="font-family:courier">C</span>
+        and vice versa</li>
+    <li>an enigma in start position + 2 rotor step will encode
+        <span style="font-family:courier">C</span> into <span style="font-family:courier">E</span>
+        and vice versa</li>
+    <li>an enigma in start position + 5 rotor steps will encode
+        <span style="font-family:courier">E</span> into <span style="font-family:courier">A</span>
+        and vice versa</li>
+</ul>
+<hr/>
+If we would have guessed the correct rotor settings and plugboard connections, we would have these three Enigmas.<br/>
+(notice that the bottom rotor setting is different for each of the Enigma's).
+<p/>
+<fieldset>
+    <legend>Please select a design stage:</legend>
+    <div>
+        <input type="radio" id="variantA" name="variant" value="variantA" onchange="handleVariant(event);" />
+        <label for="variantA">A: Enigmas + individual keyboards</label>
+        <br/>
+
+        <input type="radio" id="variantB" name="variant" value="variantB" onchange="handleVariant(event);" />
+        <label for="variantB">B: Enigmas + individual keyboards with integrated drums</label>
+        <br/>
+
+        <input type="radio" id="variantC" name="variant" value="variantC" onchange="handleVariant(event);" />
+        <label for="variantC">C: Enigmas + connected keyboards</label>
+        <br/>
+
+        <input type="radio" id="variantD" name="variant" value="variantD" onchange="handleVariant(event);" />
+        <label for="variantD">D: Enigmas without middle keyboards </label>
+        <br/>
+
+        <input type="radio" id="variantE" name="variant" value="variantE" onchange="handleVariant(event);" />
+        <label for="variantE">E: Enigmas without middle plugboards - 1 </label>
+        <br/>
+
+        <input type="radio" id="variantF" name="variant" value="variantF" onchange="handleVariant(event);" />
+        <label for="variantF">F: Enigmas without middle plugboards - 2</label>
+        <br/>
+
+        <input type="radio" id="variantG" name="variant" value="variantG" onchange="handleVariant(event);" />
+        <label for="variantG">G: Enigmas without any plugboards or keyboards </label>
+        <br/>
+
+        <input type="radio" id="variantH" name="variant" value="variantH" onchange="handleVariant(event);" />
+        <label for="variantH">H: almost there... </label>
+        <br/>
+
+        <input type="radio" id="scramblerBasic" name="variant" value="scramblerBasic" onchange="handleVariant(event);" />
+        <label for="scramblerBasic">Milestone: schematic bombe </label>
+        <br/>
+
+        <input type="radio" id="scrambler_multi_line_scanning" name="variant" value="scrambler_multi_line_scanning" onchange="handleVariant(event);" />
+        <label for="scrambler_multi_line_scanning">Multi-line scanning</label>
+        <br/>
+
+        
+    </div>
+</fieldset>
+<p/>
+<button id="reset" name="reset" onclick="handleReset(event);">Reset</button>
+<p/>
+Start with <span style="font-family:courier">A</span> on the first Enigma.
+<p/>
+
+<div id="bombeDiv">
+</div>
+
+</body>
+</html>

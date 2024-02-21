@@ -74,10 +74,10 @@ class PlugboardSVGRenderer {
             var label = idToCharToken(displayIndexToId(p, this.alphabetSize))
             var y =  LEADING_STRAIGHT + p*SINGLE + 1.5*CONNECTOR_RADIUS
             // left column
-            addTextNode (group, label, `${group.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS, y)
+            addTextNode (group, label, `${group.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS + 0.5*UNIT, y)
 
             // right column
-            addTextNode (group, label, `${group.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS, y)
+            addTextNode (group, label, `${group.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS + 0.5*UNIT, y)
         }
     }
 }

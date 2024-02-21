@@ -11,7 +11,7 @@ class EncipherPathSVGRenderer {
         addGroupNode (svg, "encipherPathContainer")
     }
 
-    drawEncipherPath(encipherWireMap, animationEndCallback, alphabetSize=26) {
+    drawEncipherPath(encipherWireMap, animationEndCallback, alphabetSize=26, animate) {
         let group = document.getElementById("encipherPathContainer")
 
         let path = this.determineSvgPathData(encipherWireMap, LEFT_MARGIN, TOP_MARGIN, alphabetSize)
@@ -29,7 +29,11 @@ class EncipherPathSVGRenderer {
         // picks up the starting position before animating
         pathNode.getBoundingClientRect();
         // Define our transition
-        pathNode.style.transition = pathNode.style.WebkitTransition = 'stroke-dashoffset 1s ease-in-out';
+        let duration = 1
+        if (!animate) {
+            duration = 0
+        }
+        pathNode.style.transition = pathNode.style.WebkitTransition = `stroke-dashoffset ${duration}s ease-in-out`;
         // Go!
         pathNode.style.strokeDashoffset = '0';
 

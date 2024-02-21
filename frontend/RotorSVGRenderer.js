@@ -93,10 +93,10 @@ class RotorSVGRenderer {
             var label = idToCharToken(displayIndexToId2(p, this.enigma.rotors[this.rotorNo]))
             var y =  LEADING_STRAIGHT + p*SINGLE + 1.5*CONNECTOR_RADIUS
             // left column
-            addTextNode (parent, label, `${parent.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS, y)
+            addTextNode (parent, label, `${parent.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS + 0.5*UNIT, y)
 
             // right column
-            addTextNode (parent, label, `${parent.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS, y)
+            addTextNode (parent, label, `${parent.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS + 0.5*UNIT, y)
         }
     }
 

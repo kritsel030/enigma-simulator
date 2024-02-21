@@ -106,7 +106,7 @@ class Rotor {
                 return 'CABEFD'
                 break
             case 'SCIII':
-                return 'EADFBA'
+                return 'EADFBC'
                 break
         }
     }
@@ -132,7 +132,7 @@ class Rotor {
 
             // 6 letter alphabet show case rotors
             case 'SCI':
-                return 'B'
+                return 'A'
                 break
             case 'SCII':
                 return 'D'
@@ -173,8 +173,10 @@ class Rotor {
     // ****************************************************************************
     // magic
 
-    step() {
-        this._position = (this._position + 1) % this.alphabetSize
+    step(steps = 1) {
+        for (let i = 1; i <= steps; i++) {
+            this._position = (this._position + 1) % this.alphabetSize
+        }
     }
 
     encipherRightToLeftContactChannel(inputChannel) {

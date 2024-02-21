@@ -1,3 +1,5 @@
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 function addGroupNode (parent, id, translateX=0, translateY=0) {
     let groupNode = document.createElementNS(SVG_NS, "g");
     groupNode.id = id
@@ -6,12 +8,15 @@ function addGroupNode (parent, id, translateX=0, translateY=0) {
     return groupNode
 }
 
-function addTextNode (parent, text, id, clazz, x=0, y=0) {
+function addTextNode (parent, text, id, clazz, x=0, y=0, transform=null) {
     let textNode = document.createElementNS(SVG_NS, "text");
     textNode.id = id
     textNode.setAttribute("x", x)
     textNode.setAttribute("y", y)
     textNode.setAttribute("class", clazz)
+    if (transform) {
+        textNode.setAttribute("transform", transform)
+    }
     textNode.innerHTML = text
     parent.appendChild(textNode)
     return textNode

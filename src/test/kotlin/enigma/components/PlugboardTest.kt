@@ -7,7 +7,7 @@ class PlugboardTest {
 
     @Test
     fun encryptUnmappedLetter() {
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val output = plugboard.encrypt('X')
 
         assertEquals('X', output, "plugboard should not replace 'X'")
@@ -15,7 +15,7 @@ class PlugboardTest {
 
     @Test
     fun encryptMappedLetterOneWay() {
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val output = plugboard.encrypt('A')
 
         assertEquals('B', output, "plugboard should map 'A' to 'B'")
@@ -23,7 +23,7 @@ class PlugboardTest {
 
     @Test
     fun encryptMappedLetterTheOtherWay() {
-        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL")
+        val plugboard = Plugboard("AB-CD-EF-GH-IJ-KL", 26)
         val output = plugboard.encrypt('B')
 
         assertEquals('A', output, "plugboard should map 'B' to 'A'")

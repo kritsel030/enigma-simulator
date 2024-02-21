@@ -99,8 +99,8 @@ if (urlParams.has('plugboard') ) {
 }
 
 // alphabet size
-var alphabetSize = 26
-//var alphabetSize = 6
+//var alphabetSize = 26
+var alphabetSize = 6
 if (urlParams.has('alphabetSize') ) {
   alphabetSize = parseFloat(urlParams.get('alphabetSize'))
   console.log('alphabetSize: ' + alphabetSize);
@@ -111,18 +111,18 @@ let COMPONENT_HEIGHT = LEADING_STRAIGHT + (alphabetSize-1) * (2*CONNECTOR_RADIUS
 let A_POSITION = alphabetSize/2 - 1 // 0-based
 
 // 26 letter enigma
-let _reflector = new Reflector(reflectorParam ?? 'B', alphabetSize)
-let _rotor1 = new Rotor(rotor1TypeParam ?? 'I', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6, alphabetSize)
-let _rotor2 = new Rotor(rotor2TypeParam ?? 'II', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5, alphabetSize)
-let _rotor3 = new Rotor(rotor3TypeParam ?? 'III', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3, alphabetSize)
-let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
+//let _reflector = new Reflector(reflectorParam ?? 'B', alphabetSize)
+//let _rotor1 = new Rotor(rotor1TypeParam ?? 'I', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6, alphabetSize)
+//let _rotor2 = new Rotor(rotor2TypeParam ?? 'II', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5, alphabetSize)
+//let _rotor3 = new Rotor(rotor3TypeParam ?? 'III', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3, alphabetSize)
+//let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
 
 // 6 letter enigma
-//let _reflector = new Reflector(reflectorParam ?? 'SC', alphabetSize)
-//let _rotor1 = new Rotor(rotor1TypeParam ?? 'SCI', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6, alphabetSize)
-//let _rotor2 = new Rotor(rotor2TypeParam ?? 'SCII', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5, alphabetSize)
-//let _rotor3 = new Rotor(rotor3TypeParam ?? 'SCIII', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3, alphabetSize)
-//let _plugboard = new Plugboard(plugboardParam ?? 'AC', alphabetSize)
+let _reflector = new Reflector('SC', alphabetSize)
+_rotor1 = new Rotor('SCII', 'E', 1, alphabetSize)
+_rotor2 = new Rotor('SCIII', 'B', 1, alphabetSize)
+_rotor3 = new Rotor('SCI', 'B', 1, alphabetSize)
+let _plugboard = new Plugboard('AE', alphabetSize)
 
 let enigma = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
 
@@ -171,6 +171,9 @@ function initFormFields() {
 function initSVG(parentId) {
     enigmaSVGRenderer.init(parentId)
 }
+
+//////////////////////////////////////////////////////////////////////////
+// UI input handlers
 
 function handleRotor1Type(event) {
     handleRotorType(event, 1, "handleRotor1Type")
@@ -270,11 +273,15 @@ function handleRotorStartPosition(event, rotorNo, trigger) {
 }
 
 function handleDisableRotorStepping(event) {
-     console.log("handleDisableRotorStepping")
-     enigma.rotorSteppingEnabled = !event.target.checked
+     // console.log("handleDisableRotorStepping")
+     enigma.rotorSteppingDisabled = event.target.checked
      // no redraw needed
 }
 
+function handleSkipAnimation(event) {
+    // console.log("handleSkipAnimation")
+    enigmaSVGRenderer.animationDisabled = event.target.checked
+}
 
 function initCanvas() {
     //console.log("framePeriodInMs: " + framePeriodInMs)
