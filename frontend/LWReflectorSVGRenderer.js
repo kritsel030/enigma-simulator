@@ -6,9 +6,6 @@ class LWReflectorSVGRenderer {
     }
 
     draw(parent, variant, x=0, y=0) {
-        // the broad reflector needs to start at another x value than a normal reflector
-        //x = variant=="variantA" ? x : x + 0.5*(REFLECTOR_BROAD_WIDTH-REFLECTOR_WIDTH)
-        //x = renderReflectorNarrow(variant) ? x + 0.5*(REFLECTOR_BROAD_WIDTH-REFLECTOR_WIDTH) : x
         let group = addGroupNode(parent, `${parent.id}_reflector`, x, y)
         this.drawBackground(group, variant)
         this.drawBorder(group, variant)
@@ -16,7 +13,7 @@ class LWReflectorSVGRenderer {
 
     // background = everything behind the encipher path
     drawBackground(parent, variant, x=0, y=0) {
-        let width = variant=="variantA" ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
+        let width = renderDrumsSeparate(variant) ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
         let path = `M ${0} ${0}`
         path += `h ${width} `
         path += `v ${REFLECTOR_HEIGHT } `
@@ -32,7 +29,7 @@ class LWReflectorSVGRenderer {
     }
 
     drawBorder(group, variant) {
-        let width = variant=="variantA" ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
+        let width = renderDrumsSeparate(variant) ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
         let path = `M ${0} ${0}`
         path += `h ${width} `
         path += `v ${REFLECTOR_HEIGHT } `

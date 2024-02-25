@@ -41,3 +41,18 @@ function addCircleNode (parent, id, clazz, radius, x, y) {
     parent.appendChild(circleNode)
     return circleNode
 }
+
+function addRectangleNode (parent, id, clazz, x, y, width, height, rx=0, ry=0) {
+    let rectNode = document.createElementNS(SVG_NS, "rect");
+    rectNode.id = id
+    rectNode.setAttribute("class", clazz)
+    rectNode.setAttribute("x", x)
+    rectNode.setAttribute("y", y)
+    rectNode.setAttribute("width", width)
+    rectNode.setAttribute("height", height)
+    rectNode.setAttribute("rx", rx)
+    rectNode.setAttribute("ry", ry)
+    
+    parent.appendChild(rectNode)
+    return rectNode
+}

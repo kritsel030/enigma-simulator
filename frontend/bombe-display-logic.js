@@ -2,7 +2,7 @@
 // constants
 
 // generic stuff
-let LEFT_MARGIN = 120
+let LEFT_MARGIN = 150
 let TOP_MARGIN = 20
 let ALPHABET_SIZE = 6
 const UNIT = 4
@@ -78,10 +78,6 @@ function renderDrums(variant) {
     return !variant.startsWith("scrambler")
 }
 
-function renderScramblerWires(variant) {
-    return variant.startsWith("scrambler")
-}
-
 function renderDrumsIntegrated(variant) {
     return renderDrums(variant) && !renderDrumsSeparate(variant)
 }
@@ -105,22 +101,53 @@ function renderPlugboard(variant, first, last, inbound) {
 }
 
 function renderKeyOrLightboard(variant, first, last, inbound) {
-    return ["variantA", "variantB"].includes(variant)  || 
-        (variant=="variantC" && (first || !inbound) ) ||
-        (["variantD", "variantE", "variantF"].includes(variant) && bombeEntryOrExit(first, last, inbound)) 
+    return ["variantA", "variantB", "variantC", "variantD"].includes(variant)  || 
+        (["variantE", "variantF"].includes(variant) && bombeEntryOrExit(first, last, inbound)) 
 }
 
-function keyOrLightboardType(variant, first, last, inbound) {
+function keyOrLightboardProperties(variant, first, last, inbound) {
+    let props = {}
+    props.virtual=false
+    props.hidden = false
+    props.positionShifted = false
+    props.variant = "<undefined>"
+    
     if (inbound) {
-        if (first) return "clickableKeyboard"
-        else if ( ["variantA", "variantB"].includes(variant)) return "keyboard"
-        else if (["variantC"].includes(variant)) return "integrated"
+        if (first) props.variant="clickableKeyboard"
+        else if ( ["variantA", "variantB"].includes(variant)) props.variant="keyboard"
+        else if (["variantC"].includes(variant)) {
+            props.hidden=true
+            props.positionShifted = true
+        }
+        else if (["variantD"].includes(variant)) props.virtual = true
     } else {
-        if (last || ["variantA", "variantB"].includes(variant)) return "lightboard"
-        else if (["variantC"].includes(variant)) return "integrated"    
-    }    
-    return "none"
+        if (last || ["variantA", "variantB"].includes(variant)) props.variant="lightboard"
+        else if (["variantC"].includes(variant)) {
+            props.variant="integrated"
+            props.positionShifted = true
+        }
+        else if (["variantD"].includes(variant)) props.virtual = true
+    }         
+    return props
 }
+
+function renderScramblerWires(variant) {
+    return variant.startsWith("scrambler")
+}
+
+function renderInputControlWires(variant, first) {
+    return first && (["variantG", "variantH"].includes(variant) || renderScramblerWires(variant))
+}
+
+
+function renderOutputToInputWires(variant) {
+    return ["scrambler_multi_line_scanning"].includes(variant)
+}
+
+function renderProceedWithPathButtons(variant) {
+    return ["scrambler_multi_line_scanning"].includes(variant)
+}
+
 
 function bombeEntryOrExit(first, last, inbound) {
     return (first && inbound) || (last && !inbound)
@@ -175,15 +202,16 @@ function plugboardXOffset(variant, first, last, inbound) {
 }
 
 function keyboardXOffset(variant, first, last, inbound) {
+    let keyboardProps = keyOrLightboardProperties(variant, first, last, inbound)
     if (inbound) 
         return 0
-    else if (["variantA", "variantB"].includes(variant) || last) 
+    else if (!keyboardProps.positionShifted) 
         return enigmaCenterXOffset(variant, first, last) + 0.5*COMPONENT_DISTANCE
     else 
         return 2*COMPONENT_SIZE + COMPONENT_DISTANCE + 0.5*ENIGMA_DISTANCE - 0.5*COMPONENT_SIZE
 }
 
-function verticalCableXOffset(variant, first, last, inbound, enigmaId) {
+function verticalCableXOffset(variant, first, last, inbound) {
     let result = -1
     if (renderDrumsSeparate(variant)) {
         result = drumXOffset(variant, first, last, inbound) + DRUM_RADIUS
@@ -198,11 +226,15 @@ function verticalCableXOffset(variant, first, last, inbound, enigmaId) {
 }
 
 function enigmaCenterXOffset(variant, first, last) {
-    if (renderHorizontalConnector(variant, first, last, true) )
+    if (renderHorizontalConnector(variant, first, last, true) ){
         return ENIGMA_HALF_WIDTH_WITH_HORIZONTAL_CONNECTOR
-    else
+    } else if (renderDrums(variant)){
         // vertical connector + space + 1/2 DRUM + 1/2 distance between components
         return ENIGMA_HALF_WIDTH_WITH_VERTICAL_CONNECTOR   
+    } else {
+        // schematic scramblers instead of drums (2 vertical connectors + 1 scrambler make a full scrambler)
+        return 0.5 * (SCRAMBLER_WIDTH + 2*CONNECTOR_HEIGHT)
+    }
 }
 
 function yValues(variant) {

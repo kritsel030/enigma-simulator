@@ -12,7 +12,9 @@ class LWDrumSVGRenderer {
 
         this.drawShape(group, variant, indicatorDrumStyle)
         this.drawLetters(group, variant)
-        this.drawDrumType(group, variant)
+        if (!indicatorDrumStyle) {
+            this.drawDrumType(group, variant)
+        }
 
         // the positionMarker is not a child element of the group but of the parent node
         // because it must stay stationary when the group moves
@@ -24,7 +26,7 @@ class LWDrumSVGRenderer {
         let classPostfix = indicatorDrumStyle ? "_indicator" : ""
         let x = DRUM_RADIUS
         let y = DRUM_RADIUS
-        let outerRadius = (variant=="variantA" && !indicatorDrumStyle) ? DRUM_RADIUS - UNIT : DRUM_RADIUS
+        let outerRadius = (renderDrumsSeparate(variant) && !indicatorDrumStyle) ? DRUM_RADIUS - UNIT : DRUM_RADIUS
         let outerclass = indicatorDrumStyle ? "drumOuter_indicator" : `drumOuter_${drum.type}`
         addCircleNode (parent, `${parent.id}_outer`, outerclass, outerRadius, x, y)
         addCircleNode (parent, `${parent.id}_letterRing`, `drumLetterring${classPostfix}`, DRUM_RADIUS - 2*UNIT, x, y)

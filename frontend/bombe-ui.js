@@ -15,33 +15,13 @@ var alphabetSize = 6
 //let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
 
 // 6 letter enigma
-let _reflector = new Reflector('SC', alphabetSize)
-_rotor1 = new Rotor('SCII', 'E', 1, alphabetSize)
-_rotor2 = new Rotor('SCIII', 'B', 1, alphabetSize)
-_rotor3 = new Rotor('SCI', 'B', 1, alphabetSize)
-let _plugboard = new Plugboard('AE', alphabetSize)
-let enigma1 = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
-_rotor3.step(2)
+let bombe = new Bombe(['SCII', 'SCIII', 'SCI'], "A-3-C-2-E-5-A", 'AE', 6) 
+bombe.setIndicatorDrumPosition(1, "E")
+bombe.setIndicatorDrumPosition(2, "B")
+bombe.setIndicatorDrumPosition(3, "B")
 
-_reflector = new Reflector('SC', alphabetSize)
-_rotor1 = new Rotor('SCII', 'E', 1, alphabetSize)
-_rotor2 = new Rotor('SCIII', 'B', 1, alphabetSize)
-_rotor3 = new Rotor('SCI', 'B', 1, alphabetSize)
-_plugboard = new Plugboard('AE', alphabetSize)
-let enigma2 = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
-_rotor3.step(1)
 
-_reflector = new Reflector('SC', alphabetSize)
-_rotor1 = new Rotor('SCII', 'E', 1, alphabetSize)
-_rotor2 = new Rotor('SCIII', 'B', 1, alphabetSize)
-_rotor3 = new Rotor('SCI', 'B', 1, alphabetSize)
-_plugboard = new Plugboard('AE', alphabetSize)
-let enigma3 = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
- _rotor3.step(4)
-
-let bombeRenderer = new BombeSVGRenderer([enigma1, enigma2, enigma3], "variantA")
-
-//let steppingRotors = [false, false, false]
+let bombeRenderer = new BombeSVGRenderer(bombe)
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -100,6 +80,14 @@ function idToCharToken(connectionId) {
 
 function idToNumberToken(connectionId) {
     return (connectionId+1).toLocaleString('nl-NL', {minimumIntegerDigits: 2})
+}
+
+function idToDisplayIndex (connectionId, alphabetSize=26) {
+    return (connectionId + alphabetSize) % alphabetSize
+}
+
+function normalize (id, alphabetSize=26) {
+    return (id + alphabetSize) % alphabetSize
 }
 
 

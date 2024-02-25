@@ -11,6 +11,9 @@ class Enigma {
         this.rotors[1] = rotor1
         this.rotors[2] = rotor2
         this.rotors[3] = rotor3
+
+        this.scramblerInputIds = []
+        this.scramblerOutputIds = []
     }
 
     setRotor(position, rotor) {
@@ -19,6 +22,16 @@ class Enigma {
 
     getAlphabetSize() {
         return this.reflector.alphabetSize
+    }
+
+    addScramblerInputId(inputId) {
+        if (!this.scramblerInputIds.includes(inputId))
+            this.scramblerInputIds.push(inputId)
+    }
+
+    addScramblerOutputId(outputId) {
+        if (!this.scramblerOutputIds.includes(outputId))
+            this.scramblerOutputIds.push(outputId)
     }
 
     setRotorSteppingDisabled(steppingDisabled) {
@@ -156,5 +169,7 @@ class Enigma {
         this.plugboardOutputId = null
         this.scramblerInputId = null
         this.scramblerOutputId = null
+        this.scramblerInputIds = []
+        this.scramblerOutputIds = []
     }
 }

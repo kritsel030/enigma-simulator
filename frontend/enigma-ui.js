@@ -29,8 +29,6 @@ let KEY_SHIFT = 30
 //let A_POSITION = 3 // 0-based
 
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 //////////////////////////////////////////////////////////////////////////
 // variables
 

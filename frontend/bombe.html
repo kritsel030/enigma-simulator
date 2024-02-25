@@ -1,12 +1,14 @@
 <html>
 <head>
     <title>Turing - Welchman bombe</title>
-        
+    
+    <script src="Bombe.js"></script>
     <script src="Enigma.js"></script>
     <script src="Plugboard.js"></script>
     <script src="Rotor.js"></script>
     <script src="Reflector.js"></script>
     <script src="svgUtil.js"></script>
+    <script src="SVGPathService.js"></script>
 
     <script src="BombeSVGRenderer.js"></script>
     <script src="LWEnigmaSVGRenderer.js"></script>
@@ -183,16 +185,7 @@
           fill: none;
           stroke: rgb(169,169,169);
           stroke-width: 1px;
-        }
-
-
-        path.wire-dashed {
-          fill: none;
-          stroke: rgb(169,169,169);
-          stroke-width: 1px;
-          stroke-dasharray: 10 5
-        }
-        
+        }        
 
         /* electrical path */
         path.electricalPath {
@@ -206,6 +199,44 @@
           stroke-width: 3px;
         }
 
+        /* input control */
+        circle.activate {
+          fill: white;
+          stroke: rgb(169,169,169);
+          cursor: pointer
+        }
+        text.activate {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: rgb(169,169,169);
+            font: 800 10px arial;
+            cursor: pointer
+        }
+
+        /* proceed with path buttons */
+        rect.pathButton {
+            fill: none;
+            stroke: rgb(105,105,105);
+            stroke-width: 1px;  
+            cursor: pointer;
+        }
+        text.pathButton {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            fill: rgb(105,105,105);
+            font: 800 16px arial;
+            cursor: pointer;
+        }
+
+        /* component labels */
+        text.componentLabel {
+            font: 600 12px arial;
+            text-anchor: middle;
+        }
+        text.componentLabelSmall {
+            font: 400 10px arial;
+            text-anchor: middle;
+        }
         
     </style>
 </head>
@@ -313,47 +344,52 @@ If we would have guessed the correct rotor settings and plugboard connections, w
 <fieldset>
     <legend>Please select a design stage:</legend>
     <div>
-        <input type="radio" id="variantA" name="variant" value="variantA" onchange="handleVariant(event);" />
-        <label for="variantA">A: Enigmas + individual keyboards</label>
-        <br/>
-
-        <input type="radio" id="variantB" name="variant" value="variantB" onchange="handleVariant(event);" />
-        <label for="variantB">B: Enigmas + individual keyboards with integrated drums</label>
-        <br/>
-
-        <input type="radio" id="variantC" name="variant" value="variantC" onchange="handleVariant(event);" />
-        <label for="variantC">C: Enigmas + connected keyboards</label>
-        <br/>
-
-        <input type="radio" id="variantD" name="variant" value="variantD" onchange="handleVariant(event);" />
-        <label for="variantD">D: Enigmas without middle keyboards </label>
-        <br/>
-
-        <input type="radio" id="variantE" name="variant" value="variantE" onchange="handleVariant(event);" />
-        <label for="variantE">E: Enigmas without middle plugboards - 1 </label>
-        <br/>
-
-        <input type="radio" id="variantF" name="variant" value="variantF" onchange="handleVariant(event);" />
-        <label for="variantF">F: Enigmas without middle plugboards - 2</label>
-        <br/>
-
-        <input type="radio" id="variantG" name="variant" value="variantG" onchange="handleVariant(event);" />
-        <label for="variantG">G: Enigmas without any plugboards or keyboards </label>
-        <br/>
-
-        <input type="radio" id="variantH" name="variant" value="variantH" onchange="handleVariant(event);" />
-        <label for="variantH">H: almost there... </label>
-        <br/>
-
-        <input type="radio" id="scramblerBasic" name="variant" value="scramblerBasic" onchange="handleVariant(event);" />
-        <label for="scramblerBasic">Milestone: schematic bombe </label>
-        <br/>
-
-        <input type="radio" id="scrambler_multi_line_scanning" name="variant" value="scrambler_multi_line_scanning" onchange="handleVariant(event);" />
-        <label for="scrambler_multi_line_scanning">Multi-line scanning</label>
-        <br/>
-
-        
+        <table>
+            <tr>
+                <td>
+                    <input type="radio" id="variantA" name="variant" value="variantA" onchange="handleVariant(event);" />
+                    <label for="variantA">A: Enigmas + individual keyboards</label>
+                    <br/>
+            
+                    <input type="radio" id="variantB" name="variant" value="variantB" onchange="handleVariant(event);" />
+                    <label for="variantB">B: Enigmas + individual keyboards with integrated drums</label>
+                    <br/>
+            
+                    <input type="radio" id="variantC" name="variant" value="variantC" onchange="handleVariant(event);" />
+                    <label for="variantC">C: Enigmas + connected keyboards</label>
+                    <br/>
+            
+                    <input type="radio" id="variantD" name="variant" value="variantD" onchange="handleVariant(event);" />
+                    <label for="variantD">D: Enigmas without middle keyboards </label>
+                    <br/>
+            
+                    <input type="radio" id="variantE" name="variant" value="variantE" onchange="handleVariant(event);" />
+                    <label for="variantE">E: Enigmas without middle plugboards - 1 </label>
+                    <br/>
+            
+                    <input type="radio" id="variantF" name="variant" value="variantF" onchange="handleVariant(event);" />
+                    <label for="variantF">F: Enigmas without middle plugboards - 2</label>
+                    <br/>
+            
+                    <input type="radio" id="variantG" name="variant" value="variantG" onchange="handleVariant(event);" />
+                    <label for="variantG">G: Enigmas without any plugboards or keyboards </label>
+                    <br/>
+            
+                    <input type="radio" id="variantH" name="variant" value="variantH" onchange="handleVariant(event);" />
+                    <label for="variantH">H: almost there... </label>
+                    <br/>
+                </td>
+                <td>
+                    <input type="radio" id="scramblerBasic" name="variant" value="scramblerBasic" onchange="handleVariant(event);" />
+                    <label for="scramblerBasic">Milestone: schematic bombe </label>
+                    <br/>
+            
+                    <input type="radio" id="scrambler_multi_line_scanning" name="variant" value="scrambler_multi_line_scanning" onchange="handleVariant(event);" />
+                    <label for="scrambler_multi_line_scanning">Multi-line scanning</label>
+                    <br/>
+                </td>
+            </tr>
+        </table>
     </div>
 </fieldset>
 <p/>

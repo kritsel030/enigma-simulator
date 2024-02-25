@@ -165,10 +165,10 @@ class EnigmaSVGRenderer {
         }
 
         // let the internal enigma encipher the input (do not step the rotors again, as we've already done that)
-        //console.log("pressedKeyId: " + enigmaSVGRenderer.pressedKeyId)
-        let encipherResult = this.enigma.encipherWireId(this.pressedKeyId, false)
+        //console.log("pressedKeyId: " + this.enigma.pressedKeyId)
+        let encipherResult = this.enigma.encipherWireId(this.enigma.pressedKeyId, false)
         //console.log ("set lightedKeyId to " + encipherResult[0])
-        this.lightedKeyId = encipherResult[0]
+        this.enigma.lightedKeyId = encipherResult[0]
 
         // animation step 4: animate the encipher path
         // (the end of this animation step triggers animation step 5)

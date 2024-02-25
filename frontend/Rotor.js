@@ -196,6 +196,6 @@ class Rotor {
     }
 
     normalize(input)  {
-        return (input + this.alphabetSize) % this.alphabetSize
+        return (input + 2*this.alphabetSize) % this.alphabetSize
     }
 }
