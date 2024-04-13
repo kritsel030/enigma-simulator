@@ -10,7 +10,7 @@ class LWPlugboardSVGRenderer {
 
         this.drawBackground(group, variant)
         this.drawWiring(group, variant, first, last, inbound)
-        this.drawBorders(group)
+        this.drawForeground(group)
     }
 
     // background = everything behind the encipher path
@@ -26,12 +26,13 @@ class LWPlugboardSVGRenderer {
     drawForeground(parent, variant, first, last, inbound, x, y) {
         var group = addGroupNode(parent, "plugboard", x, y)
 
-        this.drawWiring(group, variant, first, last, inbound)
+        //this.drawWiring(group, variant, first, last, inbound)
         this.drawBorders(group)
-        this.drawConnectorLabels(group)
+        //this.drawConnectorLabels(group)
     }
 
-    drawWiring(group, variant, first, last, inbound) {
+    drawWiring(parent, variant, first, last, inbound, x, y) {
+        var group = addGroupNode(parent, "wiring", x, y)
         let contactsProcessed = []
         for (let i=0; i < alphabetSize; i++) {
             contactsProcessed.push(0)

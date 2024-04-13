@@ -29,18 +29,61 @@ class Bombe {
             this.menuLetters.push(menu[i+2])
         }
 
+        // find the cycle letter in the menu (the letter which appears twice)
+        // (shallow copy is sufficient)
+        this.cycleLetter = null
+        let menuLettersCopy = [...this.menuLetters]
+        menuLettersCopy.sort()
+        for (let c = 0; c < menuLettersCopy.length-1; c++) {
+            if (menuLettersCopy[c] == menuLettersCopy[c+1]) {
+                this.cycleLetter = menuLettersCopy[c]
+                break
+            }
+        }
+
         // create a bank of scramblers fitted with the correct drumTypes, 
         // and all drum3 drums set to their correct relevant position as defined in the menu
         let noOfEnigmasNeeded = this.scramblerOffsets.length
+        this.scramblersByIndexMap = {}
+        this.scramblersByInputLetterMap = {}
+        this.scramblersByOutputLetterMap = {}
+        this.cycleStartEnigma = null
+        this.cycleEndEnigma = null
+        let previousScrambler = null
         for (let i=0; i < noOfEnigmasNeeded; i++) {
-            let reflector = new Reflector('SC', alphabetSize)
+            let reflector = new Reflector('DEMO', alphabetSize)
             let drum1 = new Rotor(drumTypes[0], 'Z', 1, alphabetSize)
             let drum2 = new Rotor(drumTypes[1], 'Z', 1, alphabetSize)
             let drum3 = new Rotor(drumTypes[2], 'Z', 1, alphabetSize)
             drum3.step(this.scramblerOffsets[i])
             let plugboard = new Plugboard(plugboardString, alphabetSize)
-            let scrambler = new Enigma (reflector, drum1, drum2, drum3, plugboard)
+            //let scrambler = new Enigma (reflector, drum1, drum2, drum3, plugboard)
+
+            let inputLetter = this.menuLetters[i]
+            let outputLetter = this.menuLetters[i+1]
+            let first = i===0
+            let lastInMenu = i===noOfEnigmasNeeded-1
+            let lastInCycle = i > 0 && outputLetter === this.menuLetters[0]
+            let scrambler = new BombeEnigma(reflector, drum1, drum2, drum3, plugboard, inputLetter, outputLetter, i, first, lastInMenu, lastInCycle)
+            // add the newly created scrambler/enigma to several lists and maps which are needed later on
             this.scramblers.push(scrambler)
+            this.scramblersByIndexMap[i] = scrambler
+            if (! (inputLetter in this.scramblersByInputLetterMap)) {
+                this.scramblersByInputLetterMap[inputLetter] = []
+            }
+            this.scramblersByInputLetterMap[inputLetter].push(scrambler)
+            if (! (outputLetter in this.scramblersByOutputLetterMap)) {
+                this.scramblersByOutputLetterMap[outputLetter] = []
+            }
+            this.scramblersByOutputLetterMap[outputLetter].push(scrambler)
+            if (inputLetter === this.cycleLetter && this.cycleStartEnigma == null) {
+                this.cycleStartEnigma = scrambler
+            }
+            if (outputLetter === this.cycleLetter && this.cycleEndEnigma == null) {
+                this.cycleEndEnigma = scrambler
+            }
+            if (previousScrambler != null) previousScrambler.next = scrambler
+            previousScrambler = scrambler
         }
 
         // create the indicator drums
@@ -49,6 +92,8 @@ class Bombe {
         }
 
         this.inputControlIds = []
+
+        this.pathFinder = new BombePathfinder(this)
     }
 
     // set all drums with this drumNo to the given position
@@ -69,19 +114,20 @@ class Bombe {
     }
 
     // advance all drums with this drumNo
-    // drumNo: 1, 2 of 3
+    // indicator drum no: 0, 1, or 2
     advanceIndicatorDrums(drumNo) {
         this._advanceOrTunBackIndicatorDrum(drumNo, true)
     }
 
     // turn back all drums with this drumNo
-    // drumNo: 1, 2 of 3   
+    // indicator drum no: 0, 1, or 2  
     turnBackIndicatorDrums(drumNo) {
-        this._advanceOrTunBackIndicatorDrum(drumNo, true)
+        this._advanceOrTunBackIndicatorDrum(drumNo, false)
     }
 
+    // indicator drum no: 0, 1, or 2
     _advanceOrTunBackIndicatorDrum(drumNo, advance) {
-        let newPosition = idToCharToken(normalize(charToId(this.indicatorDrums[drumNo].position.charCodeAt(0)) + (advance ? 1 : -1), alphabetSize ))
-        this.setDrumPosition(drumNo, newPosition)
+        let newPosition = idToCharToken(normalize(charToId(this.indicatorDrums[drumNo].position) + (advance ? 1 : -1), alphabetSize ))
+        this.setIndicatorDrumPosition(drumNo+1, newPosition)
     }
 }

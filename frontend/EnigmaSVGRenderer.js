@@ -1,7 +1,15 @@
 // renders an Enigma as a SVG image
 class EnigmaSVGRenderer {
 
-    constructor(enigma) {
+    // inputCallback: function to call when a keyboard letter is pressed (input)
+    // outputCallback: function to call when a lightboard letter lights up (output)
+    constructor(inputCallback, outputCallback) {
+        this.inputCallback = inputCallback
+        this.outputCallback = outputCallback
+    }
+
+    setEnigma(enigma) {
+//        console.log(enigma)
         this.enigma = enigma
         this.reflectorRenderer = new ReflectorSVGRenderer(this.enigma.reflector)
         this.rotor1Renderer = new RotorSVGRenderer(this.enigma, 1)
@@ -16,9 +24,9 @@ class EnigmaSVGRenderer {
     // parentId: the id of the HTML element which acts as the container for the SVG node
     init(parentId) {
         this.svgParentId = parentId
-        this.redrawEnigma("init")
+//        this.redrawEnigma("init")
 
-        document.addEventListener('click', this.handleClick.bind(this))
+        document.addEventListener('click', this.handleKeyboardClick.bind(this))
     }
 
     redrawEnigma(caller = "<unknown>") {
@@ -35,7 +43,7 @@ class EnigmaSVGRenderer {
         let svg = document.createElementNS(SVG_NS, "svg");
         svg.setAttribute("width", "1000");
         svg.setAttribute("height", "600");
-        svg.style.cssText = 'border: 1px solid black'
+//        svg.style.cssText = 'border: 1px solid black'
         svg.id = "enigma"
         div.appendChild(svg)
 
@@ -71,7 +79,7 @@ class EnigmaSVGRenderer {
         this.rotor2Renderer.drawForeground(svg, "rotor2", LEFT_MARGIN + 2*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
         this.rotor3Renderer.drawForeground(svg, "rotor3", LEFT_MARGIN + 3*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
         this.plugboardRenderer.drawForeground(svg, LEFT_MARGIN + 4*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
-        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.pressedKeyId, this.lightedKeyId)
+        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.enigma.pressedKeyId, this.enigma.lightedKeyId)
     }
 
     drawSimple(svg) {
@@ -86,7 +94,7 @@ class EnigmaSVGRenderer {
         this.rotor2Renderer.draw(svg, "rotor2", LEFT_MARGIN + 2*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
         this.rotor3Renderer.draw(svg, "rotor3", LEFT_MARGIN + 3*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
         this.plugboardRenderer.draw(svg, LEFT_MARGIN + 4*(COMPONENT_WIDTH + SPACING), TOP_MARGIN)
-        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.pressedKeyId, this.lightedKeyId)
+        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.enigma.pressedKeyId, this.enigma.lightedKeyId)
 
         // draw the enciphered path on top
         this.encipherPathRenderer.addPathContainer(svg)
@@ -95,14 +103,14 @@ class EnigmaSVGRenderer {
     drawComponentLabels(svg, x, y) {
         let group = addGroupNode(svg, "componentLabels", x, y)
         addTextNode (group, "Reflector", "reflector-label", "componentLabel")
-        addTextNode (group, `Rotor ${this.enigma.rotors[1].type}`, "rotor1-label", "componentLabel", 1 * (COMPONENT_WIDTH + SPACING))
-        addTextNode (group, `Rotor ${this.enigma.rotors[2].type}`, "rotor2-label", "componentLabel", 2 * (COMPONENT_WIDTH + SPACING))
-        addTextNode (group, `Rotor ${this.enigma.rotors[3].type}`, "rotor3-label", "componentLabel", 3 * (COMPONENT_WIDTH + SPACING))
+        addTextNode (group, `Left rotor`, "rotor1-label", "componentLabel", 1 * (COMPONENT_WIDTH + SPACING))
+        addTextNode (group, `Middle rotor`, "rotor2-label", "componentLabel", 2 * (COMPONENT_WIDTH + SPACING))
+        addTextNode (group, `Right rotor`, "rotor3-label", "componentLabel", 3 * (COMPONENT_WIDTH + SPACING))
         addTextNode (group, "Plugboard", "plugboard-label", "componentLabel", 4 * (COMPONENT_WIDTH + SPACING))
         addTextNode (group, "Key- & lampboard", "keyboard-label", "componentLabel", 5 * (COMPONENT_WIDTH + SPACING))
     }
 
-    handleClick (event) {
+    handleKeyboardClick (event) {
         // handle key mouse click
         // (a keyGroup is a group of SVG elements which together constitute a single keyboard key)
         let clickedKeyGroup = event.target.closest('.keyGroup')
@@ -114,9 +122,10 @@ class EnigmaSVGRenderer {
         // the last character of the keyGroup id is the letter on the key
         let pressedLetter = clickedKeyGroup.id.slice(-1)
         let pressedKeyId = charToId(pressedLetter)
+        this.inputCallback(pressedLetter)
 
-        this.pressedKeyId = pressedKeyId
-        this.lightedKeyId = null
+        this.enigma.pressedKeyId = pressedKeyId
+        this.enigma.lightedKeyId = null
 
         // only redraw the keyboard to indicate the pressed key
         // --> has a terrible effect on the rotor animation, not smooth at all
@@ -156,7 +165,7 @@ class EnigmaSVGRenderer {
 
     // animation steps 3 (complete redraw with stepped rotors) and 4 (animate the enciphered path)
     rotorSteppingAnimationDone() {
-        // console.log("rotorSteppingAnimationDone")
+//         console.log("rotorSteppingAnimationDone")
         if (! this.enigma.rotorSteppingDisabled) {
             // step the rotors of the internal enigma so we're ready to redraw the enigma in the new rotor state
             enigma.stepRotors()
@@ -165,9 +174,9 @@ class EnigmaSVGRenderer {
         }
 
         // let the internal enigma encipher the input (do not step the rotors again, as we've already done that)
-        //console.log("pressedKeyId: " + this.enigma.pressedKeyId)
+//        console.log("pressedKeyId: " + this.enigma.pressedKeyId)
         let encipherResult = this.enigma.encipherWireId(this.enigma.pressedKeyId, false)
-        //console.log ("set lightedKeyId to " + encipherResult[0])
+//        console.log ("set lightedKeyId to " + encipherResult[0])
         this.enigma.lightedKeyId = encipherResult[0]
 
         // animation step 4: animate the encipher path
@@ -182,8 +191,9 @@ class EnigmaSVGRenderer {
     // animation step 5: light up the key representing the encipher result
     encipherPathAnimationDone() {
         //console.log("encipherPathAnimationDone")
+        this.outputCallback(idToCharToken(this.enigma.lightedKeyId))
         let svg = document.getElementById("enigma")
-        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.pressedKeyId, this.lightedKeyId)
+        this.keyboardRenderer.draw(svg, LEFT_MARGIN + 5*(COMPONENT_WIDTH + SPACING), TOP_MARGIN, this.enigma.pressedKeyId, this.enigma.lightedKeyId)
     }
 
     drawConnectionColumn(svg, columnId, xLeft, width, y, alphabetSize=26) {
@@ -204,11 +214,6 @@ class EnigmaSVGRenderer {
         for(let p = 0; p<alphabetSize; p++) {
             addPathNode (group, `M ${CONNECTOR_RADIUS} ${LEADING_STRAIGHT + p*SINGLE + CONNECTOR_RADIUS} h ${width + (p%2)*KEY_SHIFT}`, `${columnId}_${p}`, "wire")
         }
-    }
-
-    resetKeyboard() {
-        this.pressedKeyId = null
-        this.lightedKeyId = null
     }
 
 }

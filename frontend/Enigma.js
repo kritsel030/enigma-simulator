@@ -2,9 +2,6 @@ class Enigma {
 
     constructor(reflector, rotor1, rotor2, rotor3, plugboard) {
         this.reflector = reflector
-//        this.rotor1 = rotor1;
-//        this.rotor2 = rotor2;
-//        this.rotor3 = rotor3;
         this.plugboard = plugboard;
         this.rotorSteppingDisabled = false
         this.rotors = {}
@@ -39,19 +36,9 @@ class Enigma {
     }
 
     // encipher the given character
-    // returns an array:
+    // returns a two-element array:
     //  index 0: enciphered character
-    //  index 1: array of intermediate results (all 0-based):
-    //    0: plugboard inbound input connection
-    //    1: plugboard inbound output connection
-    //    2: rotor3 inbound output connection
-    //    3: rotor2 inbound output connection
-    //    4: rotor1 inbound output connection
-    //    5: reflector outbound output connection
-    //    6: rotor1 outbound output connection
-    //    7: rotor2 outbound output connection
-    //    8: rotor3 outbound output connection
-    //    9: plugboard outbound output connection
+    //  index 1: object with active input and output contacts for plugboard, rotors and reflector
     encipher(inputChar, stepRotors=true) {
         if (stepRotors) {
             this.stepRotors()
@@ -171,5 +158,16 @@ class Enigma {
         this.scramblerOutputId = null
         this.scramblerInputIds = []
         this.scramblerOutputIds = []
+    }
+
+    resetRotors() {
+        this.rotors[1].resetToStartPosition()
+        this.rotors[2].resetToStartPosition()
+        this.rotors[3].resetToStartPosition()
+    }
+
+    resetKeyboard() {
+        this.pressedKeyId = null
+        this.lightedKeyId = null
     }
 }

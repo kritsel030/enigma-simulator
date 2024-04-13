@@ -15,7 +15,8 @@ var alphabetSize = 6
 //let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
 
 // 6 letter enigma
-let bombe = new Bombe(['SCII', 'SCIII', 'SCI'], "A-3-C-2-E-5-A", 'AE', 6) 
+
+let bombe = new Bombe(['D-II', 'D-III', 'D-I'], "A-2-C-1-E-4-A-3-F", 'AE', 6)
 bombe.setIndicatorDrumPosition(1, "E")
 bombe.setIndicatorDrumPosition(2, "B")
 bombe.setIndicatorDrumPosition(3, "B")
@@ -47,7 +48,7 @@ function handleVariant(event) {
 
 function handleReset(event) {
     bombeRenderer.reset()
-    bombeRenderer.redrawBombe("handleVariant")
+    bombeRenderer.redrawBombe("handleReset")
 }
 
 //////////////////////////////////////////////////////////////////////////

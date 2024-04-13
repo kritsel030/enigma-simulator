@@ -3,7 +3,11 @@
     <title>Turing - Welchman bombe</title>
     
     <script src="Bombe.js"></script>
+    <script src="BombePathfinder.js"></script>
+    <script src="EnigmaWireStatus.js"></script>
     <script src="Enigma.js"></script>
+    <script src="BombeEnigma.js"></script>
+
     <script src="Plugboard.js"></script>
     <script src="Rotor.js"></script>
     <script src="Reflector.js"></script>
@@ -30,13 +34,13 @@
         circle.drumOuter {
             fill: black
         }
-        circle.drumOuter_SCI {
+        circle.drumOuter_D-I {
             fill: red
         }
-        circle.drumOuter_SCII {
+        circle.drumOuter_D-II {
             fill: maroon
         }
-        circle.drumOuter_SCIII {
+        circle.drumOuter_D-III {
             fill: green
         }
         circle.drumOuter_I {
@@ -174,7 +178,23 @@
             font: 800 10px arial;
         }
 
-        /* generic */
+        /* diagonal board ****************************************/
+        rect.diagonalBoard {
+            # fill: rgb(255, 226, 204);
+            fill: rgb(255, 255, 204);
+            # stroke: rgb(105,105,105);
+            # stroke: rgb(128, 128, 128);
+            stroke-width: 1px;
+        }
+
+        /* probe board ****************************************/
+        rect.probe {
+            fill: rgb(202, 218, 244);
+            stroke: rgb(60,51,255);
+            stroke-width: 1px;
+        }
+
+        /* generic **********************************************/
         path.border {
           fill: none;
           stroke: #000;
@@ -183,23 +203,24 @@
 
         path.wire {
           fill: none;
-          stroke: rgb(169,169,169);
+          # stroke: rgb(169,169,169);
+          stroke: rgb(128, 128, 128);
           stroke-width: 1px;
         }        
 
-        /* electrical path */
+        /* electrical path **************************************/
         path.electricalPath {
           fill: none;
           stroke: rgb(144, 12, 63 );
-          stroke-width: 3px;
+          stroke-width: 5px;
         }
         path.electricalPath_pre_post {
           fill: none;
           stroke: black;
-          stroke-width: 3px;
+          stroke-width: 5px;
         }
 
-        /* input control */
+        /* input control *****************************************/
         circle.activate {
           fill: white;
           stroke: rgb(169,169,169);
@@ -213,7 +234,7 @@
             cursor: pointer
         }
 
-        /* proceed with path buttons */
+        /* proceed with path buttons ******************************/
         rect.pathButton {
             fill: none;
             stroke: rgb(105,105,105);
@@ -228,13 +249,19 @@
             cursor: pointer;
         }
 
-        /* component labels */
+        /* labels ************************************************/
         text.componentLabel {
-            font: 600 12px arial;
+            font: 600 16px arial;
             text-anchor: middle;
         }
         text.componentLabelSmall {
             font: 400 10px arial;
+            text-anchor: middle;
+        }
+        text.cableLabel {
+            font: 600 80px arial;
+            #fill: rgb(255, 226, 204);
+            fill: rgb(255, 187, 153);
             text-anchor: middle;
         }
         
@@ -323,18 +350,21 @@ We expect the <u>original</u> message to contain <span style="font-family:courie
 </table>
 
 <hr/>
-This results in the cycle A - 3 - C - 2 - E - 5 - A
+This results in the menu A - 2 - C - 1 - E - 4 - A - 3 - F
 <p/>
 You should read this as:
 <ul>
-    <li>an enigma in start position + 3 rotor steps will encode
+    <li>an enigma in start position + 2 rotor steps will encode
         <span style="font-family:courier">A</span> into <span style="font-family:courier">C</span>
         and vice versa</li>
-    <li>an enigma in start position + 2 rotor step will encode
+    <li>an enigma in start position + 1 rotor step will encode
         <span style="font-family:courier">C</span> into <span style="font-family:courier">E</span>
         and vice versa</li>
-    <li>an enigma in start position + 5 rotor steps will encode
+    <li>an enigma in start position + 4 rotor steps will encode
         <span style="font-family:courier">E</span> into <span style="font-family:courier">A</span>
+        and vice versa</li>
+    <li>an enigma in start position + 3 rotor steps will encode
+        <span style="font-family:courier">A</span> into <span style="font-family:courier">F</span>
         and vice versa</li>
 </ul>
 <hr/>
@@ -386,6 +416,14 @@ If we would have guessed the correct rotor settings and plugboard connections, w
             
                     <input type="radio" id="scrambler_multi_line_scanning" name="variant" value="scrambler_multi_line_scanning" onchange="handleVariant(event);" />
                     <label for="scrambler_multi_line_scanning">Multi-line scanning</label>
+                    <br/>
+
+                    <input type="radio" id="scrambler_full_menu" name="variant" value="scrambler_full_menu" onchange="handleVariant(event);" />
+                    <label for="scrambler_full_menu">Full menu</label>
+                    <br/>
+
+                    <input type="radio" id="scrambler_diagonal_board" name="variant" value="scrambler_diagonal_board" onchange="handleVariant(event);" />
+                    <label for="scrambler_diagonal_board">Diagonal board</label>
                     <br/>
                 </td>
             </tr>

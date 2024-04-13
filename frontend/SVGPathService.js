@@ -3,9 +3,11 @@ class SVGPathService {
 
     // wireId: value between 0 and 5
     static plugboardToKeyboardPath(wireId, variant, first, last, inbound, pathStart='M' ) {
+//        console.log(`SVGPathService.plugboardToKeyboardPath(wireId=${wireId}), variant=${variant}, first=${first}, last=${last}, inbound=${inbound})`)
         let xOffset = plugboardXOffset(variant, first, last, inbound)
         let yOffset = yValues(variant).plugboardY + PLUGBOARD_HEIGHT
         let position = idToDisplayIndex(wireId, alphabetSize)
+        //console.log(`position=${position}, wireId=${wireId}, alphabetSize=${alphabetSize}`)
         let fromX = xOffset + 0.5*WIRE_DISTANCE + position*WIRE_DISTANCE
         let path = `${pathStart} ${fromX} ${yOffset} `
 
@@ -69,7 +71,7 @@ class SVGPathService {
         let yOffset = yValues(variant).vertConnectorY
         let xOffset = vertConnectorXOffset(variant, first, last, true) + CONNECTOR_HEIGHT
         let fromY = yOffset + 0.5*WIRE_DISTANCE + inputWireId * WIRE_DISTANCE
-        let toX = xOffset + SCRAMBLER_WIDTH
+        let toX = xOffset + SCHEMA_ENIGMA_WIDTH
         let toY = yOffset + 0.5*WIRE_DISTANCE + outputWireId * WIRE_DISTANCE
         return `M ${xOffset} ${fromY} L ${toX} ${toY} `
     }
@@ -112,29 +114,78 @@ class SVGPathService {
         }
     }
 
-    static outputToInputPath(wireId, variant, noOfEnigmas) {
+    // voltage feedback: connect output from the last enigma in the cycle to the first enigma in the cycle
+   static outputToInputPath2(wireId, variant, lastEnigmaInCycleIndex) {
         let ys = yValues(variant)
-        let yOffset = TOP_MARGIN + ys.vertConnectorY + 0.5 * WIRE_DISTANCE
-        let xOffset = LEFT_MARGIN + noOfEnigmas * enigmaWidth(variant, false, false) + (noOfEnigmas-1)*VERTICAL_CONNECTOR_GAP + 0.5*VERTICAL_CONNECTOR_GAP
-        let fromY = yOffset + wireId * WIRE_DISTANCE
-        let h1 = wireId*WIRE_DISTANCE
-        let v = 2*wireId* WIRE_DISTANCE + 3*WIRE_DISTANCE
-        let h2 = noOfEnigmas * enigmaWidth(variant, false, false) + (noOfEnigmas-1)*VERTICAL_CONNECTOR_GAP + 2*0.5*VERTICAL_CONNECTOR_GAP + 2*wireId* WIRE_DISTANCE 
-        return `M ${xOffset} ${fromY} h ${h1} v -${v} h -${h2} v ${v} h ${h1}`
+        // start: right-hand side of right vertical connector
+        let yStartOffset = TOP_MARGIN + ys.vertConnectorY
+        let yStart = yStartOffset + 0.5*WIRE_DISTANCE + wireId * WIRE_DISTANCE
+        let xStart = LEFT_MARGIN +
+            (lastEnigmaInCycleIndex+1) * enigmaWidth(variant, false, false) +
+            lastEnigmaInCycleIndex*VERTICAL_CONNECTOR_GAP
+
+        let xRight = xStart + 2*WIRE_DISTANCE + (alphabetSize-wireId-1)*WIRE_DISTANCE
+        let yDown = yStartOffset + alphabetSize*WIRE_DISTANCE + WIRE_DISTANCE + (alphabetSize-wireId-1)*WIRE_DISTANCE + 4*COMPONENT_DISTANCE
+        let horSpaceToConnector = (["scrambler_multi_line_scanning", "scrambler_full_menu"].includes(variant)) ? alphabetSize*WIRE_DISTANCE : (alphabetSize+3)*WIRE_DISTANCE
+        let xLeft = LEFT_MARGIN + vertConnectorXOffset(variant, true, false, true) - horSpaceToConnector - (alphabetSize-wireId-1)*WIRE_DISTANCE
+        let xRight2 = LEFT_MARGIN
+
+        return `M ${xStart} ${yStart} H ${xRight} V ${yDown} H ${xLeft} V ${yStart} H ${xRight2}`
+
     }
 
     static inputControlPathPlusStartCoordinate(wireId, variant) {
         let horizontalConnector = renderHorizontalConnector(variant, true, false, true)
         let ys = yValues(variant)
-        let x = horizontalConnector ?
-            horConnectorXOffset(variant, true, false, true) + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE : 
-            vertConnectorXOffset(variant, true, false, true) - 0.5*VERTICAL_CONNECTOR_GAP
-        let y = horizontalConnector ? ys.horConnectorY + CONNECTOR_HEIGHT + CONN_TO_PB_DISTANCE : ys.vertConnectorY + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE
-        let distance = (alphabetSize - wireId + 1) * WIRE_DISTANCE 
-        let startCoordinate = {x: horizontalConnector? x : x-distance, y: horizontalConnector ? y : y+distance}
+        let xStart = horizontalConnector ?
+            horConnectorXOffset(variant, true, false, true)  + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE :
+            vertConnectorXOffset(variant, true, false, true) 
+        let yStart = horizontalConnector ?
+            ys.horConnectorY + CONNECTOR_HEIGHT + CONN_TO_PB_DISTANCE :
+            ys.vertConnectorY + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE
+        
+        let h = horizontalConnector ? 0 : -0.5*VERTICAL_CONNECTOR_GAP
+        if (["scrambler_multi_line_scanning", "scrambler_full_menu"].includes(variant))
+            h = -(alphabetSize+3)*WIRE_DISTANCE -5*WIRE_DISTANCE
+        else if (["scrambler_diagonal_board"].includes(variant))
+            h = -(alphabetSize*2 + 3) * WIRE_DISTANCE
+
+        let hToStart = horizontalConnector ? 0 : (alphabetSize-wireId) * WIRE_DISTANCE 
+        let yToStart = horizontalConnector ? 0 : (alphabetSize-wireId) * WIRE_DISTANCE
+        let xEnd = xStart + h - hToStart
+        let yEnd = yStart + yToStart   
+        // let startCoordinate = {x: horizontalConnector? xStart : xStart-distance, y: horizontalConnector ? yStart : yStart+distance}
+        let startCoordinate = {x: xEnd, y: yEnd}
+         
         // in the horizontal connector scenario, no additional wires need to be drawn, 
-        // we only need to at what coordinate to add the '+' button
-        let path = horizontalConnector ? null : `M ${x} ${y} l -${distance} ${distance} `
+        // we only need to know at what coordinate to add the '+' button
+        let path = horizontalConnector ? null : `M ${xStart} ${yStart} h ${h} L ${xEnd} ${yEnd} `
         return [path, startCoordinate]
+    }
+
+    // if input = AB
+    // then draw a diagonal board path from the a-wire in the B-cable to the b-wire in the A-cable
+    static diagonalBoardPath(letter1, letter2, variant, menuLetters, activeLetterCableWires) {
+        let fromWireId = charToId(letter1) // 0 (for A)
+        let fromCableLetter = letter2      // B
+//        let fromActive = activeLetterCableWires[fromCableLetter][fromWireId] != null
+        let toWireId = charToId(letter2) // 1 (for B)
+        let toCableLetter = letter1      // A
+//        let toActive = activeLetterCableWires[toCableLetter][toWireId] != null
+
+        // check if the 'from' cable is depicted to the right of the 'to' cable in the visualisation
+        // meaning we will be drawing a forward diagonalBoard path from aB to bA
+        let forward = menuLetters.indexOf(fromCableLetter) < menuLetters.indexOf(toCableLetter)
+
+//        console.log(`fromWireId=${fromWireId}, fromCableLetter=${fromCableLetter}, toWireId=${toWireId}, toCableLetter=${toCableLetter}`)
+        let startX = dbX(fromCableLetter, fromWireId, menuLetters)
+        let startY = wireY(fromWireId)
+        let dbY1 = dbY(fromWireId)
+
+        let dbY2 = dbY(toWireId)
+        let endX = dbX(toCableLetter, toWireId, menuLetters)
+        let endY = wireY(toWireId)
+
+        return `M ${startX} ${startY} V ${dbY1} L ${endX} ${dbY2} V ${endY}`
     }
 }

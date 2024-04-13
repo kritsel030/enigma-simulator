@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
                                                                     Rotor(middleRotorType, middleStart, 'A'),
                                                                     Rotor(rightRotorType, rightStart, 'A'),
 //                                                                    Plugboard("$stecker1$stecker2-$stecker3$stecker4", 6)
-                                                                    Plugboard("EA", 6)
+                                                                    Plugboard("EA-FC", 6)
                                                                 )
 
                                                                 val encypheredMsg = enigma.encryptMessage("CAFE")

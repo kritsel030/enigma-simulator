@@ -98,34 +98,34 @@ if (urlParams.has('plugboard') ) {
 
 // alphabet size
 //var alphabetSize = 26
-var alphabetSize = 6
+//var alphabetSize = 6
 if (urlParams.has('alphabetSize') ) {
   alphabetSize = parseFloat(urlParams.get('alphabetSize'))
   console.log('alphabetSize: ' + alphabetSize);
 }
 
-let BORDER_HEIGHT = LEADING_HEIGHT + SINGLE_HEIGHT * (alphabetSize-1) + TRAILING_HEIGHT
-let COMPONENT_HEIGHT = LEADING_STRAIGHT + (alphabetSize-1) * (2*CONNECTOR_RADIUS + STRAIGHT) + 2*CONNECTOR_RADIUS + TRAILING_STRAIGHT
-let A_POSITION = alphabetSize/2 - 1 // 0-based
+//let BORDER_HEIGHT = LEADING_HEIGHT + SINGLE_HEIGHT * (alphabetSize-1) + TRAILING_HEIGHT
+//let COMPONENT_HEIGHT = LEADING_STRAIGHT + (alphabetSize-1) * (2*CONNECTOR_RADIUS + STRAIGHT) + 2*CONNECTOR_RADIUS + TRAILING_STRAIGHT
+//let A_POSITION = alphabetSize/2 - 1 // 0-based
 
-// 26 letter enigma
-//let _reflector = new Reflector(reflectorParam ?? 'B', alphabetSize)
-//let _rotor1 = new Rotor(rotor1TypeParam ?? 'I', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6, alphabetSize)
-//let _rotor2 = new Rotor(rotor2TypeParam ?? 'II', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5, alphabetSize)
-//let _rotor3 = new Rotor(rotor3TypeParam ?? 'III', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3, alphabetSize)
-//let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
+let alphabetSize = null
 
-// 6 letter enigma
-let _reflector = new Reflector('SC', alphabetSize)
-_rotor1 = new Rotor('SCII', 'E', 1, alphabetSize)
-_rotor2 = new Rotor('SCIII', 'B', 1, alphabetSize)
-_rotor3 = new Rotor('SCI', 'B', 1, alphabetSize)
-let _plugboard = new Plugboard('AE', alphabetSize)
+let BORDER_HEIGHT = null
+let COMPONENT_HEIGHT = null
+let A_POSITION = null
 
-let enigma = new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
+let enigmaReal = null
+let enigmaDemo = null
+let enigma = null
 
-let enigmaRenderer = new EnigmaRenderer(enigma)
-let enigmaSVGRenderer = new EnigmaSVGRenderer(enigma)
+let enigmaRenderer = null
+let enigmaSVGRenderer = new EnigmaSVGRenderer(keyboardLetterCallback, lightboardLetterCallback)
+
+let svgParentId = null
+
+let input = ""
+let output = ""
+let clipboard = ""
 
 let canvas;
 let ctx;
@@ -146,7 +146,59 @@ let steppingRotors = [false, false, false]
 let encryptionPoints
 
 //////////////////////////////////////////////////////////////////////////
-// init
+// init Enigma
+
+function initEnigma(parentId) {
+//    console.log("initEnigma")
+    enigmaSVGRenderer.init(parentId)
+    enigmaReal = initRealEnigma()
+    enigmaDemo = initDemoEnigma()
+    switchToRealEnigma()
+}
+
+function switchToRealEnigma() {
+//    console.log("switchToRealEnigma")
+    enigma = enigmaReal
+    handleEnigmaSwitch()
+}
+
+function switchToDemoEnigma() {
+//    console.log("switchToDemoEnigma")
+    enigma = enigmaDemo
+    handleEnigmaSwitch()
+}
+
+function handleEnigmaSwitch() {
+//    console.log("handleEnigmaSwitch")
+    alphabetSize = enigma.getAlphabetSize()
+    BORDER_HEIGHT = LEADING_HEIGHT + SINGLE_HEIGHT * (alphabetSize-1) + TRAILING_HEIGHT
+    COMPONENT_HEIGHT = LEADING_STRAIGHT + (alphabetSize-1) * (2*CONNECTOR_RADIUS + STRAIGHT) + 2*CONNECTOR_RADIUS + TRAILING_STRAIGHT
+    A_POSITION = enigma.getAlphabetSize()/2 - 1 // 0-based
+    resetInputOutput()
+    enigma.resetKeyboard()
+    enigmaSVGRenderer.setEnigma(enigma)
+    enigmaSVGRenderer.redrawEnigma("handleEnigmaSwitch")
+}
+
+function initRealEnigma() {
+    let alphabetSize = 26
+    let _reflector = new Reflector(reflectorParam ?? 'B', alphabetSize)
+    let _rotor1 = new Rotor(rotor1TypeParam ?? 'I', rotor1PositionParam ?? 'A', rotor1RingSettingParam ?? 6, alphabetSize)
+    let _rotor2 = new Rotor(rotor2TypeParam ?? 'II', rotor2PositionParam ?? 'D', rotor2RingSettingParam ?? 5, alphabetSize)
+    let _rotor3 = new Rotor(rotor3TypeParam ?? 'III', rotor3PositionParam ?? 'U', rotor3RingSettingParam ?? 3, alphabetSize)
+    let _plugboard = new Plugboard(plugboardParam ?? 'AC-DK-GI-JB-OE-XZ', alphabetSize)
+    return new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
+}
+
+function initDemoEnigma() {
+    let alphabetSize = 6
+    let _reflector = new Reflector('DEMO', alphabetSize)
+    _rotor1 = new Rotor('D-II', 'E', 1, alphabetSize)
+    _rotor2 = new Rotor('D-III', 'B', 1, alphabetSize)
+    _rotor3 = new Rotor('D-I', 'B', 1, alphabetSize)
+    let _plugboard = new Plugboard('AE', alphabetSize)
+    return new Enigma (_reflector, _rotor1, _rotor2, _rotor3, _plugboard)
+}
 
 function initFormFields() {
     // rotor types
@@ -163,15 +215,38 @@ function initFormFields() {
     document.getElementById("rotor1StartPosition").value = enigma.rotors[1].startPosition
     document.getElementById("rotor2StartPosition").value = enigma.rotors[2].startPosition
     document.getElementById("rotor3StartPosition").value = enigma.rotors[3].startPosition
+
+    document.getElementById("plugboard").value = enigma.plugboard.wiringDefinition
 }
 
-// parentId: id of the html element which will contain the SVG
-function initSVG(parentId) {
-    enigmaSVGRenderer.init(parentId)
+//////////////////////////////////////////////////////////////////////////
+// Emulator properties
+
+function handleDemoAlphabet(event) {
+     console.log("handleDemoAlphabet")
+     let demoMode = event.target.checked
+     if (demoMode) {
+        switchToDemoEnigma()
+     } else {
+        switchToRealEnigma()
+     }
+     initFormFields()
+}
+
+function handleDisableRotorStepping(event) {
+     // console.log("handleDisableRotorStepping")
+     enigma.rotorSteppingDisabled = event.target.checked
+     // no redraw needed
+}
+
+function handleSkipAnimation(event) {
+    // console.log("handleSkipAnimation")
+    enigmaSVGRenderer.animationDisabled = event.target.checked
 }
 
 //////////////////////////////////////////////////////////////////////////
 // UI input handlers
+
 
 function handleRotor1Type(event) {
     handleRotorType(event, 1, "handleRotor1Type")
@@ -187,7 +262,8 @@ function handleRotor3Type(event) {
 
 function handleRotorType(event, rotorNo, trigger) {
     enigma.setRotor(rotorNo, new Rotor(event.target.value, 'A', 1, 26))
-    enigmaSVGRenderer.resetKeyboard()
+    resetInputOutput()
+    enigma.resetKeyboard()
     enigmaSVGRenderer.redrawEnigma(trigger)
     initFormFields()
 }
@@ -227,7 +303,8 @@ function handleRotorRingSetting(event, rotorNo, trigger) {
         enigma.rotors[rotorNo].ringSetting = 1
         document.getElementById(event.target.id).value = "A"
     }
-    enigmaSVGRenderer.resetKeyboard()
+    resetInputOutput()
+    enigma.resetKeyboard()
     enigmaSVGRenderer.redrawEnigma(trigger)
     initFormFields()
 }
@@ -265,20 +342,39 @@ function handleRotorStartPosition(event, rotorNo, trigger) {
         enigma.rotors[rotorNo].startPosition = "A"
         document.getElementById(event.target.id).value = "A"
     }
-    enigmaSVGRenderer.resetKeyboard()
+    enigma.resetKeyboard()
+    resetInputOutput()
     enigmaSVGRenderer.redrawEnigma(trigger)
     initFormFields()
 }
 
-function handleDisableRotorStepping(event) {
-     // console.log("handleDisableRotorStepping")
-     enigma.rotorSteppingDisabled = event.target.checked
-     // no redraw needed
+function resetToStartPosition(event) {
+    console.log("resetToStartPosition")
+    resetInputOutput()
+    enigma.resetRotors()
+    enigma.resetKeyboard()
+    enigmaSVGRenderer.redrawEnigma("resetToStartPosition")
 }
 
-function handleSkipAnimation(event) {
-    // console.log("handleSkipAnimation")
-    enigmaSVGRenderer.animationDisabled = event.target.checked
+function keyboardLetterCallback(inputLetter) {
+    document.getElementById("input").value = document.getElementById("input").value + inputLetter
+}
+
+function lightboardLetterCallback(outputLetter) {
+    document.getElementById("output").value = document.getElementById("output").value + outputLetter
+}
+
+function resetInputOutput() {
+    document.getElementById("input").value = ""
+    document.getElementById("output").value = ""
+}
+
+//////////////////////////////////////////////////////////////////////////
+// SVG and canvas initializers
+
+// parentId: id of the html element which will contain the SVG
+function initSVG(parentId) {
+    enigmaSVGRenderer.init(parentId)
 }
 
 function initCanvas() {

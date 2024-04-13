@@ -5,15 +5,6 @@ class PlugboardSVGRenderer {
         this.alphabetSize = alphabetSize
     }
 
-    draw(svg, x, y) {
-        let group = addGroupNode(svg, "plugboard", x, y)
-
-        this.drawBackground(group)
-        this.drawWiring(group)
-        this.drawBorders(group)
-        this.drawConnectorLabels(group)
-    }
-
     // background = everything behind the encipher path
     drawBackground(group, x=0, y=0) {
         let path = `M ${x} ${y}`
@@ -74,10 +65,10 @@ class PlugboardSVGRenderer {
             var label = idToCharToken(displayIndexToId(p, this.alphabetSize))
             var y =  LEADING_STRAIGHT + p*SINGLE + 1.5*CONNECTOR_RADIUS
             // left column
-            addTextNode (group, label, `${group.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS + 0.5*UNIT, y)
+            addTextNode (group, label, `${group.id}_left_${label}`, "connectorLabel", -CONNECTOR_RADIUS, y)
 
             // right column
-            addTextNode (group, label, `${group.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS + 0.5*UNIT, y)
+            addTextNode (group, label, `${group.id}_right_${label}`, "connectorLabel", COMPONENT_WIDTH-CONNECTOR_RADIUS, y)
         }
     }
 }

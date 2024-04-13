@@ -85,7 +85,7 @@ class ReflectorSVGRenderer {
         // 25 = position at the bottom of the rotor
         for (let p=0; p<this.reflector.alphabetSize; p++) {
             var label = idToCharToken(displayIndexToId(p, this.reflector.alphabetSize))
-            var x = COMPONENT_WIDTH - CONNECTOR_RADIUS + 0.5*UNIT
+            var x = COMPONENT_WIDTH - CONNECTOR_RADIUS
             var y = LEADING_STRAIGHT + p*SINGLE + 1.5*CONNECTOR_RADIUS
             addTextNode (parent, label, `${parent.id}_${label}`, "connectorLabel", x, y)
         }

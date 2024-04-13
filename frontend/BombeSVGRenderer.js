@@ -3,7 +3,8 @@ class BombeSVGRenderer {
 
     // constructor(enigmaList){
     constructor(bombe) {    
-        this.variant = "scrambler_multi_line_scanning"
+        // this.variant = "scrambler_multi_line_scanning"
+        this.variant = "variantA"
         this.bombe = bombe
         this.lwEnigmaRenderers = []
 
@@ -38,7 +39,7 @@ class BombeSVGRenderer {
 
         // create the svg element
         let svg = document.createElementNS(SVG_NS, "svg");
-        svg.setAttribute("width", "1000");
+        svg.setAttribute("width", "1200");
         svg.setAttribute("height", "500");
         svg.style.cssText = 'border: 1px solid black'
         svg.id = "bombe"
@@ -48,50 +49,175 @@ class BombeSVGRenderer {
     }
 
     draw(svg) {
-        let ys = yValues(this.variant)
+        this.drawBackground(svg)
 
-        let previousFirst = null
-        let previousLast = null
-        let x = LEFT_MARGIN
-        for (let i=0; i<this.lwEnigmaRenderers.length; i++) {
-            let first = i==0
-            let last = i==this.lwEnigmaRenderers.length-1
-            x += first ? 0 : enigmaWidth(this.variant, previousFirst, previousLast) + enigmaGap(this.variant, previousFirst, previousLast)
-            this.lwEnigmaRenderers[i].draw(svg, i, this.variant,  first, last, x, TOP_MARGIN)
-            previousFirst = first
-            previousLast = last
+        this.drawWiring(svg)
+
+        // electrical path
+        this.pathRenderer.draw(svg, this.variant, {}, LEFT_MARGIN, TOP_MARGIN)
+
+        this.drawForeground(svg)
+
+    }
+
+    drawBackground(parent) {
+        let ys = yValues(this.variant)
+        // diagonal board container
+        if (renderDiagonalBoard(this.variant)) {
+            let leftX = LEFT_MARGIN + vertConnectorXOffset(this.variant, true, false, true) - (alphabetSize+3) * WIRE_DISTANCE - 4*WIRE_DISTANCE
+            let dbWidth = this.lwEnigmaRenderers.length * enigmaWidth(this.variant, false, false) + (this.lwEnigmaRenderers.length-1)*VERTICAL_CONNECTOR_GAP + 2*(alphabetSize+3)*WIRE_DISTANCE + 4*WIRE_DISTANCE
+            addRectangleNode(parent, "diagonalBoard", "diagonalBoard", leftX, ys.diagonalBoard, dbWidth, DIAGONAL_BOARD_HEIGHT + WIRE_DISTANCE, 2*UNIT, 2*UNIT)
         }
 
+        // scramblers/engimas
+        let noOfScramblers = numberOfScramblersToDisplay(this.variant, this.bombe.menuLetters)
+        for (let i=0; i<noOfScramblers; i++) {
+            let first = i==0
+            let last = i==noOfScramblers-1
+            let x = scramblerAbsoluteXOffset(this.variant, i, this.bombe.menuLetters)
+            this.lwEnigmaRenderers[i].drawBackground(parent, i, this.variant, first, last, x, TOP_MARGIN)
+        }
+    }
+
+    drawWiring(svg) {
+        let ys = yValues(this.variant)
          // wires from bombe output to bombe input
         if (renderOutputToInputWires(this.variant)) {
             for (let i=0; i<alphabetSize; i++) {
-                let path = SVGPathService.outputToInputPath(i, this.variant, this.lwEnigmaRenderers.length)
+//                let path = SVGPathService.outputToInputPath(i, this.variant, this.lwEnigmaRenderers.length)
+                let path = SVGPathService.outputToInputPath2(i, this.variant, this.bombe.cycleEndEnigma.index)
                 addPathNode (svg, path, `feedback_${i}`, "wire")
             }
         }
 
+        // diagonal board wires
+        if (renderDiagonalBoard(this.variant)) {
+            // let dbBottomY = DIAGONAL_BOARD_HEIGHT
+            let dbBottomY = ys.diagonalBoard + DIAGONAL_BOARD_HEIGHT - WIRE_DISTANCE
+
+            // A-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let path = `M ${dbX("A", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                addPathNode (svg, path, `test`, "wire")
+            }
+
+            // C-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let path = `M ${dbX("C", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                addPathNode (svg, path, `test`, "wire")
+            }
+
+            // E-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let path = `M ${dbX("E", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                addPathNode (svg, path, `test`, "wire")
+            }
+
+            // F-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                //let path = `M ${dbX("F", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                let startX = scramblerAbsoluteXOffset(this.variant, 3, this.bombe.menuLetters) + vertConnectorXOffset(this.variant, false, false, false, 3)
+                let path = `M ${startX} ${wireY(i)} H ${dbX("F", i, this.bombe.menuLetters)} V ${dbBottomY} `
+                addPathNode (svg, path, `test`, "wire")
+            }
+
+            let acDBPath = SVGPathService.diagonalBoardPath('A', 'C', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, acDBPath, `test`, "wire")
+
+            let aeDBPath = SVGPathService.diagonalBoardPath('A', 'E', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, aeDBPath, `test`, "wire")
+
+            let afDBPath = SVGPathService.diagonalBoardPath('A', 'F', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, afDBPath, `test`, "wire")
+
+            let ceDBPath = SVGPathService.diagonalBoardPath('C', 'E', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, ceDBPath, `test`, "wire")
+
+            let cfDBPath = SVGPathService.diagonalBoardPath('C', 'F', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, cfDBPath, `test`, "wire")
+
+            let efDBPath = SVGPathService.diagonalBoardPath('E', 'F', this.variant, this.bombe.menuLetters)
+            addPathNode (svg, efDBPath, `test`, "wire")
+        }
+
+        // scramblers/engimas
+        let noOfScramblers = numberOfScramblersToDisplay(this.variant, this.bombe.menuLetters)
+        for (let i=0; i<noOfScramblers; i++) {
+            let first = i==0
+            let last = i==noOfScramblers-1
+            let x = scramblerAbsoluteXOffset(this.variant, i, this.bombe.menuLetters)
+            this.lwEnigmaRenderers[i].drawWiring(svg, i, this.variant, first, last, x, TOP_MARGIN)
+        }
+
+    }
+
+    drawForeground(svg) {
+        let ys = yValues(this.variant)
         // indicator drums
-        let xIndicator = LEFT_MARGIN + this.lwEnigmaRenderers.length * enigmaWidth(this.variant, false, false) + (this.lwEnigmaRenderers.length-1)*VERTICAL_CONNECTOR_GAP + 0.5*VERTICAL_CONNECTOR_GAP + 6*COMPONENT_DISTANCE
+        // let xIndicator = LEFT_MARGIN + this.lwEnigmaRenderers.length * enigmaWidth(this.variant, false, false) + (this.lwEnigmaRenderers.length-1)*VERTICAL_CONNECTOR_GAP + 0.5*VERTICAL_CONNECTOR_GAP + 6*COMPONENT_DISTANCE
+        let xIndicator = 20
         let group = addGroupNode (svg, "indicatordrums", xIndicator, TOP_MARGIN)
         this.indicatorDrum1Renderer.draw(group, `${group.id}_drum1`, this.variant, 0, ys.drum1Y, true)
         this.indicatorDrum2Renderer.draw(group, `${group.id}_drum2`, this.variant, 0, ys.drum2Y, true)
         this.indicatorDrum3Renderer.draw(group, `${group.id}_drum3`, this.variant, 0, ys.drum3Y, true)
 
-        // electrical path
-        this.pathRenderer.draw(svg, this.variant, {}, LEFT_MARGIN, TOP_MARGIN)
+        // buttons next to key indicators to advance or step back all drums on the same row
+        let xDrumButtons = xIndicator + DRUM_WIDTH + COMPONENT_DISTANCE
+        let drumButtonsGroup = addGroupNode (svg, "drumButtons", xDrumButtons, TOP_MARGIN)
+        let drumNumbers = [1, 2, 3]
+        for (let i=0; i < drumNumbers.length; i++) {
+            let drumNo = drumNumbers[i]
+            this.drawDrumButtons(drumNo, drumButtonsGroup, this.variant)
+        }
+
+        // probe
+        if (renderOutputToInputWires(this.variant)) {
+            let probeX = LEFT_MARGIN - 4*WIRE_DISTANCE
+            let probeY = TOP_MARGIN + ys.vertConnectorY - 0.5*WIRE_DISTANCE
+            addRectangleNode (svg, "probe", "probe", probeX, probeY, 2*WIRE_DISTANCE, COMPONENT_SIZE + 2*WIRE_DISTANCE, UNIT, UNIT)
+        }
+
+        // scramblers/engimas
+        let noOfScramblers = numberOfScramblersToDisplay(this.variant, this.bombe.menuLetters)
+        for (let i=0; i<noOfScramblers; i++) {
+            let first = i==0
+            let last = i==noOfScramblers-1
+            let x = scramblerAbsoluteXOffset(this.variant, i, this.bombe.menuLetters)
+            this.lwEnigmaRenderers[i].drawForeground(svg, i, this.variant, first, last, x, TOP_MARGIN)
+        }
 
         // proceed with path buttons
         if (renderProceedWithPathButtons(this.variant)) {
             let nextButton = addGroupNode(svg, "nextButton")
-            nextButton.addEventListener('click', this.handleNextPathSegmentClick.bind(this), false) 
-            addRectangleNode (nextButton, `${nextButton.id}_rect`, "pathButton", LEFT_MARGIN+100, TOP_MARGIN, 20, 20) 
+            nextButton.addEventListener('click', this.handleNextPathSegmentClick.bind(this), false)
+            addRectangleNode (nextButton, `${nextButton.id}_rect`, "pathButton", LEFT_MARGIN+100, TOP_MARGIN, 20, 20)
             addTextNode(nextButton, "&#x25B6;", `${nextButton.id}_text`, "pathButton", LEFT_MARGIN+100+10, TOP_MARGIN+10)
-            
+
             let completePathButton = addGroupNode(svg, "completePathButton")
             completePathButton.addEventListener('click', this.handleCompletePathClick.bind(this), false)
-            addRectangleNode (completePathButton, `${completePathButton.id}_rect`, "pathButton", LEFT_MARGIN+100+20+10, TOP_MARGIN, 40, 20) 
+            addRectangleNode (completePathButton, `${completePathButton.id}_rect`, "pathButton", LEFT_MARGIN+100+20+10, TOP_MARGIN, 40, 20)
             addTextNode(completePathButton, "&#x25B6;&#x25B6;|", `${completePathButton.id}_text`, "pathButton", LEFT_MARGIN+100+20+10+20, TOP_MARGIN+10)
         }
+
+    }
+
+    drawDrumButtons(drumNo, group, variant) {
+        let ys = yValues(variant)
+        let proceedButton = addGroupNode (group, `advance_${drumNo}`)
+        proceedButton.setAttribute("class", "drumButtonGroup")
+        proceedButton.addEventListener('click', this.handleAdvanceDrums.bind(this), false)
+        let y = 2 * COMPONENT_DISTANCE
+        if (drumNo == 1) y += ys.drum1Y 
+        if (drumNo == 2) y += ys.drum2Y 
+        if (drumNo == 3) y += ys.drum3Y 
+        addRectangleNode (proceedButton, `${proceedButton.id}_rect`, "pathButton", 0, y, 10, 10) 
+        addTextNode(proceedButton, "+", `${proceedButton.id}_text`, "pathButton", 5, y + 6)
+        
+        let stepBackButton = addGroupNode (group, `stepback_${drumNo}`)
+        stepBackButton.setAttribute("class", "drumButtonGroup")
+        stepBackButton.addEventListener('click', this.handleStepBackDrums.bind(this), false)
+        addRectangleNode (stepBackButton, `${stepBackButton.id}_rect`, "pathButton", 0, y + 15, 10, 10) 
+        addTextNode(stepBackButton, "-", `${stepBackButton.id}_text`, "pathButton", 5, y + 5 + 15)
     }
 
     handleKeyClick (event) {
@@ -106,21 +232,8 @@ class BombeSVGRenderer {
         this.pressedKeyId = pressedKeyId
         // console.log(`key ${pressedLetter} got clicked`)
 
-        // encipher the pressed key on each enigma
-        // using one enigma's out put as the next enigma's input
-        // (do not use rotor stepping)
-        let inputId = pressedKeyId
-        for (let i=0; i<this.lwEnigmaRenderers.length; i++) {
-            let enigmaRenderer = this.lwEnigmaRenderers[i]
-            let enigma = enigmaRenderer.enigma
-            let outputId = enigma.encipherWireId(inputId, false)[0]
-            enigma.plugboardInputId = inputId
-            enigma.plugboardOutputId = outputId
-            enigma.scramblerInputId = null
-            enigma.scramblerOutputId = null
-            // prepare for next enigma in the list
-            inputId = outputId
-        }
+        this.reset()
+        this.bombe.pathFinder.processKeyboardInput(this.pressedKeyId)
         this.redrawBombe("key press " + pressedLetter)
     }
 
@@ -128,80 +241,54 @@ class BombeSVGRenderer {
         let clickedInputControl = event.target.closest('.activate')
         if (!clickedInputControl) return;
 
+        this.reset()
         let clickedInputWire = clickedInputControl.id.slice(-1)
         let scramblerInputId = Number(clickedInputWire)
         this.bombe.inputControlIds.push(scramblerInputId)
 
-        this.calculateScramblerInputsAndOutputs(scramblerInputId)
-    
+        //this.calculateScramblerInputsAndOutputs(scramblerInputId)
+        this.bombe.pathFinder.processEnigmaInput(bombe.scramblersByIndexMap[0], scramblerInputId)
         this.redrawBombe("input activation " + clickedInputWire)
     }
 
     handleNextPathSegmentClick(event) {
-        this.calculateNextPathSegment()
+        this.bombe.pathFinder.processNextPathRequest(this.variant)
         this.redrawBombe("next path segment")
     }
 
     handleCompletePathClick(event) {
-        let inputAdded = true
-        while (inputAdded) {
-            inputAdded = this.calculateNextPathSegment()
+        let pathAdded = true
+        while (pathAdded) {
+            pathAdded = this.bombe.pathFinder.processNextPathRequest(this.variant)
         }
         this.redrawBombe("complete the path")
     }
 
-    calculateNextPathSegment() {
-        // add the scrambler outputIds of the last scrambler to the scramler inputIds of the first scrambler
-        let result = this.addLastScramblerOutputIdsToFirstScramblerInputIds()
+    handleAdvanceDrums(event) {
+        let drumButtonGroup = event.target.closest('.drumButtonGroup')
+        if (!drumButtonGroup) return;
 
-        // recalculate all scrambler inputs and outputs based on the inputs of the first scrambler
-        let firstEnigma = this.bombe.scramblers[0]
-        for (let i2=0; i2 < firstEnigma.scramblerInputIds.length; i2++){
-            this.calculateScramblerInputsAndOutputs(firstEnigma.scramblerInputIds[i2])
-        }
-        return result
+        let drumNo = Number(drumButtonGroup.id.slice(-1))
+        this.bombe.advanceIndicatorDrums(drumNo-1)
+
+        this.reset()
+        this.redrawBombe("advance drums " + drumNo)
     }
 
-    // add the scrambler outputIds of the last scrambler to the scramler inputIds of the first scrambler
-    addLastScramblerOutputIdsToFirstScramblerInputIds() {
-        let inputAdded = false
-        let firstEnigma = this.bombe.scramblers[0]
-        let lastEnigma = this.bombe.scramblers[this.bombe.scramblers.length-1]
-        for (let i=0; i < lastEnigma.scramblerOutputIds.length; i++){
-            let outputId = lastEnigma.scramblerOutputIds[i]
-            if (!firstEnigma.scramblerInputIds.includes(outputId)) {
-                firstEnigma.addScramblerInputId(outputId)
-                inputAdded = true
-            }
-        }
-        return inputAdded
-    }
+    handleStepBackDrums(event) {
+        let drumButtonGroup = event.target.closest('.drumButtonGroup')
+        if (!drumButtonGroup) return;
 
-    // recalculate all scrambler inputs and outputs based on an input of the first scrambler
-    calculateScramblerInputsAndOutputs(firstInputId) {
-        let scramblerInputId = firstInputId
-        let scramblerOutputId = null
-        for (let i=0; i<this.lwEnigmaRenderers.length; i++) {
-            let enigmaRenderer = this.lwEnigmaRenderers[i]
-            let enigma = enigmaRenderer.enigma
-            // false: do no step rotors
-            // true: skip plugboard
-            scramblerOutputId = enigma.encipherWireId(scramblerInputId, false, true)[0]
-            enigma.plugboardInputId = null
-            enigma.plugboardOutputId = null
-            enigma.addScramblerInputId(scramblerInputId)
-            enigma.addScramblerOutputId(scramblerOutputId)
-            // prepare for next enigma in the list
-            scramblerInputId = scramblerOutputId
-        }
+        let drumNo = Number(drumButtonGroup.id.slice(-1))
+        this.bombe.turnBackIndicatorDrums(drumNo-1)
+
+        this.reset()
+        this.redrawBombe("step back drums " + drumNo)
     }
 
     reset(event) {
         this.bombe.inputControlIds = []
-        for (let i=0; i<this.lwEnigmaRenderers.length; i++) {
-            let enigmaRenderer = this.lwEnigmaRenderers[i]
-            enigmaRenderer.enigma.reset()
-        }
+        this.bombe.pathFinder.reset()
     }
 
 }

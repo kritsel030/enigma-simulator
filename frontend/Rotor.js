@@ -76,6 +76,12 @@ class Rotor {
     }
 
     // ****************************************************************************
+    // reset
+    resetToStartPosition() {
+        this.position = this.startPosition
+    }
+
+    // ****************************************************************************
     // getters
 
     // based on https://en.wikipedia.org/wiki/Enigma_rotor_details
@@ -98,14 +104,14 @@ class Rotor {
                 return 'VZBRGITYUPSDNHLXAWMJQOFECK'
                 break
 
-            // 6 letter alphabet show case rotors
-            case 'SCI':
+            // demo rotors for 6 letter alphabet
+            case 'D-I':
                 return 'CAFBDE'
                 break
-            case 'SCII':
+            case 'D-II':
                 return 'CABEFD'
                 break
-            case 'SCIII':
+            case 'D-III':
                 return 'EADFBC'
                 break
         }
@@ -130,14 +136,14 @@ class Rotor {
                 return 'A'
                 break
 
-            // 6 letter alphabet show case rotors
-            case 'SCI':
+            // demo rotors for 6 letter alphabet
+            case 'D-I':
                 return 'A'
                 break
-            case 'SCII':
+            case 'D-II':
                 return 'D'
                 break
-            case 'SCIII':
+            case 'D-III':
                 return 'E'
                 break
         }

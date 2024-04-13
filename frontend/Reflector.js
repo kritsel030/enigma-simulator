@@ -36,7 +36,7 @@ class Reflector {
                 break
 
             // 6 letter alphabet show case reflector
-            case 'SC':
+            case 'DEMO':
                 return 'FEDCBA'
                 break
         }

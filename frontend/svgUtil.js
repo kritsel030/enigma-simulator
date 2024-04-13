@@ -23,6 +23,7 @@ function addTextNode (parent, text, id, clazz, x=0, y=0, transform=null) {
 }
 
 function addPathNode (parent, path, id, clazz) {
+//    console.log("addPathNode " + id + " " + path)
     let pathNode = document.createElementNS(SVG_NS, "path");
     pathNode.id = id
     pathNode.setAttribute("d", path)

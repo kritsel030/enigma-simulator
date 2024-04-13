@@ -9,73 +9,41 @@ class LWEnigmaSVGRenderer {
         this.drum3Renderer = new LWDrumSVGRenderer(this.enigma, 3)
         this.plugboardRenderer = new LWPlugboardSVGRenderer(this.enigma.plugboard, this.enigma.getAlphabetSize())
         this.keyAndLightboardRenderer = new LWKeyAndLightboardSVGRenderer(enigma.getAlphabetSize())
-//        this.encipherPathRenderer = new EncipherPathSVGRenderer(this.reflectorRenderer)
         this.bombeRenderer = bombeRenderer
         this.bombe = this.bombeRenderer.bombe
         this.animationDisabled = false
     }
 
-    draw(parent, id, variant, first, last, x, y  ) {
-        this.id = id
-        this.drawSimple(parent, id, variant, first, last, x, y)
-//        this.drawLayered(svg)
+    drawBackground(parent, enigmaId, variant, first, last, x, y) {
+        let group = addGroupNode (parent, enigmaId, x, y)
+        let ys = yValues(variant)
+        if (renderReflector(variant)) {
+            this.reflectorRenderer.drawBackground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
+        }
+
+        // draw plugboard(s)
+        if (renderPlugboard(variant, first, last, true)) {
+            this.plugboardRenderer.drawBackground(group, variant, plugboardXOffset(variant, first, last, true), ys.plugboardY )
+        }
+        if (renderPlugboard(variant, first, last, false)) {
+            this.plugboardRenderer.drawBackground(group, variant, plugboardXOffset(variant, first, last, false), ys.plugboardY )
+        }
     }
 
-    drawSimple(parent, enigmaId, variant, first, last, x, y) {
-        let ys = yValues(variant)
+    drawForeground(parent, enigmaId, variant, first, last, x, y) {
         let group = addGroupNode (parent, enigmaId, x, y)
+        let ys = yValues(variant)
+//        let group = addGroupNode (parent, enigmaId, x, y)
+        let enigmaWireStatus = bombe.pathFinder.enigmaWireStatuses[enigmaId]
+
+        // label underneath the enigma
+        this.drawEnigmaLabel(group, enigmaId, variant, first, last)
+
+        // label for the cable leading into / out of the enigma
+        this.drawCableLabels(group, enigmaId, variant, first, last)
 
         if (renderReflector(variant)) {
-            this.reflectorRenderer.draw(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
-        }
-
-        // wires between plugboard and (virtual) keyboard
-        if (renderKeyOrLightboard(variant, first, last, true)) {
-            this.drawPlugboardToKeyboardConnections(group, variant, "left", first, last, true, alphabetSize)
-        }
-        if (renderKeyOrLightboard(variant, first, last, false)) {
-            this.drawPlugboardToKeyboardConnections(group, variant, "right", first, last, false, alphabetSize)
-        }
-
-        // wires to/from horizontal connectors 
-        if (renderHorizontalConnector(variant, first, last, true) ) {
-            this.drawHorConnectorInputOutput(group, variant, "left", first, last, true, horConnectorXOffset(variant, first, last, true), ys.horConnectorY + CONNECTOR_HEIGHT, alphabetSize)
-        }
-        if (renderHorizontalConnector(variant, first, last, false)) {
-            this.drawHorConnectorInputOutput(group, variant, "right", first, last, false, horConnectorXOffset(variant, first, last, false), ys.horConnectorY + CONNECTOR_HEIGHT, alphabetSize)
-        }
-
-        // wires to/from vertical connectors
-        if (renderVerticalConnector(variant, first, last, true)) {
-            this.drawVertConnectorInputOutput(group, variant, "left", first, last, true, vertConnectorXOffset(variant, first, last, true), ys.vertConnectorY, alphabetSize)
-        }
-        if (renderVerticalConnector(variant, first, last, false)) {
-            this.drawVertConnectorInputOutput(group, variant, "right", first, last, false, vertConnectorXOffset(variant, first, last, false) + CONNECTOR_HEIGHT, ys.vertConnectorY, alphabetSize)
-        }
-
-        // diagonal input control wires connecting to the horizontal input wires of the input vertical connector of the first enigma
-        if (renderInputControlWires(variant, first)) {
-            this.drawInputControl(group, variant)
-        }
-
-        // wires in a scrambler
-        // each wire's start is a letchworth enigma input, and the end is the enigma's output
-        // (a letchworth enigma being an enigma without a plugboard)
-        if (renderScramblerWires(variant)) {
-            this.drawScramblerWires(group, variant, first, last)
-        } 
-
-        // draw cables between reflector, drums and connectors
-        if (renderDrums(variant)) {
-            // cable through scrambler (connecting drums and reflector)
-            let scramblerCablePath = SVGPathService.drumsAndReflectorCablePath(variant, first, last)
-            addPathNode (group, scramblerCablePath, `${group.id}_cable_scrambler`, "cable")
-            // cable from input connector to drum3
-            let connectorCablePathLeft = SVGPathService.connectorCablePath(variant, first, last, true)
-            addPathNode (group, connectorCablePathLeft, `${group.id}_cable_connector_left`, "cable")
-            // cable from drum3 to output connector
-            let connectorCablePathRight = SVGPathService.connectorCablePath(variant, first, last, false)
-            addPathNode (group, connectorCablePathRight, `${group.id}_cable_connector_right`, "cable")
+            this.reflectorRenderer.drawForeground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
         }
 
         // draw the 3 drums
@@ -110,19 +78,20 @@ class LWEnigmaSVGRenderer {
             this.drawVerticalConnector(group, "right", vertConnectorXOffset(variant, first, last, false, enigmaId), ys.vertConnectorY)
         }
 
-        // draw plugboard(s)
         if (renderPlugboard(variant, first, last, true)) {
-            this.plugboardRenderer.draw(group, `${group.id}_plugboard_left`, variant, first, last, true, plugboardXOffset(variant, first, last, true), ys.plugboardY )
+            this.plugboardRenderer.drawForeground(group, variant, first, last, true, plugboardXOffset(variant, first, last, true), ys.plugboardY )
         }
         if (renderPlugboard(variant, first, last, false)) {
-            this.plugboardRenderer.draw(group, `${group.id}_plugboard_right`, variant, first, last, false, plugboardXOffset(variant, first, last, false), ys.plugboardY )
+            this.plugboardRenderer.drawForeground(group, variant, first, last, false, plugboardXOffset(variant, first, last, false), ys.plugboardY )
         }
 
         // draw keyboard/lightboard
         if (renderKeyOrLightboard(variant, first, last, true)) {
             let leftXOffset = keyboardXOffset(variant, first, last, true)
             let leftProps = keyOrLightboardProperties(variant, first, last, true)
-            this.keyAndLightboardRenderer.draw(group, `${group.id}_keyboard_left`, variant, leftProps, leftXOffset, ys.keyboardY, this.enigma.plugboardInputId, this.enigma.plugboardOutputId)
+            let plugboardInputId = enigmaWireStatus.activePaths.length > 0 ? enigmaWireStatus.activePaths[0].inboundPbInputContactId : null
+            let plugboardOutputId = null
+            this.keyAndLightboardRenderer.draw(group, `${group.id}_keyboard_left`, variant, leftProps, leftXOffset, ys.keyboardY, plugboardInputId, plugboardOutputId)
             // add the onclick event handler to the group of keys
             if (leftProps.variant == "clickableKeyboard") {
                 group.addEventListener('click', bombeRenderer.handleKeyClick.bind(bombeRenderer), false)
@@ -131,17 +100,84 @@ class LWEnigmaSVGRenderer {
         if (renderKeyOrLightboard(variant, first, last, false)) {
             let rightProps = keyOrLightboardProperties(variant, first, last, false)
             let rightXOffset = keyboardXOffset(variant, first, last, false)
-            this.keyAndLightboardRenderer.draw(group, `${group.id}_keyboard_right`, variant, rightProps, rightXOffset, ys.keyboardY, this.enigma.plugboardInputId, this.enigma.plugboardOutputId)
+            let plugboardInputId = null
+            let plugboardOutputId = enigmaWireStatus.activePaths.length > 0 ? enigmaWireStatus.activePaths[0].outboundPbOutputContactId : null
+            this.keyAndLightboardRenderer.draw(group, `${group.id}_keyboard_right`, variant, rightProps, rightXOffset, ys.keyboardY, plugboardInputId, plugboardOutputId)
         }
 
-        // draw a label
-        let labelY = 10
+    }
+
+    drawWiring(parent, enigmaId, variant, first, last, x, y) {
+        let group = addGroupNode (parent, enigmaId, x, y)
+        let ys = yValues(variant)
+
+        // wires between plugboard and (virtual) keyboard
+        if (renderKeyOrLightboard(variant, first, last, true)) {
+            this.drawPlugboardToKeyboardConnections(group, variant, "left", first, last, true, alphabetSize)
+        }
+        if (renderKeyOrLightboard(variant, first, last, false)) {
+            this.drawPlugboardToKeyboardConnections(group, variant, "right", first, last, false, alphabetSize)
+        }
+
+        // wires to/from horizontal connectors
+        if (renderHorConnectorInputOutput(variant, first, last, true) ) {
+            this.drawHorConnectorInputOutput(group, variant, "left", first, last, true, horConnectorXOffset(variant, first, last, true), ys.horConnectorY + CONNECTOR_HEIGHT, alphabetSize)
+        }
+        if (renderHorConnectorInputOutput(variant, first, last, false)) {
+            this.drawHorConnectorInputOutput(group, variant, "right", first, last, false, horConnectorXOffset(variant, first, last, false), ys.horConnectorY + CONNECTOR_HEIGHT, alphabetSize)
+        }
+
+        // wires to/from vertical connectors
+        if (renderVertConnectorInputOutput(variant, first, last, true)) {
+            this.drawVertConnectorInputOutput(group, variant, "left", first, last, true, vertConnectorXOffset(variant, first, last, true), ys.vertConnectorY, alphabetSize)
+        }
+        if (renderVertConnectorInputOutput(variant, first, last, false)) {
+            this.drawVertConnectorInputOutput(group, variant, "right", first, last, false, vertConnectorXOffset(variant, first, last, false) + CONNECTOR_HEIGHT, ys.vertConnectorY, alphabetSize)
+        }
+
+        // diagonal input control wires connecting to the horizontal input wires of the input vertical connector of the first enigma
+        if (renderInputControlWires(variant, first)) {
+            this.drawInputControl(group, variant)
+        }
+
+        // wires in a scrambler
+        // each wire's start is a letchworth enigma input, and the end is the enigma's output
+        // (a letchworth enigma being an enigma without a plugboard)
+        if (renderScramblerWires(variant)) {
+            this.drawScramblerWires(group, variant, first, last)
+        }
+
+        // draw plugboard(s)
+        if (renderPlugboard(variant, first, last, true)) {
+            this.plugboardRenderer.drawWiring(group, variant, first, last, true, plugboardXOffset(variant, first, last, true), ys.plugboardY )
+        }
+        if (renderPlugboard(variant, first, last, false)) {
+            this.plugboardRenderer.drawWiring(group, variant, first, last, false, plugboardXOffset(variant, first, last, false), ys.plugboardY )
+        }
+
+        // draw cables between reflector, drums and connectors
+        if (renderDrums(variant)) {
+            // cable through scrambler (connecting drums and reflector)
+            let scramblerCablePath = SVGPathService.drumsAndReflectorCablePath(variant, first, last)
+            addPathNode (group, scramblerCablePath, `${group.id}_cable_scrambler`, "cable")
+            // cable from input connector to drum3
+            let connectorCablePathLeft = SVGPathService.connectorCablePath(variant, first, last, true)
+            addPathNode (group, connectorCablePathLeft, `${group.id}_cable_connector_left`, "cable")
+            // cable from drum3 to output connector
+            let connectorCablePathRight = SVGPathService.connectorCablePath(variant, first, last, false)
+            addPathNode (group, connectorCablePathRight, `${group.id}_cable_connector_right`, "cable")
+        }
+    }
+
+    drawEnigmaLabel(parent, enigmaId, variant, first, last) {
+        let ys = yValues(variant)
+        let labelY = TOP_MARGIN
         if (renderKeyOrLightboard(variant, first, last, false) || renderKeyOrLightboard(variant, first, last, true)) {
-            labelY += ys.keyboardY + 2*PLUGBOARD_HEIGHT + COMPONENT_DISTANCE
-        } else if (renderPlugboard(variant, first, last, false) || renderPlugboard(variant, first, last, true)){
-            labelY += ys.plugboardY + PLUGBOARD_HEIGHT
+            labelY += ys.keyboardY + 40
+//        } else if (renderPlugboard(variant, first, last, false) || renderPlugboard(variant, first, last, true)){
+//            labelY += ys.plugboardY
         } else if (renderHorizontalConnector(variant, first, last, false) || renderHorizontalConnector(variant, first, last, true)){
-            labelY += ys.horConnectorY + CONNECTOR_HEIGHT + 4 * COMPONENT_DISTANCE
+            labelY += ys.plugboardY + COMPONENT_DISTANCE
         } else {
             labelY = ys.vertConnectorY + CONNECTOR_WIDTH + 2*COMPONENT_DISTANCE
         }
@@ -149,43 +185,42 @@ class LWEnigmaSVGRenderer {
         // labels are horizontally centered based on the x property
         // add labels underneath each enigma
         let labelX = enigmaCenterXOffset(variant, first, last)
-        addTextNode(group, `scrambler ${enigmaId+1}`, `scrambler_${enigmaId+1}_label`, "componentLabelSmall", labelX, labelY)
-        addTextNode(group, `start +${this.bombe.scramblerOffsets[enigmaId]}`, `scrambler_${enigmaId+1}_position_label`, "componentLabel", labelX, labelY+COMPONENT_DISTANCE)
-    
+        addTextNode(parent, `enigma ${enigmaId+1}`, `scrambler_${enigmaId+1}_label`, "componentLabelSmall", labelX, labelY)
+        addTextNode(parent, `start +${this.bombe.scramblerOffsets[enigmaId]}`, `scrambler_${enigmaId+1}_position_label`, "componentLabel", labelX, labelY+20)
+    }
+
+    drawCableLabels(parent, enigmaId, variant, first, last) {
         // label the cable coming into the first enigma
-        if (first && !renderKeyOrLightboard(variant, first, last, true)) {
+        if (first) {
             // labels are horizontally centered based on the x property
-            let cableLabelX = - 0.5*VERTICAL_CONNECTOR_GAP
-            let cableLabelY = 0
-            
+            let cableLabelY = this.calculateCableLabelY(variant, first, last, true)
+            let cableLabelX = 0
             if (renderHorizontalConnector(variant, first, last, true)) {
-                if (renderPlugboard(variant, first, last, true)) {
-                    cableLabelY = ys.plugboardY + PLUGBOARD_HEIGHT + 0.5*alphabetSize*WIRE_DISTANCE + 2*COMPONENT_DISTANCE
-                } else {
-                    cableLabelY = ys.horConnectorY + CONNECTOR_HEIGHT + WIRE_DISTANCE + 0.5*alphabetSize*WIRE_DISTANCE + 2*COMPONENT_DISTANCE
-                }
+                cableLabelX = -15
             } else if (renderVerticalConnector(variant, first, last, true)) {
-                cableLabelY = ys.vertConnectorY + CONNECTOR_WIDTH + 4*COMPONENT_DISTANCE
+                cableLabelX = -100
             }
-            addTextNode(group, `${this.bombe.menuLetters[0]}-cable`, `cable_0`, "componentLabel", cableLabelX, cableLabelY)
+            addTextNode(parent, `${this.bombe.menuLetters[0]}`, `cable_0`, "cableLabel", cableLabelX, cableLabelY)
         }
 
-        // label the cable to the next enigma
-        if (!renderKeyOrLightboard(variant, first, last, false) || keyOrLightboardProperties(variant, first, last, false).virtual) {
-            // labels are horizontally centered based on the x property
-            let cableLabelX = enigmaWidth(variant, first, last) + 0.5*VERTICAL_CONNECTOR_GAP
-            let cableLabelY = 0
-            
-            if (renderHorizontalConnector(variant, first, last, false)) {
-                if (renderPlugboard(variant, first, last, false)) {
-                    cableLabelY = ys.plugboardY + PLUGBOARD_HEIGHT + 0.5*alphabetSize*WIRE_DISTANCE + 2*COMPONENT_DISTANCE
-                } else {
-                    cableLabelY = ys.horConnectorY + CONNECTOR_HEIGHT + WIRE_DISTANCE + 0.5*alphabetSize*WIRE_DISTANCE + COMPONENT_DISTANCE
-                }
-            } else if (renderVerticalConnector(variant, first, last, false)) {
-                cableLabelY = ys.vertConnectorY + CONNECTOR_WIDTH + 4*COMPONENT_DISTANCE
-            }
-            addTextNode(group, `${this.bombe.menuLetters[enigmaId+1]}-cable`, `cable_${enigmaId+1}`, "componentLabel", cableLabelX, cableLabelY)
+        // label the cable leading to the next enigma
+        // labels are horizontally centered based on the x property
+        let cableLabelY = this.calculateCableLabelY(variant, first, last, false)
+        let cableLabelX = 0
+        if (renderHorizontalConnector(variant, first, last, false)) {
+            cableLabelX = enigmaWidth(variant, first, last) + 0.5*HORIZONTAL_CONNECTOR_GAP
+        } else if (renderVerticalConnector(variant, first, last, false)) {
+            cableLabelX = enigmaWidth(variant, first, last) + 0.5*VERTICAL_CONNECTOR_GAP
+        }
+        addTextNode(parent, `${this.bombe.menuLetters[enigmaId+1]}`, `cable_${enigmaId+1}`, "cableLabel", cableLabelX, cableLabelY)
+    }
+
+    calculateCableLabelY(variant, first, last, inbound) {
+        let ys = yValues(variant)
+        if (renderHorizontalConnector(variant, first, last, inbound)) {
+            return TOP_MARGIN + ys.plugboardY + PLUGBOARD_HEIGHT
+        } else if (renderVerticalConnector(variant, first, last, inbound)) {
+            return TOP_MARGIN + ys.vertConnectorY + 3.75 * WIRE_DISTANCE
         }
     }
 
