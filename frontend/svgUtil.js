@@ -1,9 +1,12 @@
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-function addGroupNode (parent, id, translateX=0, translateY=0) {
+function addGroupNode (parent, id, translateX=0, translateY=0, props={}) {
     let groupNode = document.createElementNS(SVG_NS, "g");
     groupNode.id = id
     groupNode.setAttribute("transform", `translate(${translateX}, ${translateY})`)
+    for (let key in props) {
+        groupNode.setAttribute(key, props[key])
+    }
     parent.appendChild(groupNode)
     return groupNode
 }

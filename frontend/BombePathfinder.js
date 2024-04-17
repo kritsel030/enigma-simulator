@@ -22,21 +22,27 @@ class BombePathfinder {
         for (let i=0; i < this.bombe.menuLetters.length; i++) {
             this.activeLetterCableWires2[this.bombe.menuLetters[i]] = []
         }
-        this.activeLetterCableWires2["CYCLE_END"] = []
+        this.activeLetterCableWires2["#"] = []
         this.activeDiagonalBoardConnections = []
         this.activeCycleCableWireIds = []
     }
 
     // keyboard input is the same as plugboard input
-    processKeyboardInput(keyId) {
+    processKeyboardInput(enigmaIndex, keyId, variant) {
+//        console.log(`processKeyboardInput(${enigmaIndex}, ${keyId}, ${variant})`)
         let inboundPbInputContactId = keyId
+
         // encipher the pressed key on each enigma
         // using one enigma's out put as the next enigma's input
-        for (let i=0; i<this.bombe.scramblers.length; i++) {
-            let enigma = this.bombe.scramblers[i]
-            let enigmaWireStatus = this.enigmaWireStatuses[i]
+        let enigma = this.bombe.scramblers[enigmaIndex]
+
+//        for (let i=0; i<this.bombe.scramblers.length; i++) {
+//            let enigma = this.bombe.scramblers[i]
+        while (enigma != null) {
+            let enigmaWireStatus = this.enigmaWireStatuses[enigma.index]
             let encipherResult = enigma.encipherWireId(inboundPbInputContactId, false)
             let outboundPbOutputContactId = encipherResult[0]
+//            console.log(`enigmaIndex=${enigma.index}, inboundPbInputContactId=${inboundPbInputContactId}, outboundPbOutputContactId=${outboundPbOutputContactId})`)
 
             enigmaWireStatus.addEncipherPathViaPlugboard(
                 inboundPbInputContactId,
@@ -64,25 +70,48 @@ class BombePathfinder {
                 // new
                 this.activeLetterCableWires2[outputCableLetter].push(encipherResult[1].outbound_R3toPBWireId)
             } else {
-                // new
-                this.activeLetterCableWires2["CYCLE_END"].push(outputWireId)
+                // new)
+                this.activeLetterCableWires2["#"].push(outputWireId)
             }
 
             // prepare for next enigma in the list
-            inboundPbInputContactId = outboundPbOutputContactId
+            if (["variantA", "variantB"].includes(variant)) {
+                enigma = null
+            } else {
+                enigma = enigma.next
+                inboundPbInputContactId = outboundPbOutputContactId
+            }
+        }
+    }
+
+    completePath(variant) {
+        let segmentAdded = true
+        while (segmentAdded) {
+            segmentAdded = bombeRenderer.bombe.pathFinder.processNextPathRequest(variant)
         }
     }
 
     processNextPathRequest(variant) {
-//        console.log("processNextPathRequest")
+//        console.log(`processNextPathRequest(${variant})`)
         if (this.findAndProcessUnprocessedEnigmaInput()) {
             // console.log("unprocessed enigma input found and processed")
+            return true
+        }
+
+        if (this.findAndProcessUnprocessedEnigmaOutput()) {
+            // console.log("unprocessed enigma output found and processed")
             return true
         }
 
         // add the scrambler outputIds of the 'cycleEndEnigma' to the scrambler inputIds of the 'cycleStartEnigma'
         if (this.findAndProcessNewCycleFeedbackPath()) {
             // console.log("new cycle feedback wire to activate found")
+            return true
+        }
+
+        // add the scrambler inputIds of the 'cycleStartEnigma' to the unprocessed scrambler outputIds of the 'cycleEndEnigma'
+        if (this.findAndProcessNewCycleFeedforwardPath()) {
+            console.log("new cycle feedforward wire to activate found")
             return true
         }
 
@@ -93,17 +122,29 @@ class BombePathfinder {
             // so it is time to activate the CE diagonal board wire
             // and mark the 'e' contact for the enigma which has 'C' as its input as un unprocessed contact
             let wireInCableToActivate = this.findDiagonalBoardConnectionToActivate(false)
+//            console.log("find diagonal board feed-back: " + wireInCableToActivate)
             if (wireInCableToActivate != null) {
-                console.log("new feed-back DB conn to activate found: " + wireInCableToActivate)
+                // console.log("new feed-back DB conn to activate found: " + wireInCableToActivate)
                 let contactId = charToId(wireInCableToActivate[0].toUpperCase())
                 let cableLetter = wireInCableToActivate[1]
                 this.activeDiagonalBoardConnections.push(wireInCableToActivate.toUpperCase())
                 this.activeDiagonalBoardConnections.push(wireInCableToActivate[1].concat(wireInCableToActivate[0]).toUpperCase())
+                this.activeLetterCableWires2[cableLetter].push(contactId)
     //            console.log("cableLetter: " + cableLetter)
     //            console.log(this.bombe.scramblersByInputLetterMap)
-                let enigma = this.bombe.scramblersByInputLetterMap[cableLetter][0]
-                if (!this.enigmaWireStatuses[enigma.index].scramblerInputContactIds.includes(contactId)) {
-                    this.enigmaWireStatuses[enigma.index].unprocessedScramblerInputContactId = contactId
+                let leftEnigma = this.bombe.scramblersByOutputLetterMap[cableLetter]
+                if (leftEnigma != null) {
+                    // the previous enigma will receive another output
+                    if (!this.enigmaWireStatuses[leftEnigma.index].scramblerOutputContactIds.includes(contactId)) {
+                        this.enigmaWireStatuses[leftEnigma.index].unprocessedScramblerOutputContactId = contactId
+                    }
+                }
+                let rightEnigma = this.bombe.scramblersByInputLetterMap[cableLetter]
+                if (rightEnigma != null) {
+                    // the next enigma will receive another input
+                    if (!this.enigmaWireStatuses[rightEnigma.index].scramblerInputContactIds.includes(contactId)) {
+                        this.enigmaWireStatuses[rightEnigma.index].unprocessedScramblerInputContactId = contactId
+                    }
                 }
                 return true
             }
@@ -114,19 +155,28 @@ class BombePathfinder {
             // so it is time to activate the CE diagonal board wire
             // and mark the 'e' contact for the enigma which has 'C' as its input as un unprocessed contact
             wireInCableToActivate = this.findDiagonalBoardConnectionToActivate(true)
+//            console.log("find diagonal board feed-forward: " + wireInCableToActivate)
             if (wireInCableToActivate != null) {
-                console.log("new feed-forward DB conn to activate found: " + wireInCableToActivate)
+                // console.log("new feed-forward DB conn to activate found: " + wireInCableToActivate)
                 let contactId = charToId(wireInCableToActivate[0].toUpperCase())
                 let cableLetter = wireInCableToActivate[1]
                 this.activeDiagonalBoardConnections.push(wireInCableToActivate.toUpperCase())
                 this.activeDiagonalBoardConnections.push(wireInCableToActivate[1].concat(wireInCableToActivate[0]).toUpperCase())
+                this.activeLetterCableWires2[cableLetter].push(contactId)
     //            console.log("cableLetter: " + cableLetter)
     //            console.log(this.bombe.scramblersByInputLetterMap)
-                let enigma = this.bombe.scramblersByOutputLetterMap[cableLetter][0]
-                if (!enigma.lastInMenu) {
+                let leftEnigma = this.bombe.scramblersByOutputLetterMap[cableLetter]
+                if (leftEnigma != null) {
+                    // the previous enigma will receive another output
+                    if (!this.enigmaWireStatuses[leftEnigma.index].scramblerOutputContactIds.includes(contactId)) {
+                        this.enigmaWireStatuses[leftEnigma.index].unprocessedScramblerOutputContactId = contactId
+                    }
+                }
+                let rightEnigma = this.bombe.scramblersByInputLetterMap[cableLetter]
+                if (rightEnigma != null) {
                     // the next enigma will receive another input
-                    if (!this.enigmaWireStatuses[enigma.index+1].scramblerInputContactIds.includes(contactId)) {
-                        this.enigmaWireStatuses[enigma.index+1].unprocessedScramblerInputContactId = contactId
+                    if (!this.enigmaWireStatuses[rightEnigma.index].scramblerInputContactIds.includes(contactId)) {
+                        this.enigmaWireStatuses[rightEnigma.index].unprocessedScramblerInputContactId = contactId
                     }
                 }
                 return true
@@ -157,6 +207,28 @@ class BombePathfinder {
         return false
     }
 
+    // add the scrambler inputIds of the 'cycleStartEnigma' to the unprocessed scrambler outputIds of the 'cycleEndEnigma'
+    findAndProcessNewCycleFeedforwardPath() {
+//        console.log("findAndProcessNewCycleFeedbackPath")
+        let cycleStartEnigma = this.bombe.cycleStartEnigma
+        let cycleEndEnigma = this.bombe.cycleEndEnigma
+        let cycleStartEnigmaWireStatus = this.enigmaWireStatuses[cycleStartEnigma.index]
+        let cycleEndEnigmaWireStatus = this.enigmaWireStatuses[cycleEndEnigma.index]
+
+        for (let i=0; i < cycleStartEnigmaWireStatus.scramblerInputContactIds.length; i++){
+            let cycleStartOutputId = cycleStartEnigmaWireStatus.scramblerInputContactIds[i]
+            if (!this.activeCycleCableWireIds.includes(cycleStartOutputId)) {
+                if (! cycleEndEnigmaWireStatus.scramblerOutputContactIds.includes(cycleStartOutputId)) {
+                    cycleEndEnigmaWireStatus.unprocessedScramblerOutputContactId = cycleStartOutputId
+                }
+                this.activeCycleCableWireIds.push(cycleStartOutputId)
+                return true
+            }
+        }
+        return false
+    }
+
+
     findAndProcessUnprocessedEnigmaInput() {
 //        console.log("findAndProcessUnprocessedEnigmaInput")
         for (let i=0; i<this.enigmaWireStatuses.length; i++) {
@@ -165,6 +237,20 @@ class BombePathfinder {
                 let enigma = this.bombe.scramblers[i]
                 this.processEnigmaInput(enigma, enigmaWireStatus.unprocessedScramblerInputContactId)
                 enigmaWireStatus.unprocessedScramblerInputContactId = null
+                return true
+            }
+        }
+        return false
+    }
+
+    findAndProcessUnprocessedEnigmaOutput() {
+//        console.log("findAndProcessUnprocessedEnigmaOutput")
+        for (let i=0; i<this.enigmaWireStatuses.length; i++) {
+            let enigmaWireStatus = this.enigmaWireStatuses[i]
+            if (enigmaWireStatus.unprocessedScramblerOutputContactId != null) {
+                let enigma = this.bombe.scramblers[i]
+                this.processEnigmaOutput(enigma, enigmaWireStatus.unprocessedScramblerOutputContactId)
+                enigmaWireStatus.unprocessedScramblerOutputContactId = null
                 return true
             }
         }
@@ -199,14 +285,10 @@ class BombePathfinder {
 
                 let outputWireLetter = idToCharToken(scramblerOutputContactId).toLowerCase()
                 let outputCableLetter = enigma.outputLetter
-                if (enigma != this.bombe.cycleEndEnigma) {
-                    //old
-                    this.activeLetterCableWires.push(outputWireLetter.concat(outputCableLetter))
-                    // new
-                    this.activeLetterCableWires2[outputCableLetter].push(scramblerOutputContactId)
-                } else {
-                    this.activeLetterCableWires2["CYCLE_END"].push(scramblerOutputContactId)
-                }
+                //old
+                this.activeLetterCableWires.push(outputWireLetter.concat(outputCableLetter))
+                // new
+                this.activeLetterCableWires2[outputCableLetter].push(scramblerOutputContactId)
 
                 // prepare for next iteration
                 scramblerInputContactId = scramblerOutputContactId
@@ -217,6 +299,50 @@ class BombePathfinder {
         }
         return pathAdded
     }
+
+    // based on new output for a scrambler/enigma, calculate new activePaths for all preceeding scramblers/enigmas
+    processEnigmaOutput(startEnigma, startOutputId) {
+        let scramblerOutputContactId = startOutputId
+        let enigma = startEnigma
+        let pathAdded = false
+        while (enigma != null) {
+            let enigmaWireStatus = this.enigmaWireStatuses[enigma.index]
+            if (!enigmaWireStatus.scramblerOutputContactIds.includes(scramblerOutputContactId)) {
+                pathAdded = true
+                // false: do no step rotors
+                // true: skip plugboard
+                let encipherResult = enigma.encipherWireId(scramblerOutputContactId, false, true)
+                let scramblerInputContactId = encipherResult[0]
+                enigmaWireStatus.addEncipherPath(scramblerInputContactId, scramblerOutputContactId)
+
+                // mark active wires in letter cables
+                // 'cA' means that the 'c' wire in the 'A' cable is active
+                if (enigma.first) {
+                    let outputWireLetter = idToCharToken(scramblerOutputContactId).toLowerCase()
+                    let outputCableLetter = enigma.outputLetter
+                    // old
+                    this.activeLetterCableWires.push(outputWireLetter.concat(outputCableLetter))
+                    // new
+                    this.activeLetterCableWires2[outputCableLetter].push(scramblerOutputContactId)
+                }
+
+                let inputWireLetter = idToCharToken(scramblerInputContactId).toLowerCase()
+                let inputCableLetter = enigma.inputLetter
+                //old
+                this.activeLetterCableWires.push(inputWireLetter.concat(inputCableLetter))
+                // new
+                this.activeLetterCableWires2[inputCableLetter].push(scramblerInputContactId)
+
+                // prepare for next iteration
+                scramblerOutputContactId = scramblerInputContactId
+                enigma = enigma.previous
+            } else {
+                break
+            }
+        }
+        return pathAdded
+    }
+
 
     findForwardDiagonalBoardConnectionToActivate() {
         let availableConnections = ['AC', 'AE', 'AF', 'CA', 'CE', 'CF', 'EA', 'EC', 'EF', 'FA', 'FC', 'FE']

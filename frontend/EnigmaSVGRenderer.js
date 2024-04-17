@@ -41,8 +41,8 @@ class EnigmaSVGRenderer {
 
         // create the svg element
         let svg = document.createElementNS(SVG_NS, "svg");
-        svg.setAttribute("width", "1000");
-        svg.setAttribute("height", "600");
+        svg.setAttribute("width", "850");
+        svg.setAttribute("height", "500");
 //        svg.style.cssText = 'border: 1px solid black'
         svg.id = "enigma"
         div.appendChild(svg)

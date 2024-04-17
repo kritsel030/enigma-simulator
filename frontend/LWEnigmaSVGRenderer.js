@@ -8,7 +8,7 @@ class LWEnigmaSVGRenderer {
         this.drum2Renderer = new LWDrumSVGRenderer(this.enigma, 2)
         this.drum3Renderer = new LWDrumSVGRenderer(this.enigma, 3)
         this.plugboardRenderer = new LWPlugboardSVGRenderer(this.enigma.plugboard, this.enigma.getAlphabetSize())
-        this.keyAndLightboardRenderer = new LWKeyAndLightboardSVGRenderer(enigma.getAlphabetSize())
+        this.keyAndLightboardRenderer = new LWKeyAndLightboardSVGRenderer(enigma.index, enigma.getAlphabetSize())
         this.bombeRenderer = bombeRenderer
         this.bombe = this.bombeRenderer.bombe
         this.animationDisabled = false
@@ -17,17 +17,22 @@ class LWEnigmaSVGRenderer {
     drawBackground(parent, enigmaId, variant, first, last, x, y) {
         let group = addGroupNode (parent, enigmaId, x, y)
         let ys = yValues(variant)
+
+        // reflector
         if (renderReflector(variant)) {
             this.reflectorRenderer.drawBackground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
         }
 
-        // draw plugboard(s)
+        // plugboard
         if (renderPlugboard(variant, first, last, true)) {
             this.plugboardRenderer.drawBackground(group, variant, plugboardXOffset(variant, first, last, true), ys.plugboardY )
         }
         if (renderPlugboard(variant, first, last, false)) {
             this.plugboardRenderer.drawBackground(group, variant, plugboardXOffset(variant, first, last, false), ys.plugboardY )
         }
+
+        // label for the cable leading into / out of the enigma
+        this.drawCableLabels(group, enigmaId, variant, first, last)
     }
 
     drawForeground(parent, enigmaId, variant, first, last, x, y) {
@@ -39,9 +44,7 @@ class LWEnigmaSVGRenderer {
         // label underneath the enigma
         this.drawEnigmaLabel(group, enigmaId, variant, first, last)
 
-        // label for the cable leading into / out of the enigma
-        this.drawCableLabels(group, enigmaId, variant, first, last)
-
+        // reflector
         if (renderReflector(variant)) {
             this.reflectorRenderer.drawForeground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
         }

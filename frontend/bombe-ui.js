@@ -24,6 +24,20 @@ bombe.setIndicatorDrumPosition(3, "B")
 
 let bombeRenderer = new BombeSVGRenderer(bombe)
 
+let variants = [
+    "variantA",
+    "variantB",
+    "variantC",
+    "variantD",
+    "variantE",
+    "variantF",
+    "variantG",
+    "variantH",
+    "scramblerBasic",
+    "scrambler_multi_line_scanning",
+    "scrambler_full_menu",
+    "scrambler_diagonal_board"]
+
 
 //////////////////////////////////////////////////////////////////////////
 // init
@@ -40,15 +54,80 @@ function initFormFields() {
 //////////////////////////////////////////////////////////////////////////
 // UI input handlers
 
+function handleFirstVariant(event) {
+    console.log("handleFirstVariant")
+    let newVariant = variants[0]
+    bombeRenderer.variant = newVariant
+    document.getElementById("variant").value = newVariant
+    bombeRenderer.redrawBombe("handleFirstVariant")
+}
+
+function handlePreviousVariant(event) {
+    console.log("handlePreviousVariant")
+    let currentVariantIndex = variants.indexOf(bombeRenderer.variant)
+    if (currentVariantIndex != 0) {
+        let newVariant = variants[currentVariantIndex-1]
+        bombeRenderer.variant = newVariant
+        document.getElementById("variant").value = newVariant
+    }
+    bombeRenderer.redrawBombe("handlePreviousVariant")
+}
+
 function handleVariant(event) {
     //console.log("handleVariant: " + event.target.value)
+    console.log(event.target.value)
     bombeRenderer.variant = event.target.value
     bombeRenderer.redrawBombe("handleVariant")
 }
 
-function handleReset(event) {
+function handleNextVariant(event) {
+    console.log("handleNextVariant")
+    let currentVariantIndex = variants.indexOf(bombeRenderer.variant)
+    if (currentVariantIndex < variants.length-1) {
+        let newVariant = variants[currentVariantIndex+1]
+        bombeRenderer.variant = newVariant
+        document.getElementById("variant").value = newVariant
+    }
+    bombeRenderer.redrawBombe("handleNextVariant")
+}
+
+function handleLastVariant(event) {
+    console.log("handleLastVariant")
+    let newVariant = variants[variants.length-1]
+    bombeRenderer.variant = newVariant
+    document.getElementById("variant").value = newVariant
+    bombeRenderer.redrawBombe("handleLastVariant")
+}
+
+// ***************************************************************************************
+// electrical path controls
+function handleClearPath(event) {
     bombeRenderer.reset()
-    bombeRenderer.redrawBombe("handleReset")
+    bombeRenderer.redrawBombe("handleClearPath")
+}
+
+function handleNextPathSegment(event) {
+    bombeRenderer.bombe.pathFinder.processNextPathRequest(bombeRenderer.variant)
+    bombeRenderer.redrawBombe("next path segment")
+}
+
+function handleCompletePath(event) {
+//    let pathAdded = true
+//    while (pathAdded) {
+//        pathAdded = bombeRenderer.bombe.pathFinder.processNextPathRequest(bombeRenderer.variant)
+//    }
+    bombeRenderer.bombe.pathFinder.completePath(bombeRenderer.variant)
+    bombeRenderer.redrawBombe("complete the path")
+}
+
+// auto-complete the electrical path when the user selects an input wire
+function handleAutoCompletePath(event) {
+    bombeRenderer.autoCompletePathOnInputActivation = event.target.checked
+}
+
+// auto-activate the d-wire when the user changes the start position of a drum
+function handleAutoActivateInput(event) {
+    bombeRenderer.autoActivateInputOnRotorPositionChange = event.target.checked
 }
 
 //////////////////////////////////////////////////////////////////////////

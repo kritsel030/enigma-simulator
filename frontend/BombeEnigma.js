@@ -9,6 +9,7 @@ class BombeEnigma extends Enigma {
         this.lastInMenu = lastInMenu
         this.lastInCycle = lastInCycle
         this.next = null
+        this.previous = null
     }
 
     isLast(variant) {

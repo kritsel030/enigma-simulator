@@ -1,6 +1,7 @@
 class LWKeyAndLightboardSVGRenderer {
 
-    constructor(alphabetSize = 26) {
+    constructor(enigmaIndex, alphabetSize = 26) {
+        this.enigmaIndex = enigmaIndex
         this.alphabetSize = alphabetSize
     }
 
@@ -34,7 +35,8 @@ class LWKeyAndLightboardSVGRenderer {
                 // keyGroup is the group of SVG elements which together form a single key
                 // the 'keyGroup' class is used in the onClick event handler to determine which element
                 // with this class was clicked
-                let keyGroup = addGroupNode (group, `${group.id}_key_${letter}`, 0, 0)
+                let props = {"keyId" : p, "keyLetter": letter, "enigmaIndex": this.enigmaIndex}
+                let keyGroup = addGroupNode (group, `${group.id}_key_${letter}`, 0, 0, props)
                 keyGroup.setAttribute("class", "keyGroup")
 
                 // key is pressed

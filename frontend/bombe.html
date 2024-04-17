@@ -25,11 +25,22 @@
     <script src="bombe-display-logic.js"></script>
     <style>
 
-        /* LW reflector */
+        /* basics ***************************************************/
+        body {
+            font-family: arial;
+        }
+        h1 {
+            line-height: 50px;
+            background: black;
+            color: rgb(255, 187, 153);
+        }
+
+        /* reflector ************************************************/
         path.reflectorBG {
           fill: rgb(237,237,237)
         }
 
+        /* drum ****************************************************/
         /* LW enigma drum */
         circle.drumOuter {
             fill: black
@@ -93,7 +104,7 @@
             font: bold 12px courier
         }
 
-        /* indicator drum */
+        /* indicator drum **********************************************/
         circle.drumOuter_indicator {
             fill: rgb(240, 230, 140)
         }
@@ -104,24 +115,25 @@
             fill: black
         }
 
-        /* bombe connector */
+        /* bombe connector *********************************************/
         path.connector {
           fill: rgb(47,79,79);
           stroke: black
         }
 
+        /* cable between connector, drums and reflector ****************/
         path.cable {
           fill: none;
           stroke: rgb(105,105,105);
           stroke-width: 10px;
         }
 
-        /* LW enigma plugboard */
+        /* LW enigma plugboard ******************************************/
         path.plugboardBG {
           fill: rgb(237,237,237)
         }
 
-        /* LW key- and lightboard */
+        /* LW key- and lightboard ***************************************/
         circle.key {
           fill: rgb(80,80,80);
           cursor: pointer
@@ -263,6 +275,23 @@
             #fill: rgb(255, 226, 204);
             fill: rgb(255, 187, 153);
             text-anchor: middle;
+        }
+
+        /* fieldsets *******************************************/
+        fieldset {
+            background-color: rgb(255, 226, 204);
+            border-radius: 8px;
+            box-shadow: 4px 4px 4px #666;
+        }
+
+        legend {
+          background-color: black;
+          color: rgb(255, 187, 153);
+          font-weight: bold;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 4px;
+          box-shadow: 2px 2px 2px #666;
         }
         
     </style>
@@ -435,6 +464,69 @@ If we would have guessed the correct rotor settings and plugboard connections, w
 <p/>
 Start with <span style="font-family:courier">A</span> on the first Enigma.
 <p/>
+
+
+<table style="border-spacing:20">
+    <tr>
+        <td valign="top">
+            <fieldset>
+                <legend>visual variant</legend>
+                <p/>
+
+                <button onclick="handleFirstVariant(event)"><b>|&nbsp;&lt;&lt;</b>&nbsp;</button>
+                <button onclick="handlePreviousVariant(event)"><b>&lt;</b>&nbsp;</button>
+                &nbsp;
+                <select id="variant" style="width:250" onchange="handleVariant(event);">
+                    <option value="variantA">A: Enigmas + individual keyboards</option>
+                    <option value="variantB">B: Enigmas + individual keyboards with integrated drums</option>
+                    <option value="variantC">C: Enigmas + connected keyboards</option>
+                    <option value="variantD">D: Enigmas without middle keyboards </option>
+                    <option value="variantE">E: Enigmas without middle plugboards - 1 </option>
+                    <option value="variantF">F: Enigmas without middle plugboards - 2</option>
+                    <option value="variantG">G: Enigmas without any plugboards or keyboards </option>
+                    <option value="variantH">H: almost there... </option>
+                    <option value="scramblerBasic">Milestone: schematic bombe </option>
+                    <option value="scrambler_multi_line_scanning">Multi-line scanning</option>
+                    <option value="scrambler_full_menu">Full menu</option>
+                    <option value="scrambler_diagonal_board">Diagonal board</option>
+            </select>
+                &nbsp;
+                <button onclick="handleNextVariant(event)">&nbsp;<b>&gt;</b></button>
+                <button onclick="handleLastVariant(event)">&nbsp;<b>&gt;&gt;&nbsp;|</b></button>
+
+            </fieldset>
+        </td>
+        <td valign="top">
+            <fieldset>
+                <legend>electrical path controls</legend>
+                <p/>
+                <table>
+                    <tr>
+                        <td valign="top">
+                            <button id="reset" name="reset" onclick="handleClearPath(event);">clear</button>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <button id="nextPathSegment" name="nextPathSegment" onclick="handleNextPathSegment(event)">&#9654;</button>
+                            &nbsp;
+                            <button id="completePath" name="completePath" onclick="handleCompletePath(event)">&#9654;&#9654;<b>|</b></button>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </td>
+                        <td valign="top">
+                            <label><input type='checkbox' onchange='handleAutoCompletePath(event);'> Auto-complete path when activating input</label>
+                            <br/>
+                            <label>
+                                <input type='checkbox' onchange='handleAutoActivateInput(event);'>
+                                Auto-activate <input type='inputContactId' value="c" size="1" style="width: 15"> input when changing rotor position
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+
+
+            </fieldset>
+
+        </td>
+    </tr>
+</table>
 
 <div id="bombeDiv">
 </div>

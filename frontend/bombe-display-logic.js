@@ -53,7 +53,7 @@ const DRUM_ENIGMA_HALF_WIDTH_WITH_HORIZONTAL_CONNECTOR = COMPONENT_SIZE + 0.5*CO
 const DRUM_ENIGMA_HALF_WIDTH_WITH_VERTICAL_CONNECTOR = CONNECTOR_HEIGHT + COMPONENT_DISTANCE + DRUM_RADIUS
 
 // gap between two enigma's which have a horizontal connector on their joining sides
-const HORIZONTAL_CONNECTOR_GAP = 3 * COMPONENT_DISTANCE
+const HORIZONTAL_CONNECTOR_GAP = 6 * COMPONENT_DISTANCE
 // gap between two enigma's which have a vertical connector on their joining sides
 const VERTICAL_CONNECTOR_GAP = 9 * COMPONENT_DISTANCE
 
@@ -126,7 +126,7 @@ function keyOrLightboardProperties(variant, first, last, inbound) {
     
     if (inbound) {
         if (first) props.variant="clickableKeyboard"
-        else if ( ["variantA", "variantB"].includes(variant)) props.variant="keyboard"
+        else if ( ["variantA", "variantB"].includes(variant)) props.variant="clickableKeyboard"
         else if (["variantC"].includes(variant)) {
             props.hidden=true
             props.positionShifted = true
@@ -164,11 +164,6 @@ function renderOutputToInputWires(variant) {
 function renderDiagonalBoard (variant) {
     return ["scrambler_diagonal_board"].includes(variant)
 }
-
-function renderProceedWithPathButtons(variant) {
-    return ["scrambler_multi_line_scanning", "scrambler_full_menu", "scrambler_diagonal_board"].includes(variant)
-}
-
 
 function bombeEntryOrExit(first, last, inbound) {
     return (first && inbound) || (last && !inbound)
@@ -247,7 +242,7 @@ function drumXOffset(variant, first, last, inbound, enigmaId) {
     if (renderDrumsSeparate(variant)) {
         result = inbound ? 0 : DRUM_WIDTH + DRUM_DISTANCE
     } else if (inbound) {
-        if (renderHorizontalConnector(variant, first, last, true) )
+        if (renderHorizontalConnector(variant, first, last, inbound) )
             result = DRUM_RADIUS + 0.5*COMPONENT_DISTANCE
         else
             result = CONNECTOR_HEIGHT + COMPONENT_DISTANCE

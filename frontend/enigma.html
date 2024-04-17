@@ -20,28 +20,24 @@
     <script src="svgUtil.js"></script>
     <style>
 
-        text.componentLabel {
-          font: bold 14px arial;
+        /* basics ***************************************************/
+        body {
+            font-family: arial;
+        }
+        h1 {
+            line-height: 50px;
+            background: black;
+            color: rgb(255, 187, 153);
         }
 
+        /* reflector **********************************************/
         path.reflectorBG {
           fill: rgb(255, 255, 204)
         }
 
+        /* rotor **************************************************/
         path.rotorBG {
           fill: rgb(255, 255, 204)
-        }
-
-        path.border {
-          fill: none;
-          stroke: #000;
-          stroke-width: 1.5px;
-        }
-
-        path.wire {
-          fill: none;
-          stroke: rgb(169,169,169);
-          stroke-width: 1px;
         }
 
         path.outerRing {
@@ -54,10 +50,26 @@
           stroke-width: 1.5px;
         }
 
+        text.rotorLabel {
+          font: bold 12px arial;
+        }
+
+        path.ringSettingMarker {
+            fill: none;
+            stroke: red;
+            stroke-width: 2.5px
+        }
+
+        path.notch {
+            fill: black;
+        }
+
+        /* plugboard***********************************************/
         path.plugboardBG {
           fill: rgb(255, 255, 204)
         }
 
+        /* key- and lampboard ************************************/
         circle.key {
           fill: rgb(80,80,80);
           cursor: pointer
@@ -105,28 +117,33 @@
             cursor: pointer
         }
 
-        text.connectorLabel {
-          font: bold 6px arial;
-        }
-
-        text.rotorLabel {
-          font: bold 12px arial;
-        }
-
-        path.ringSettingMarker {
-            fill: none;
-            stroke: red;
-            stroke-width: 2.5px
-        }
-
-        path.notch {
-            fill: black;
-        }
-
+        /* activated path *****************************************/
         path.encipherPath {
           fill: none;
           stroke: rgb(144, 12, 63 );
           stroke-width: 3px;
+        }
+
+        /* generics ***********************************************/
+        path.border {
+          fill: none;
+          stroke: #000;
+          stroke-width: 1.5px;
+        }
+
+        path.wire {
+          fill: none;
+          stroke: rgb(169,169,169);
+          stroke-width: 1px;
+        }
+
+        /* labels *************************************************/
+        text.componentLabel {
+          font: bold 14px arial;
+        }
+
+        text.connectorLabel {
+          font: bold 6px arial;
         }
 
         /* div layout *********************************************/
@@ -137,7 +154,25 @@
             float:left;
         }
 
-        .typewriter {
+        /* fieldsets *******************************************/
+        fieldset {
+            background-color: rgb(255, 226, 204);
+            border-radius: 8px;
+            box-shadow: 4px 4px 4px #666;
+        }
+
+        legend {
+          background-color: black;
+          color: rgb(255, 187, 153);
+          font-weight: bold;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 4px;
+          box-shadow: 2px 2px 2px #666;
+        }
+
+        /* miscellaneous *******************************************/
+        input.typewriter {
             font-family:'Courier New';
             font-size: large;
         }
@@ -158,128 +193,119 @@
 <!--    your browser does not support drawings-->
 <!--</canvas>-->
 
-<h1>Enigma (SVG version)</h1>
+<h1>&nbsp;Enigma emulator</h1>
 
-    <fieldset>
-        <legend>Emulator properties</legend>
-        <p/>
+    <table style="border-spacing:20">
+        <tr>
+            <td >
+                <fieldset>
+                    <legend>Emulator properties</legend>
+                    <p/>
 
-        <label><input type='checkbox' onchange='handleDemoAlphabet(event);'>Use demo alphabet (6 letters)</label>
-        <p/>
+                    <label><input type='checkbox' onchange='handleDemoAlphabet(event);'>use demo alphabet (6 letters)</label>
+                    <p/>
 
-        <label><input type='checkbox' onchange='handleDisableRotorStepping(event);'>Disable rotor stepping</label>
-        <p/>
+                    <label><input type='checkbox' onchange='handleDisableRotorStepping(event);'>disable rotor stepping</label>
+                    <p/>
 
-        <label><input type='checkbox' onchange='handleSkipAnimation(event);'>Skip animation</label>
-    </fieldset>
-    <p/>
+                    <label><input type='checkbox' onchange='handleSkipAnimation(event);'>skip animation</label>
+                </fieldset>
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;<br/>
+                <div style="border:3px solid black; border-radius: 8px; padding:10px">
+                    <table >
+                        <tr>
+                            <th style="width: 110px"></th>
+                            <th style="width: 140px"></th>
+                            <th style="width: 110px"></th>
+                            <th style="width: 110px"></th>
+                            <th style="width: 110px"></th>
+                            <th style="width: 250px"></th>
+                        </tr>
+                        <tr>
+                            <td><b>type</b></td>
+                            <td></td>
+                            <td> <select name="rotor1Type" id="rotor1Type" onchange="handleRotor1Type(event);">
+                                <option value="I">I</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                                <option value="V">V</option>
+                                <option value="D-I">demo I</option>
+                                <option value="D-II">demo II</option>
+                                <option value="D-III">demo III</option>
+                            </select></td>
 
-<!--    <label><input type='checkbox' onchange='handleDisableRotorStepping(event);'>Switch between real 26 and demo 6 letter keyboard</label>-->
-    <!--    <p/>-->
-        <table>
-<!--            <tr>-->
-<!--                <th style="width: 100px"></th>-->
-<!--                <th style="width: 110px"></th>-->
-<!--                <th style="width: 110px; text-align: left">rotor 1</th>-->
-<!--                <th style="width: 110px; text-align: left">rotor 2</th>-->
-<!--                <th style="width: 110px; text-align: left">rotor 3</th>-->
-<!--                <th></th>-->
-<!--            </tr>-->
-            <tr>
-                <th style="width: 100px"></th>
-                <th style="width: 110px"></th>
-                <th style="width: 110px"></th>
-                <th style="width: 110px"></th>
-                <th style="width: 110px"></th>
-                <th style="width: 110px"></th>
-                <th style="width: 110px"></th>
-            </tr>
-            <tr>
-                <td><b>type</b></td>
-                <td/>
-                <td> <select name="rotor1Type" id="rotor1Type" onchange="handleRotor1Type(event);">
-                    <option value="I">I</option>
-                    <option value="II">II</option>
-                    <option value="III">III</option>
-                    <option value="IV">IV</option>
-                    <option value="V">V</option>
-                    <option value="D-I">demo I</option>
-                    <option value="D-II">demo II</option>
-                    <option value="D-III">demo III</option>
-                </select></td>
+                            <td> <select name="rotor2Type" id="rotor2Type" onchange="handleRotor2Type(event);">
+                                <option value="I">I</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                                <option value="V">V</option>
+                                <option value="D-I">demo I</option>
+                                <option value="D-II">demo II</option>
+                                <option value="D-III">demo III</option>
+                            </select></td>
 
-                <td> <select name="rotor2Type" id="rotor2Type" onchange="handleRotor2Type(event);">
-                    <option value="I">I</option>
-                    <option value="II">II</option>
-                    <option value="III">III</option>
-                    <option value="IV">IV</option>
-                    <option value="V">V</option>
-                    <option value="D-I">demo I</option>
-                    <option value="D-II">demo II</option>
-                    <option value="D-III">demo III</option>
-                </select></td>
+                            <td> <select name="rotor3Type" id="rotor3Type" onchange="handleRotor3Type(event);">
+                                <option value="I">I</option>
+                                <option value="II">II</option>
+                                <option value="III">III</option>
+                                <option value="IV">IV</option>
+                                <option value="V">V</option>
+                                <option value="D-I">demo I</option>
+                                <option value="D-II">demo II</option>
+                                <option value="D-III">demo III</option>
+                            </select></td>
+                            <td> <input name="plugboard" id="plugboard" size="30"></input></td>
+                        </tr>
 
-                <td> <select name="rotor3Type" id="rotor3Type" onchange="handleRotor3Type(event);">
-                    <option value="I">I</option>
-                    <option value="II">II</option>
-                    <option value="III">III</option>
-                    <option value="IV">IV</option>
-                    <option value="V">V</option>
-                    <option value="D-I">demo I</option>
-                    <option value="D-II">demo II</option>
-                    <option value="D-III">demo III</option>
-                </select></td>
-                <td> <input name="plugboard" id="plugboard" size="30"></input></td>
-                <td></td>
-            </tr>
+                        <tr>
+                            <td><b>ring setting</b></td>
+                            <td/>
+                            <td> <input name="rotor1RingSetting" id="rotor1RingSetting" onchange="handleRotor1RingSetting(event);" size="1"></td>
+                            <td> <input name="rotor2RingSetting" id="rotor2RingSetting" onchange="handleRotor2RingSetting(event);" size="2"></td>
+                            <td> <input name="rotor3RingSetting" id="rotor3RingSetting" onchange="handleRotor3RingSetting(event);" size="1"></td>
+                            <td></td>
+                        </tr>
 
-            <tr>
-                <td><b>ring setting</b></td>
-                <td/>
-                <td> <input name="rotor1RingSetting" id="rotor1RingSetting" onchange="handleRotor1RingSetting(event);" size="1"></td>
-                <td> <input name="rotor2RingSetting" id="rotor2RingSetting" onchange="handleRotor2RingSetting(event);" size="2"></td>
-                <td> <input name="rotor3RingSetting" id="rotor3RingSetting" onchange="handleRotor3RingSetting(event);" size="1"></td>
-                <td></td>
-                <td></td>
-            </tr>
+                        <tr>
+                            <td valign="top"><b>start position</b></td>
+                            <td valign="top"> <button name="resetToStartPosition" onclick="resetToStartPosition(event);" style="width:110px">reset rotors to start position</button></td>
+                            <td valign="top"> <input name="rotor1StartPosition" id="rotor1StartPosition" onchange="handleRotor1StartPosition(event);" size="1"></td>
+                            <td valign="top"> <input name="rotor2StartPosition" id="rotor2StartPosition" onchange="handleRotor2StartPosition(event);" size="1"></td>
+                            <td valign="top"> <input name="rotor3StartPosition" id="rotor3StartPosition" onchange="handleRotor3StartPosition(event);" size="1"></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <p/>
+                    <div id="enigmaDiv"></div>
+                </div>
+            </td>
 
-            <tr>
-                <td><b>start position</b></td>
-                <td/>
-                <td> <input name="rotor1StartPosition" id="rotor1StartPosition" onchange="handleRotor1StartPosition(event);" size="1"></td>
-                <td> <input name="rotor2StartPosition" id="rotor2StartPosition" onchange="handleRotor2StartPosition(event);" size="1"></td>
-                <td> <input name="rotor3StartPosition" id="rotor3StartPosition" onchange="handleRotor3StartPosition(event);" size="1"></td>
-                <td></td>
-                <td> <button name="resetToStartPosition" onclick="resetToStartPosition(event);">Reset rotors to start position</button></td>
-            </tr>
-        </table>
+            <td valign="top" >
+                <fieldset>
+                    <legend>input and output</legend>
+                    <p/>
+                    input<br/>
+                    <input id="input" size="20" class="typewriter" disabled></input>
+                    <p/>
+                    output</br>
+                    <input id="output" size="20" class="typewriter" disabled></input>
 
-<div id="wrapper" class="wrapper">
-    <div id="enigmaDiv" class="float"></div>
-    <div id="textareas" class="float">
-        <p/>
-        <fieldset>
-            <legend>input</legend>
-            <input id="input" size="30" class="typewriter"></input>
-        </fieldset>
-        <p/>
+                    <button onclick='document.getElementById("clipboard").value = document.getElementById("output").value'>copy to clipboard</button>
+                    <p/>&nbsp;
+                    <p/>
+                    clipboard<br/>
+                    <input id="clipboard" size="20" class="typewriter" disabled></input>
+                </fieldset>
+            </td>
+        </tr>
+    </table>
 
-        <fieldset>
-            <legend>output</legend>
-            <input id="output" size="30" class="typewriter"></input>
-            <p/>
-            <button onclick='document.getElementById("clipboard").value = document.getElementById("output").value'>copy to clipboard</button>
-        </fieldset>
-        <p/>
-        <fieldset>
-            <legend>clipboard</legend>
-            <input id="clipboard" size="30" class="typewriter"></input>
-        </fieldset>
-    </div>
-</div>
-
-<!--<script>-->
-<!--    initFormFields()-->
-<!--</script>-->
 </body>
 </html>

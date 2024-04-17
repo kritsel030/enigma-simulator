@@ -33,8 +33,9 @@ class BombePathSVGRenderer {
                 if (menuLetter != this.bombe.cycleLetter) {
                     if (this.bombe.pathFinder.activeLetterCableWires2[menuLetter].length > 0) {
                         // find the index of the enigma which has this letter as its output letter
-                        let enigma = this.bombe.scramblersByOutputLetterMap[menuLetter][0]
+                        let enigma = this.bombe.scramblersByOutputLetterMap[menuLetter]
                         let enigmaIndex = enigma.index
+                        // the variant controls the number of enigmas shown (full menu or only the cycle part)
                         if (enigmaIndex < numberOfScramblersToDisplay(variant, this.bombe.menuLetters)) {
                             if (renderVerticalConnector(variant, false, false, false)) {
                                 let x =
@@ -45,7 +46,7 @@ class BombePathSVGRenderer {
                                     let wireId = this.bombe.pathFinder.activeLetterCableWires2[menuLetter][a]
                                     let y = TOP_MARGIN + ys.vertConnectorY + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE
 //                                    let h = enigma.isLast(variant) ? (variant=="scrambler_diagonal_board" ? WIRE_DISTANCE : 0.5*VERTICAL_CONNECTOR_GAP) : VERTICAL_CONNECTOR_GAP
-                                    let h = enigma.isLast(variant) ? WIRE_DISTANCE : VERTICAL_CONNECTOR_GAP
+                                    let h = enigma.isLast(variant) ? 2*WIRE_DISTANCE + wireId*WIRE_DISTANCE : VERTICAL_CONNECTOR_GAP
                                     let path = `M ${x} ${y} h ${h}`
                                     addPathNode (parent, path, `${parent.id}_${menuLetter}_${wireId}`, "electricalPath")
                                 }
@@ -56,7 +57,7 @@ class BombePathSVGRenderer {
             }
 
             // output cable of the enigma at the end of the cycle
-            if (this.bombe.pathFinder.activeLetterCableWires2["CYCLE_END"].length > 0) {
+            if (this.bombe.pathFinder.activeLetterCableWires2["#"].length > 0) {
                 // find the index of the enigma which has this letter as its output letter
                 let enigma = this.bombe.cycleEndEnigma
                 let enigmaIndex = enigma.index
@@ -65,8 +66,9 @@ class BombePathSVGRenderer {
                         scramblerAbsoluteXOffset(variant, enigmaIndex, this.bombe.menuLetters) +
                         vertConnectorXOffset(variant, false, false, false, enigmaIndex) +
                         CONNECTOR_HEIGHT
-                    for (let a=0; a < this.bombe.pathFinder.activeLetterCableWires2["CYCLE_END"].length; a++) {
-                        let wireId = this.bombe.pathFinder.activeLetterCableWires2["CYCLE_END"][a]
+
+                    for (let a=0; a < this.bombe.pathFinder.activeLetterCableWires2["#"].length; a++) {
+                        let wireId = this.bombe.pathFinder.activeLetterCableWires2["#"][a]
                         let y = TOP_MARGIN + ys.vertConnectorY + 0.5*WIRE_DISTANCE + wireId*WIRE_DISTANCE
                         let h = this.bombe.cycleEndEnigma.isLast(variant) ? 0.5*VERTICAL_CONNECTOR_GAP : VERTICAL_CONNECTOR_GAP
                         if (variant == "scrambler_multi_line_scanning") {

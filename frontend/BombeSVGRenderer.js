@@ -5,6 +5,8 @@ class BombeSVGRenderer {
     constructor(bombe) {    
         // this.variant = "scrambler_multi_line_scanning"
         this.variant = "variantA"
+        this.autoCompletePathOnInputActivation = false
+        this.autoActivateInputOnRotorPositionChange = false
         this.bombe = bombe
         this.lwEnigmaRenderers = []
 
@@ -67,6 +69,13 @@ class BombeSVGRenderer {
             let leftX = LEFT_MARGIN + vertConnectorXOffset(this.variant, true, false, true) - (alphabetSize+3) * WIRE_DISTANCE - 4*WIRE_DISTANCE
             let dbWidth = this.lwEnigmaRenderers.length * enigmaWidth(this.variant, false, false) + (this.lwEnigmaRenderers.length-1)*VERTICAL_CONNECTOR_GAP + 2*(alphabetSize+3)*WIRE_DISTANCE + 4*WIRE_DISTANCE
             addRectangleNode(parent, "diagonalBoard", "diagonalBoard", leftX, ys.diagonalBoard, dbWidth, DIAGONAL_BOARD_HEIGHT + WIRE_DISTANCE, 2*UNIT, 2*UNIT)
+        }
+
+        // probe
+        if (renderOutputToInputWires(this.variant)) {
+            let probeX = LEFT_MARGIN - 4*WIRE_DISTANCE
+            let probeY = TOP_MARGIN + ys.vertConnectorY - 0.5*WIRE_DISTANCE
+            addRectangleNode (parent, "probe", "probe", probeX, probeY, 2*WIRE_DISTANCE, COMPONENT_SIZE + 2*WIRE_DISTANCE, UNIT, UNIT)
         }
 
         // scramblers/engimas
@@ -170,13 +179,6 @@ class BombeSVGRenderer {
             this.drawDrumButtons(drumNo, drumButtonsGroup, this.variant)
         }
 
-        // probe
-        if (renderOutputToInputWires(this.variant)) {
-            let probeX = LEFT_MARGIN - 4*WIRE_DISTANCE
-            let probeY = TOP_MARGIN + ys.vertConnectorY - 0.5*WIRE_DISTANCE
-            addRectangleNode (svg, "probe", "probe", probeX, probeY, 2*WIRE_DISTANCE, COMPONENT_SIZE + 2*WIRE_DISTANCE, UNIT, UNIT)
-        }
-
         // scramblers/engimas
         let noOfScramblers = numberOfScramblersToDisplay(this.variant, this.bombe.menuLetters)
         for (let i=0; i<noOfScramblers; i++) {
@@ -185,20 +187,6 @@ class BombeSVGRenderer {
             let x = scramblerAbsoluteXOffset(this.variant, i, this.bombe.menuLetters)
             this.lwEnigmaRenderers[i].drawForeground(svg, i, this.variant, first, last, x, TOP_MARGIN)
         }
-
-        // proceed with path buttons
-        if (renderProceedWithPathButtons(this.variant)) {
-            let nextButton = addGroupNode(svg, "nextButton")
-            nextButton.addEventListener('click', this.handleNextPathSegmentClick.bind(this), false)
-            addRectangleNode (nextButton, `${nextButton.id}_rect`, "pathButton", LEFT_MARGIN+100, TOP_MARGIN, 20, 20)
-            addTextNode(nextButton, "&#x25B6;", `${nextButton.id}_text`, "pathButton", LEFT_MARGIN+100+10, TOP_MARGIN+10)
-
-            let completePathButton = addGroupNode(svg, "completePathButton")
-            completePathButton.addEventListener('click', this.handleCompletePathClick.bind(this), false)
-            addRectangleNode (completePathButton, `${completePathButton.id}_rect`, "pathButton", LEFT_MARGIN+100+20+10, TOP_MARGIN, 40, 20)
-            addTextNode(completePathButton, "&#x25B6;&#x25B6;|", `${completePathButton.id}_text`, "pathButton", LEFT_MARGIN+100+20+10+20, TOP_MARGIN+10)
-        }
-
     }
 
     drawDrumButtons(drumNo, group, variant) {
@@ -226,15 +214,15 @@ class BombeSVGRenderer {
         let clickedKeyGroup = event.target.closest('.keyGroup')
         if (!clickedKeyGroup) return;
 
-        // the last character of the keyGroup id is the letter on the key
-        let pressedLetter = clickedKeyGroup.id.slice(-1)
-        let pressedKeyId = charToId(pressedLetter)
-        this.pressedKeyId = pressedKeyId
-        // console.log(`key ${pressedLetter} got clicked`)
+        this.pressedKeyId = Number(clickedKeyGroup.getAttribute("keyId"))
+        let pressedLetter = clickedKeyGroup.getAttribute("keyLetter")
+        let enigmaIndex = clickedKeyGroup.getAttribute("enigmaIndex")
 
-        this.reset()
-        this.bombe.pathFinder.processKeyboardInput(this.pressedKeyId)
-        this.redrawBombe("key press " + pressedLetter)
+        if (enigmaIndex == 0) {
+            this.reset()
+        }
+        this.bombe.pathFinder.processKeyboardInput(enigmaIndex, this.pressedKeyId, this.variant)
+        this.redrawBombe("key press " + pressedLetter + " on enigma " + enigmaIndex)
     }
 
     handleInputControlClick(event) {
@@ -248,20 +236,10 @@ class BombeSVGRenderer {
 
         //this.calculateScramblerInputsAndOutputs(scramblerInputId)
         this.bombe.pathFinder.processEnigmaInput(bombe.scramblersByIndexMap[0], scramblerInputId)
-        this.redrawBombe("input activation " + clickedInputWire)
-    }
-
-    handleNextPathSegmentClick(event) {
-        this.bombe.pathFinder.processNextPathRequest(this.variant)
-        this.redrawBombe("next path segment")
-    }
-
-    handleCompletePathClick(event) {
-        let pathAdded = true
-        while (pathAdded) {
-            pathAdded = this.bombe.pathFinder.processNextPathRequest(this.variant)
+        if (this.autoCompletePathOnInputActivation) {
+            this.bombe.pathFinder.completePath(this.variant)
         }
-        this.redrawBombe("complete the path")
+        this.redrawBombe("input activation " + clickedInputWire)
     }
 
     handleAdvanceDrums(event) {
@@ -272,6 +250,14 @@ class BombeSVGRenderer {
         this.bombe.advanceIndicatorDrums(drumNo-1)
 
         this.reset()
+        if (this.autoActivateInputOnRotorPositionChange) {
+            let wireId = 2 // c-wire
+            this.bombe.inputControlIds.push(wireId)
+            this.bombe.pathFinder.processEnigmaInput(bombe.scramblersByIndexMap[0], wireId)
+            if (this.autoCompletePathOnInputActivation) {
+                this.bombe.pathFinder.completePath(this.variant)
+            }
+        }
         this.redrawBombe("advance drums " + drumNo)
     }
 
@@ -283,6 +269,14 @@ class BombeSVGRenderer {
         this.bombe.turnBackIndicatorDrums(drumNo-1)
 
         this.reset()
+        if (this.autoActivateInputOnRotorPositionChange) {
+            let wireId = 2 // c-wire
+            this.bombe.inputControlIds.push(wireId)
+            this.bombe.pathFinder.processEnigmaInput(bombe.scramblersByIndexMap[0], wireId)
+            if (this.autoCompletePathOnInputActivation) {
+                this.bombe.pathFinder.completePath(this.variant)
+            }
+        }
         this.redrawBombe("step back drums " + drumNo)
     }
 

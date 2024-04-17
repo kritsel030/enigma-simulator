@@ -13,8 +13,9 @@ class LWReflectorSVGRenderer {
 
     // background = everything behind the encipher path
     drawBackground(parent, variant, x=0, y=0) {
+        let startX = reflectorXOffset(variant)
         let width = renderDrumsSeparate(variant) ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
-        let path = `M ${0} ${0}`
+        let path = `M ${startX} ${0}`
         path += `h ${width} `
         path += `v ${REFLECTOR_HEIGHT } `
         path += `h -${width} Z`
@@ -29,8 +30,9 @@ class LWReflectorSVGRenderer {
 //    }
 
     drawForeground(group, variant) {
+        let startX = reflectorXOffset(variant)
         let width = renderDrumsSeparate(variant) ? REFLECTOR_BROAD_WIDTH : REFLECTOR_WIDTH
-        let path = `M ${0} ${0}`
+        let path = `M ${startX} ${0}`
         path += `h ${width} `
         path += `v ${REFLECTOR_HEIGHT } `
         path += `h -${width} Z`

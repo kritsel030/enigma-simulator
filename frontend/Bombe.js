@@ -57,32 +57,30 @@ class Bombe {
             let drum3 = new Rotor(drumTypes[2], 'Z', 1, alphabetSize)
             drum3.step(this.scramblerOffsets[i])
             let plugboard = new Plugboard(plugboardString, alphabetSize)
-            //let scrambler = new Enigma (reflector, drum1, drum2, drum3, plugboard)
 
-            let inputLetter = this.menuLetters[i]
-            let outputLetter = this.menuLetters[i+1]
             let first = i===0
+            let inputLetter = (!first && this.menuLetters[i] == this.cycleLetter) ? '#' : this.menuLetters[i]
+            let outputLetter = this.menuLetters[i+1] == this.cycleLetter ? '#' : this.menuLetters[i+1]
+
             let lastInMenu = i===noOfEnigmasNeeded-1
-            let lastInCycle = i > 0 && outputLetter === this.menuLetters[0]
+            let lastInCycle = i > 0 && outputLetter === '#'
             let scrambler = new BombeEnigma(reflector, drum1, drum2, drum3, plugboard, inputLetter, outputLetter, i, first, lastInMenu, lastInCycle)
             // add the newly created scrambler/enigma to several lists and maps which are needed later on
             this.scramblers.push(scrambler)
             this.scramblersByIndexMap[i] = scrambler
-            if (! (inputLetter in this.scramblersByInputLetterMap)) {
-                this.scramblersByInputLetterMap[inputLetter] = []
-            }
-            this.scramblersByInputLetterMap[inputLetter].push(scrambler)
-            if (! (outputLetter in this.scramblersByOutputLetterMap)) {
-                this.scramblersByOutputLetterMap[outputLetter] = []
-            }
-            this.scramblersByOutputLetterMap[outputLetter].push(scrambler)
+            this.scramblersByInputLetterMap[inputLetter] = scrambler
+            this.scramblersByOutputLetterMap[outputLetter] = scrambler
             if (inputLetter === this.cycleLetter && this.cycleStartEnigma == null) {
                 this.cycleStartEnigma = scrambler
             }
-            if (outputLetter === this.cycleLetter && this.cycleEndEnigma == null) {
+            if (outputLetter === '#' && this.cycleEndEnigma == null) {
                 this.cycleEndEnigma = scrambler
             }
-            if (previousScrambler != null) previousScrambler.next = scrambler
+            if (previousScrambler != null) {
+                previousScrambler.next = scrambler
+                scrambler.previous = previousScrambler
+            }
+            // prepare for next iteration
             previousScrambler = scrambler
         }
 

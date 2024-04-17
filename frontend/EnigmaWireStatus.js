@@ -9,6 +9,8 @@ class EnigmaWireStatus {
         this.scramblerOutputContactIds = []
         this.activePaths = []
         this.unprocessedScramblerInputContactId = null
+        this.unprocessedScramblerOutputContactId = null
+
     }
 
     addEncipherPathViaPlugboard(inputPbInputContactId, scramblerInputContactId, scramblerOutputContactId, outputPbOutputContactId) {
