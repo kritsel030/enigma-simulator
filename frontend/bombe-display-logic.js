@@ -2,8 +2,8 @@
 // constants
 
 // generic stuff
-let LEFT_MARGIN = 370
-let TOP_MARGIN = 20
+let LEFT_MARGIN = 350
+let TOP_MARGIN = 0
 let ALPHABET_SIZE = 6
 const UNIT = 4
 const WIRE_DISTANCE = 3*UNIT
@@ -61,7 +61,7 @@ const VERTICAL_CONNECTOR_GAP = 9 * COMPONENT_DISTANCE
 const SCHEMA_ENIGMA_WIDTH = 4 * COMPONENT_DISTANCE
 
 // diagonal board stuff
-const DIAGONAL_BOARD_HEIGHT = 9*WIRE_DISTANCE
+const DIAGONAL_BOARD_HEIGHT = 7*WIRE_DISTANCE
 
 const A_POSITION = 0
 
@@ -285,7 +285,7 @@ function keyboardXOffset(variant, first, last, inbound) {
     else if (!keyboardProps.positionShifted) 
         return enigmaCenterXOffset(variant, first, last) + 0.5*COMPONENT_DISTANCE
     else 
-        return 2*COMPONENT_SIZE + COMPONENT_DISTANCE + 0.5*ENIGMA_DISTANCE - 0.5*COMPONENT_SIZE
+        return 20+ 2*COMPONENT_SIZE + COMPONENT_DISTANCE + 0.5*ENIGMA_DISTANCE - 0.5*COMPONENT_SIZE
 }
 
 function verticalCableXOffset(variant, first, last, inbound) {

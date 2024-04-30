@@ -41,9 +41,9 @@ class BombeSVGRenderer {
 
         // create the svg element
         let svg = document.createElementNS(SVG_NS, "svg");
-        svg.setAttribute("width", "1200");
-        svg.setAttribute("height", "500");
-        svg.style.cssText = 'border: 1px solid black'
+        svg.setAttribute("width", "1100");
+        svg.setAttribute("height", "450");
+        //svg.style.cssText = 'border: 1px solid black'
         svg.id = "bombe"
         div.appendChild(svg)
 
@@ -102,29 +102,36 @@ class BombeSVGRenderer {
         // diagonal board wires
         if (renderDiagonalBoard(this.variant)) {
             // let dbBottomY = DIAGONAL_BOARD_HEIGHT
-            let dbBottomY = ys.diagonalBoard + DIAGONAL_BOARD_HEIGHT - WIRE_DISTANCE
+            let dbBottomY = TOP_MARGIN + ys.diagonalBoard + DIAGONAL_BOARD_HEIGHT
 
             // A-cable
             for (let i=0; i<ALPHABET_SIZE; i++) {
-                let path = `M ${dbX("A", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                let x = dbX("A", i, this.bombe.menuLetters)
+                let y = wireY(i)
+                let path = `M ${x} ${y} V ${dbBottomY} `
                 addPathNode (svg, path, `test`, "wire")
             }
 
             // C-cable
             for (let i=0; i<ALPHABET_SIZE; i++) {
-                let path = `M ${dbX("C", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                let x = dbX("C", i, this.bombe.menuLetters)
+                let y = wireY(i)
+                let path = `M ${x} ${y} V ${dbBottomY} `
                 addPathNode (svg, path, `test`, "wire")
             }
 
             // E-cable
             for (let i=0; i<ALPHABET_SIZE; i++) {
-                let path = `M ${dbX("E", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                let x = dbX("E", i, this.bombe.menuLetters)
+                let y = wireY(i)
+                let path = `M ${x} ${y} V ${dbBottomY} `
                 addPathNode (svg, path, `test`, "wire")
             }
 
             // F-cable
             for (let i=0; i<ALPHABET_SIZE; i++) {
                 //let path = `M ${dbX("F", i, this.bombe.menuLetters)} ${wireY(i)} V ${dbBottomY} `
+                let letterX = dbX("F", i, this.bombe.menuLetters)
                 let startX = scramblerAbsoluteXOffset(this.variant, 3, this.bombe.menuLetters) + vertConnectorXOffset(this.variant, false, false, false, 3)
                 let path = `M ${startX} ${wireY(i)} H ${dbX("F", i, this.bombe.menuLetters)} V ${dbBottomY} `
                 addPathNode (svg, path, `test`, "wire")
@@ -187,6 +194,42 @@ class BombeSVGRenderer {
             let x = scramblerAbsoluteXOffset(this.variant, i, this.bombe.menuLetters)
             this.lwEnigmaRenderers[i].drawForeground(svg, i, this.variant, first, last, x, TOP_MARGIN)
         }
+
+        // wire letters on diagonal board wires
+        // diagonal board wires + wire letters
+        if (renderDiagonalBoard(this.variant)) {
+            // let dbBottomY = DIAGONAL_BOARD_HEIGHT
+            let dbBottomY = TOP_MARGIN + ys.diagonalBoard + DIAGONAL_BOARD_HEIGHT
+
+            // A-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let x = dbX("A", i, this.bombe.menuLetters)
+                addCircleNode(svg, `db_wire_letter`, "wireLetter", 1.5*UNIT, x, dbBottomY + 20)
+                addTextNode(svg, idToCharToken(i).toLowerCase(), `db_wire_letter`, "wireLetter", x, dbBottomY + 20)
+            }
+
+            // C-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let x = dbX("C", i, this.bombe.menuLetters)
+                addCircleNode(svg, `db_wire_letter`, "wireLetter", 1.5*UNIT, x, dbBottomY + 20)
+                addTextNode(svg, idToCharToken(i).toLowerCase(), `db_wire_letter`, "wireLetter", x, dbBottomY + 20)
+            }
+
+            // E-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let x = dbX("E", i, this.bombe.menuLetters)
+                addCircleNode(svg, `db_wire_letter`, "wireLetter", 1.5*UNIT, x, dbBottomY + 20)
+                addTextNode(svg, idToCharToken(i).toLowerCase(), `db_wire_letter`, "wireLetter", x, dbBottomY + 20)
+            }
+
+            // F-cable
+            for (let i=0; i<ALPHABET_SIZE; i++) {
+                let x = dbX("F", i, this.bombe.menuLetters)
+                addCircleNode(svg, `db_wire_letter`, "wireLetter", 1.5*UNIT, x, dbBottomY + 20)
+                addTextNode(svg, idToCharToken(i).toLowerCase(), `db_wire_letter`, "wireLetter", x, dbBottomY + 20)
+            }
+        }
+
     }
 
     drawDrumButtons(drumNo, group, variant) {

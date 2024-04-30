@@ -28,8 +28,12 @@
         /* basics ***************************************************/
         body {
             font-family: arial;
+            background-color: rgb(255, 187, 153);
+            margin:0;
+            padding:0
         }
         h1 {
+            padding: 8;
             line-height: 50px;
             background: black;
             color: rgb(255, 187, 153);
@@ -218,7 +222,19 @@
           # stroke: rgb(169,169,169);
           stroke: rgb(128, 128, 128);
           stroke-width: 1px;
-        }        
+        }
+
+        /* wire **********************************************/
+        circle.wireLetter {
+            fill: rgba(255,255,255,0.75);
+        }
+        text.wireLetter {
+            alignment-baseline: middle;
+            text-anchor: middle;
+            #fill: rgb(169,169,169);
+            fill: rgb(100,100,100);
+            font: 400 12px arial;
+        }
 
         /* electrical path **************************************/
         path.electricalPath {
@@ -293,6 +309,27 @@
           border-radius: 4px;
           box-shadow: 2px 2px 2px #666;
         }
+
+        /* div layout *********************************************/
+        div.wrapper {
+            overflow: hidden;
+        }
+        div.float {
+            float:left;
+        }
+        div.card {
+            margin: 16;
+            padding: 16;
+            background-color: white;
+            #border-radius: 8px;
+            box-shadow: 4px 4px 4px #666;
+        }
+        h2 {
+            line-height: 12px;
+            font-size: 20;
+            margin: 0;
+            margin-bottom: 16;
+        }
         
     </style>
 </head>
@@ -300,235 +337,93 @@
 
 <h1>Turing-Welchman bombe</h1>
 
-We received this <u>encoded</u> message: <span style="font-family:courier">C E C A A E</span>
-<p/>
-We expect the <u>original</u> message to contain <span style="font-family:courier">C A F E</span>
-<p/>
-<hr/>
-
-<table>
-    <tr>
-        <th>C</th>
-        <th>E</th>
-        <th>C</th>
-        <th>A</th>
-        <th>A</th>
-        <th>E</th>
-        <th></th>
-    </tr>
-
-    <tr>
-        <td style="color: red">C</td>
-        <td>A</td>
-        <td>F</td>
-        <td>E</td>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td></td>
-        <td>C</td>
-        <td>A</td>
-        <td>F</td>
-        <td>E</td>
-        <td></td>
-        <td>&larr; this one works!</td>
-    </tr>
-    <tr>
-        <td></td>
-        <td></td>
-        <td style="color: red">C</td>
-        <td style="color: red">A</td>
-        <td>F</td>
-        <td style="color: red">E</td>
-        <td></td>
-    </tr>
-</table>
-<p/>
-<hr/>
-<table>
-    <tr>
-        <th></th>
-        <th>1</th>
-        <th>2</th>
-        <th>3</th>
-        <th>4</th>
-        <th></th>
-        <th></th>
-    </tr>
-    <tr>
-        <td><span style="text-decoration: line-through;">C</span></td>
-        <th>E</th>
-        <th>C</th>
-        <th>A</th>
-        <th>A</th>
-        <td><span style="text-decoration: line-through;">E</span></td>
-        <th></th>
-    </tr>
-    <tr>
-        <td></td>
-        <td>C</td>
-        <td>A</td>
-        <td>F</td>
-        <td>E</td>
-        <td></td>
-        <td>&larr; this one works!</td>
-    </tr>
-
-</table>
-
-<hr/>
-This results in the menu A - 2 - C - 1 - E - 4 - A - 3 - F
-<p/>
-You should read this as:
-<ul>
-    <li>an enigma in start position + 2 rotor steps will encode
-        <span style="font-family:courier">A</span> into <span style="font-family:courier">C</span>
-        and vice versa</li>
-    <li>an enigma in start position + 1 rotor step will encode
-        <span style="font-family:courier">C</span> into <span style="font-family:courier">E</span>
-        and vice versa</li>
-    <li>an enigma in start position + 4 rotor steps will encode
-        <span style="font-family:courier">E</span> into <span style="font-family:courier">A</span>
-        and vice versa</li>
-    <li>an enigma in start position + 3 rotor steps will encode
-        <span style="font-family:courier">A</span> into <span style="font-family:courier">F</span>
-        and vice versa</li>
-</ul>
-<hr/>
-If we would have guessed the correct rotor settings and plugboard connections, we would have these three Enigmas.<br/>
-(notice that the bottom rotor setting is different for each of the Enigma's).
-<p/>
-<fieldset>
-    <legend>Please select a design stage:</legend>
-    <div>
+<div class="card">
+    <h2>Menu</h2>
+<div class="wrapper">
+    <div class="float">
         <table>
             <tr>
-                <td>
-                    <input type="radio" id="variantA" name="variant" value="variantA" onchange="handleVariant(event);" />
-                    <label for="variantA">A: Enigmas + individual keyboards</label>
-                    <br/>
-            
-                    <input type="radio" id="variantB" name="variant" value="variantB" onchange="handleVariant(event);" />
-                    <label for="variantB">B: Enigmas + individual keyboards with integrated drums</label>
-                    <br/>
-            
-                    <input type="radio" id="variantC" name="variant" value="variantC" onchange="handleVariant(event);" />
-                    <label for="variantC">C: Enigmas + connected keyboards</label>
-                    <br/>
-            
-                    <input type="radio" id="variantD" name="variant" value="variantD" onchange="handleVariant(event);" />
-                    <label for="variantD">D: Enigmas without middle keyboards </label>
-                    <br/>
-            
-                    <input type="radio" id="variantE" name="variant" value="variantE" onchange="handleVariant(event);" />
-                    <label for="variantE">E: Enigmas without middle plugboards - 1 </label>
-                    <br/>
-            
-                    <input type="radio" id="variantF" name="variant" value="variantF" onchange="handleVariant(event);" />
-                    <label for="variantF">F: Enigmas without middle plugboards - 2</label>
-                    <br/>
-            
-                    <input type="radio" id="variantG" name="variant" value="variantG" onchange="handleVariant(event);" />
-                    <label for="variantG">G: Enigmas without any plugboards or keyboards </label>
-                    <br/>
-            
-                    <input type="radio" id="variantH" name="variant" value="variantH" onchange="handleVariant(event);" />
-                    <label for="variantH">H: almost there... </label>
-                    <br/>
-                </td>
-                <td>
-                    <input type="radio" id="scramblerBasic" name="variant" value="scramblerBasic" onchange="handleVariant(event);" />
-                    <label for="scramblerBasic">Milestone: schematic bombe </label>
-                    <br/>
-            
-                    <input type="radio" id="scrambler_multi_line_scanning" name="variant" value="scrambler_multi_line_scanning" onchange="handleVariant(event);" />
-                    <label for="scrambler_multi_line_scanning">Multi-line scanning</label>
-                    <br/>
+                <td>enciphered message:</td>
+                <td style="font-family: courier; font-weight:800">E</td>
+                <td style="font-family: courier; font-weight:800">C</td>
+                <td style="font-family: courier; font-weight:800">A</td>
+                <td style="font-family: courier; font-weight:800">A</td>
+            </tr>
 
-                    <input type="radio" id="scrambler_full_menu" name="variant" value="scrambler_full_menu" onchange="handleVariant(event);" />
-                    <label for="scrambler_full_menu">Full menu</label>
-                    <br/>
-
-                    <input type="radio" id="scrambler_diagonal_board" name="variant" value="scrambler_diagonal_board" onchange="handleVariant(event);" />
-                    <label for="scrambler_diagonal_board">Diagonal board</label>
-                    <br/>
-                </td>
+            <tr>
+                <td/>
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>4</td>
+            </tr>
+            <tr>
+                <td>crib:</td>
+                <td style="font-family: courier; font-weight:800">C</td>
+                <td style="font-family: courier; font-weight:800">A</td>
+                <td style="font-family: courier; font-weight:800">F</td>
+                <td style="font-family: courier; font-weight:800">E</td>
             </tr>
         </table>
     </div>
-</fieldset>
-<p/>
-<button id="reset" name="reset" onclick="handleReset(event);">Reset</button>
-<p/>
-Start with <span style="font-family:courier">A</span> on the first Enigma.
-<p/>
+    <div class="float" style="margin-left: 50">
+        Resulting menu: <b>A</b> - 2 - <b>C</b> - 1 - <b>E</b> - 4 - <b>A</b> - 3 - <b>F</b>
+    </div>
+</div>
+</div>
 
+<div class="wrapper">
+    <div class="float card">
+        <h2>Visual variant selection</h2>
+        <button onclick="handleFirstVariant(event)"><b>|&nbsp;&lt;&lt;</b>&nbsp;</button>
+        <button onclick="handlePreviousVariant(event)"><b>&lt;</b>&nbsp;</button>
+        &nbsp;
+        <select id="variant" style="width:250" onchange="handleVariant(event);">
+            <option value="variantA">A: Enigmas + individual keyboards</option>
+            <option value="variantB">B: Enigmas + individual keyboards with integrated drums</option>
+            <option value="variantC">C: Enigmas + connected keyboards</option>
+            <option value="variantD">D: Enigmas without middle keyboards </option>
+            <option value="variantE">E: Enigmas without middle plugboards - 1 </option>
+            <option value="variantF">F: Enigmas without middle plugboards - 2</option>
+            <option value="variantG">G: Enigmas without any plugboards or keyboards </option>
+            <option value="variantH">H: almost there... </option>
+            <option value="scramblerBasic">Milestone: schematic bombe </option>
+            <option value="scrambler_multi_line_scanning">Multi-line scanning</option>
+            <option value="scrambler_full_menu">Full menu</option>
+            <option value="scrambler_diagonal_board">Diagonal board</option>
+        </select>
+        &nbsp;
+        <button onclick="handleNextVariant(event)">&nbsp;<b>&gt;</b></button>
+        <button onclick="handleLastVariant(event)">&nbsp;<b>&gt;&gt;&nbsp;|</b></button>
+    </div>
 
-<table style="border-spacing:20">
-    <tr>
-        <td valign="top">
-            <fieldset>
-                <legend>visual variant</legend>
-                <p/>
+    <div class="float card">
+        <h2>Electrical path controls</h2>
+        <table>
+            <tr>
+                <td valign="top">
+                    <button id="reset" name="reset" onclick="handleClearPath(event);">clear</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <button id="nextPathSegment" name="nextPathSegment" onclick="handleNextPathSegment(event)">&#9654;</button>
+                    &nbsp;
+                    <button id="completePath" name="completePath" onclick="handleCompletePath(event)">&#9654;&#9654;<b>|</b></button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </td>
+                <td valign="top">
+                    <label><input type='checkbox' onchange='handleAutoCompletePath(event);'> Auto-complete path when activating input</label>
+                    <br/>
+                    <label>
+                        <input type='checkbox' onchange='handleAutoActivateInput(event);'>
+                        Auto-activate <input type='inputContactId' value="c" size="1" style="width: 15"> input when changing rotor position
+                    </label>
+                </td>
+            </tr>
+        </table>
 
-                <button onclick="handleFirstVariant(event)"><b>|&nbsp;&lt;&lt;</b>&nbsp;</button>
-                <button onclick="handlePreviousVariant(event)"><b>&lt;</b>&nbsp;</button>
-                &nbsp;
-                <select id="variant" style="width:250" onchange="handleVariant(event);">
-                    <option value="variantA">A: Enigmas + individual keyboards</option>
-                    <option value="variantB">B: Enigmas + individual keyboards with integrated drums</option>
-                    <option value="variantC">C: Enigmas + connected keyboards</option>
-                    <option value="variantD">D: Enigmas without middle keyboards </option>
-                    <option value="variantE">E: Enigmas without middle plugboards - 1 </option>
-                    <option value="variantF">F: Enigmas without middle plugboards - 2</option>
-                    <option value="variantG">G: Enigmas without any plugboards or keyboards </option>
-                    <option value="variantH">H: almost there... </option>
-                    <option value="scramblerBasic">Milestone: schematic bombe </option>
-                    <option value="scrambler_multi_line_scanning">Multi-line scanning</option>
-                    <option value="scrambler_full_menu">Full menu</option>
-                    <option value="scrambler_diagonal_board">Diagonal board</option>
-            </select>
-                &nbsp;
-                <button onclick="handleNextVariant(event)">&nbsp;<b>&gt;</b></button>
-                <button onclick="handleLastVariant(event)">&nbsp;<b>&gt;&gt;&nbsp;|</b></button>
+    </div>
+</div>
 
-            </fieldset>
-        </td>
-        <td valign="top">
-            <fieldset>
-                <legend>electrical path controls</legend>
-                <p/>
-                <table>
-                    <tr>
-                        <td valign="top">
-                            <button id="reset" name="reset" onclick="handleClearPath(event);">clear</button>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            <button id="nextPathSegment" name="nextPathSegment" onclick="handleNextPathSegment(event)">&#9654;</button>
-                            &nbsp;
-                            <button id="completePath" name="completePath" onclick="handleCompletePath(event)">&#9654;&#9654;<b>|</b></button>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        </td>
-                        <td valign="top">
-                            <label><input type='checkbox' onchange='handleAutoCompletePath(event);'> Auto-complete path when activating input</label>
-                            <br/>
-                            <label>
-                                <input type='checkbox' onchange='handleAutoActivateInput(event);'>
-                                Auto-activate <input type='inputContactId' value="c" size="1" style="width: 15"> input when changing rotor position
-                            </label>
-                        </td>
-                    </tr>
-                </table>
-
-
-            </fieldset>
-
-        </td>
-    </tr>
-</table>
-
-<div id="bombeDiv">
+<div class="card" id="bombeDiv">
 </div>
 
 </body>

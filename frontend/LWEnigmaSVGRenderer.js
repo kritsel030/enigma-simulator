@@ -20,7 +20,7 @@ class LWEnigmaSVGRenderer {
 
         // reflector
         if (renderReflector(variant)) {
-            this.reflectorRenderer.drawBackground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
+            this.reflectorRenderer.drawBackground(group, variant, first, last, reflectorXOffset(variant, first, last), ys.reflectorY)
         }
 
         // plugboard
@@ -46,7 +46,7 @@ class LWEnigmaSVGRenderer {
 
         // reflector
         if (renderReflector(variant)) {
-            this.reflectorRenderer.drawForeground(group, variant, reflectorXOffset(variant, first, last), ys.reflectorY)
+            this.reflectorRenderer.drawForeground(group, variant, first, last, reflectorXOffset(variant, first, last), ys.reflectorY)
         }
 
         // draw the 3 drums
@@ -108,6 +108,8 @@ class LWEnigmaSVGRenderer {
             this.keyAndLightboardRenderer.draw(group, `${group.id}_keyboard_right`, variant, rightProps, rightXOffset, ys.keyboardY, plugboardInputId, plugboardOutputId)
         }
 
+        // draw letters on input and output wires
+        this.drawWireLetters(group, enigmaId, variant, first, last)
     }
 
     drawWiring(parent, enigmaId, variant, first, last, x, y) {
@@ -176,13 +178,13 @@ class LWEnigmaSVGRenderer {
         let ys = yValues(variant)
         let labelY = TOP_MARGIN
         if (renderKeyOrLightboard(variant, first, last, false) || renderKeyOrLightboard(variant, first, last, true)) {
-            labelY += ys.keyboardY + 40
+            labelY += ys.keyboardY + 60
 //        } else if (renderPlugboard(variant, first, last, false) || renderPlugboard(variant, first, last, true)){
 //            labelY += ys.plugboardY
         } else if (renderHorizontalConnector(variant, first, last, false) || renderHorizontalConnector(variant, first, last, true)){
-            labelY += ys.plugboardY + COMPONENT_DISTANCE
+            labelY += ys.plugboardY + 4*COMPONENT_DISTANCE
         } else {
-            labelY = ys.vertConnectorY + CONNECTOR_WIDTH + 2*COMPONENT_DISTANCE
+            labelY += ys.vertConnectorY + CONNECTOR_WIDTH + 2*COMPONENT_DISTANCE
         }
 
         // labels are horizontally centered based on the x property
@@ -223,7 +225,7 @@ class LWEnigmaSVGRenderer {
         if (renderHorizontalConnector(variant, first, last, inbound)) {
             return TOP_MARGIN + ys.plugboardY + PLUGBOARD_HEIGHT
         } else if (renderVerticalConnector(variant, first, last, inbound)) {
-            return TOP_MARGIN + ys.vertConnectorY + 3.75 * WIRE_DISTANCE
+            return TOP_MARGIN + ys.vertConnectorY + 16*UNIT
         }
     }
 
@@ -292,6 +294,9 @@ class LWEnigmaSVGRenderer {
             }
             addCircleNode(group, `input_${i}`, "activate", 1.5*UNIT, pathAndStartCoordinate[1].x, pathAndStartCoordinate[1].y)
             addTextNode(group, "+", `input_${i}`, "activate", pathAndStartCoordinate[1].x, pathAndStartCoordinate[1].y+1)
+
+            // wire letter
+            addTextNode(group, idToCharToken(i).toLowerCase(), `input_${i}_letter`, "wireLetter", pathAndStartCoordinate[1].x, pathAndStartCoordinate[1].y+16)
         }
         group.addEventListener('click', bombeRenderer.handleInputControlClick.bind(bombeRenderer), false)
     }
@@ -314,6 +319,52 @@ class LWEnigmaSVGRenderer {
     drawCable(group, side, fromX, fromY, toX, toY) {
         addPathNode (group, `M ${fromX} ${fromY} L ${toX} ${toY}`, `${group.id}_cable_${side}`, "cable")
     }
+
+//    drawWireLetters(parent, enigmaId, variant, first, last, x, y) {
+    drawWireLetters(parent, enigmaId, variant, first, last) {
+        let group = parent
+        let ys = yValues(variant)
+        // input connector
+        if (renderHorizontalConnector(variant, first, last, true) ) {
+            if (!renderInputControlWires(variant, first)) {
+                let xOffset = horConnectorXOffset(variant, first, last, true)
+                let y = ys.horConnectorY + CONNECTOR_HEIGHT + 12
+                for (let i=0; i < alphabetSize; i++) {
+                    let x = xOffset + 0.5*WIRE_DISTANCE + i*WIRE_DISTANCE
+                    addCircleNode(group, `input_${i}_i`, "wireLetter", 1.5*UNIT, x, y)
+                    addTextNode(group, idToCharToken(i).toLowerCase(), `input_${i}_i`, "wireLetter", x, y)
+                }
+            }
+
+        } else if (first && renderVerticalConnector(variant, first, last, true) ) {
+            let x = vertConnectorXOffset(variant, first, last, true) - 36
+            let yOffset = ys.vertConnectorY
+            for (let i=0; i < alphabetSize; i++) {
+                let y = yOffset + 0.5*WIRE_DISTANCE + i*WIRE_DISTANCE
+                addCircleNode(group, `input_${i}_i`, "wireLetter", 1.5*UNIT, x, y)
+                addTextNode(group, idToCharToken(i).toLowerCase(), `input_${i}_i`, "wireLetter", x, y)
+            }
+        }
+        // outbound connector
+        if (renderHorizontalConnector(variant, first, last, false) ) {
+            let xOffset = horConnectorXOffset(variant, first, last, false)
+            let y = ys.horConnectorY + CONNECTOR_HEIGHT + 12
+            for (let i=0; i < alphabetSize; i++) {
+                let x = xOffset + 0.5*WIRE_DISTANCE + i*WIRE_DISTANCE
+                addCircleNode(group, `input_${i}_i`, "wireLetter", 1.5*UNIT, x, y)
+                addTextNode(group, idToCharToken(i).toLowerCase(), `input_${i}_i`, "wireLetter", x, y)
+            }
+        } else if (renderVerticalConnector(variant, first, last, false) ) {
+            let x = vertConnectorXOffset(variant, first, last, false) + CONNECTOR_HEIGHT + 12
+            let yOffset = ys.vertConnectorY
+            for (let i=0; i < alphabetSize; i++) {
+                let y = yOffset + 0.5*WIRE_DISTANCE + i*WIRE_DISTANCE
+                addCircleNode(group, `input_${i}_i`, "wireLetter", 1.5*UNIT, x, y)
+                addTextNode(group, idToCharToken(i).toLowerCase(), `input_${i}_i`, "wireLetter", x, y)
+            }
+        }
+   }
+
 
     resetKeyboard() {
         this.pressedKeyId = null

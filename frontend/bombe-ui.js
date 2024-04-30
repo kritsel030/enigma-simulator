@@ -48,7 +48,7 @@ function initSVG(parentId) {
 }
 
 function initFormFields() {
-    document.getElementById(bombeRenderer.variant).checked = true
+    document.getElementById('variant').value = bombeRenderer.variant
 }
 
 //////////////////////////////////////////////////////////////////////////

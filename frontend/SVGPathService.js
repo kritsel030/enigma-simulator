@@ -19,8 +19,8 @@ class SVGPathService {
             path += `l ${toX} ${toY} `
         } else {
             // path with an angle to the virtual keyboard
-            let v = 0.5*wireId*WIRE_DISTANCE + WIRE_DISTANCE 
-            let h = 0.5 * (PLUGBOARD_WIDTH + ENIGMA_DISTANCE)
+            let v = 0.5*wireId*WIRE_DISTANCE + WIRE_DISTANCE
+            let h = 0.5 * (PLUGBOARD_WIDTH + HORIZONTAL_CONNECTOR_GAP)
             if (inbound) h = -h
             path += ` v ${v} h ${h} `
         }
@@ -46,7 +46,7 @@ class SVGPathService {
         if (renderPlugboard(variant, first, last, inbound) || (first && inbound) || (last && !inbound)) {
             path += `v ${CONN_TO_PB_DISTANCE} `
         } else {
-            let extraV = 0.5*wireId*WIRE_DISTANCE + WIRE_DISTANCE 
+            let extraV = 0.5*wireId*WIRE_DISTANCE + 6*UNIT
             let h = 0.5 * (PLUGBOARD_WIDTH + HORIZONTAL_CONNECTOR_GAP)
             if (inbound) h = -h
             path += `v ${extraV} h ${h} `
